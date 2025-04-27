@@ -1,6 +1,6 @@
-from .base import BoundingBox
+from .base import Annotation, BoundingBox
 
-class PascalVoc_BoundingBox(BoundingBox):
+class PascalVocBoundingBox(BoundingBox):
     
     x_min: int
     y_min: int
@@ -15,3 +15,18 @@ class PascalVoc_BoundingBox(BoundingBox):
 
     def getBoundingBox(self):
         return [self.x_min, self.y_min, self.x_max,  self.y_max]
+    
+
+class PascalVocObject(Annotation[PascalVocBoundingBox]):
+
+    name: str
+    pose: str
+    truncated: bool
+    difficult: bool
+
+    def __init__(self, bbox: PascalVocBoundingBox, name: str, pose: str, truncated: bool, difficult: bool) -> None:
+        super().__init__(bbox)
+        self.name = name
+        self.pose = pose
+        self.truncated = truncated
+        self.difficult = difficult

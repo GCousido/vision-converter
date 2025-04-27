@@ -1,6 +1,6 @@
-from .base import BoundingBox
+from .base import Annotation, BoundingBox
 
-class Yolo_BoundingBox(BoundingBox):
+class YoloBoundingBox(BoundingBox):
     
     x_center: int
     y_center: int
@@ -15,3 +15,12 @@ class Yolo_BoundingBox(BoundingBox):
 
     def getBoundingBox(self):
         return [self.x_center, self.y_center, self.width, self.height]
+
+
+class YoloAnnotation(Annotation[YoloBoundingBox]):
+
+    id_class: int
+
+    def __init__(self, bbox: YoloBoundingBox, id_class: int) -> None:
+        super().__init__(bbox)
+        self.id_class = id_class
