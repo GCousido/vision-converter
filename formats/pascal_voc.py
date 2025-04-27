@@ -1,7 +1,6 @@
-from .base import Annotation, BoundingBox
+from .base import Annotation, BoundingBox, FileFormat
 
 class PascalVocBoundingBox(BoundingBox):
-    
     x_min: int
     y_min: int
     x_max: int
@@ -18,7 +17,6 @@ class PascalVocBoundingBox(BoundingBox):
     
 
 class PascalVocObject(Annotation[PascalVocBoundingBox]):
-
     name: str
     pose: str
     truncated: bool
@@ -30,3 +28,25 @@ class PascalVocObject(Annotation[PascalVocBoundingBox]):
         self.pose = pose
         self.truncated = truncated
         self.difficult = difficult
+
+
+class PascalVocFile(FileFormat[PascalVocObject]):
+    folder: str
+    # filename: str - en principio está en el base
+    path: str
+
+    # forman la etiqueta de size
+    width: int
+    height: int
+    depth: int
+
+    segmented: int
+
+    def __init__(self, filename: str, annotations: list[PascalVocObject], folder: str, path: str, width: int, height: int, depth: int, segmented: int) -> None:
+        super().__init__(filename, annotations)
+        self.folder = folder
+        self.path = path
+        self.width = width
+        self.height = height
+        self.depth = depth
+        self.segmented = segmented
