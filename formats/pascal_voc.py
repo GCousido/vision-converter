@@ -1,4 +1,4 @@
-from .base import Annotation, BoundingBox, FileFormat
+from .base import Annotation, BoundingBox, DatasetFormat, FileFormat
 
 class PascalVocBoundingBox(BoundingBox):
     x_min: int
@@ -50,3 +50,9 @@ class PascalVocFile(FileFormat[PascalVocObject]):
         self.height = height
         self.depth = depth
         self.segmented = segmented
+
+
+class PascalVocFormat(DatasetFormat[PascalVocFile]):
+
+    def __init__(self, name: str, files: list[PascalVocFile]) -> None:
+        super().__init__(name, files)

@@ -1,4 +1,4 @@
-from .base import Annotation, BoundingBox, FileFormat
+from .base import Annotation, BoundingBox, DatasetFormat, FileFormat
 
 class YoloBoundingBox(BoundingBox):
     x_center: int
@@ -27,3 +27,17 @@ class YoloFile(FileFormat[YoloAnnotation]):
 
     def __init__(self, filename: str, annotations: list[YoloAnnotation]) -> None:
         super().__init__(filename, annotations)
+
+
+class YoloFormat(DatasetFormat[YoloFile]):
+    class_labels: list[str]
+
+    def __init__(self, name: str, files: list[YoloFile], class_labels: list[str]) -> None:
+        super().__init__(name,files)
+        self.class_labels = class_labels
+
+    def addClassLabel(self, class_label: str) -> None:
+        self.class_labels.append(class_label)
+
+    def getClassLabels(self) -> list[str]:
+        return self.class_labels

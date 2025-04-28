@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from .base import Annotation, BoundingBox, FileFormat
+from .base import Annotation, BoundingBox, DatasetFormat, FileFormat
 
 class CocoBoundingBox(BoundingBox):
     x_min: int
@@ -85,3 +85,9 @@ class CocoFile(FileFormat[CocoLabel]):
         self.licenses = licenses
         self.images = images
         self.categories = categories
+
+
+class CocoFormat(DatasetFormat[CocoFile]):
+
+    def __init__(self, name: str, files: list[CocoFile]) -> None:
+        super().__init__(name, files)

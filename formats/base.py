@@ -34,3 +34,23 @@ class FileFormat(ABC, Generic[K]):
     
     def addAnnotation(self, annotation: K) -> None:
         self.annotations.append(annotation)
+
+
+X = TypeVar("X", bound=FileFormat)
+
+class DatasetFormat(ABC, Generic[X]):
+    name: str
+    files: list[X]
+
+    def __init__(self, name: str, files: list[X]) -> None:
+        self.name = name
+        self.files = files
+
+    def getName(self) -> str:
+        return self.name
+
+    def getFiles(self) -> list[X]:
+        return self.files
+    
+    def addFile(self, file: X) -> None:
+        self.files.append(file)
