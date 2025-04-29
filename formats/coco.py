@@ -29,11 +29,11 @@ class CocoLabel(Annotation[CocoBoundingBox]):
     id: int
     image_id: int
     category_id: int
-    segmentation: list[list[float] | RLESegmentation]
+    segmentation: list[list[float]] | RLESegmentation
     area: float
     iscrowd: bool
 
-    def __init__(self, bbox: CocoBoundingBox, id: int, image_id: int, category_id: int, segmentation: list[list[float] | RLESegmentation], area: float, iscrowd: bool) -> None:
+    def __init__(self, bbox: CocoBoundingBox, id: int, image_id: int, category_id: int, segmentation: list[list[float]] | RLESegmentation, area: float, iscrowd: bool) -> None:
         super().__init__(bbox)
         self.id = id
         self.image_id = image_id
@@ -95,3 +95,144 @@ class CocoFormat(DatasetFormat[CocoFile]):
     def __init__(self, name: str, files: list[CocoFile]) -> None:
         super().__init__(name, files)
 
+    @staticmethod
+    def build(name: str, files: list[CocoFile]) -> 'CocoFormat':
+        """Construye un objeto YoloFormat con parámetros específicos"""
+        return CocoFormat(name, files)
+    
+    @staticmethod
+    def create_coco_file_from_json(coco_data, name: str) -> CocoFile:
+
+        # Extraer información
+        info_data = coco_data.get('info', {})
+        info = Info(
+            description=info_data.get('description', ''),
+            url=info_data.get('url', ''),
+            version=info_data.get('version', ''),
+            year=info_data.get('year', 0),
+            contributor=info_data.get('contributor', ''),
+            date_created=info_data.get('date_created', '')
+        )
+
+        # Extraer licencias
+        licenses = []
+        for license_data in coco_data.get('licenses', []):
+            licenses.append(License(
+                id=license_data.get('id', 0),
+                name=license_data.get('name', ''),
+                url=license_data.get('url', '')
+            ))
+        
+        # Extraer imágenes
+        images = []
+        for image_data in coco_data.get('images', []):
+            images.append(CocoImages(
+                id=image_data.get('id', 0),
+                width=image_data.get('width', 0),
+                height=image_data.get('height', 0),
+                file_name=image_data.get('file_name', ''),
+                license=image_data.get('license', 0),
+                flicker_url=image_data.get('flickr_url', ''),
+                coco_url=image_data.get('coco_url', ''),
+                date_captured=image_data.get('date_captured', '')
+            ))
+        
+        # Extraer categorías
+        categories = []
+        for category_data in coco_data.get('categories', []):
+            categories.append(Category(
+                id=category_data.get('id', 0),
+                name=category_data.get('name', ''),
+                supercategory=category_data.get('supercategory', '')
+            ))
+        
+        # Extraer anotaciones
+        annotations = []
+        for ann_data in coco_data.get('annotations', []):
+            bbox_data = ann_data.get('bbox', [0, 0, 0, 0])
+            bbox = CocoBoundingBox(
+                x_min=bbox_data[0] if len(bbox_data) > 0 else 0,
+                y_min=bbox_data[1] if len(bbox_data) > 1 else 0,
+                width=bbox_data[2] if len(bbox_data) > 2 else 0,
+                height=bbox_data[3] if len(bbox_data) > 3 else 0
+            )
+            
+            # Procesar datos de segmentación
+            segmentation_data = ann_data.get('segmentation', [])
+            if isinstance(segmentation_data, dict) and 'counts' in segmentation_data:
+                # Formato RLE: es un único dict, no una lista
+                size = segmentation_data.get('size', [0, 0])
+                segmentation = RLESegmentation(
+                    alto=size[0] if len(size) > 0 else 0,
+                    ancho=size[1] if len(size) > 1 else 0,
+                    counts=segmentation_data.get('counts', '')
+                )
+            elif isinstance(segmentation_data, list):
+                # Formato polígono: es una lista de listas de floats
+                segmentation = segmentation_data
+            else:
+                segmentation = []
+
+            
+            annotations.append(CocoLabel(
+                bbox=bbox,
+                id=ann_data.get('id', 0),
+                image_id=ann_data.get('image_id', 0),
+                category_id=ann_data.get('category_id', 0),
+                segmentation=segmentation,
+                area=ann_data.get('area', 0.0),
+                iscrowd=bool(ann_data.get('iscrowd', 0))
+            ))
+
+        return CocoFile(
+                filename=name,
+                annotations=annotations,
+                info=info,
+                licenses=licenses,
+                images=images,
+                categories=categories
+            )
+
+    @staticmethod
+    def read_from_folder(folder_path: str) -> 'CocoFormat':
+        """
+        Lee un dataset en formato COCO desde una carpeta.
+
+        El formato COCO típicamente consiste en:
+        - Una carpeta de imágenes
+        - Archivos JSON de anotaciones en una carpeta 'annotations'
+
+        Args:
+            folder_path (str): Ruta a la carpeta del dataset
+
+        Returns:
+            CocoFormat: Objeto con el dataset COCO cargado
+        """
+
+        folder = Path(folder_path)
+
+        if not folder.exists():
+            raise FileNotFoundError(f"No se encontró la carpeta {folder_path}")
+
+        # Buscar archivos de anotaciones JSON
+        ann_folder = folder / "annotations"
+        if not ann_folder.exists():
+            raise FileNotFoundError(f"No se encontró la carpeta de anotaciones en {folder_path}")
+
+        json_files = list(ann_folder.glob("*.json"))
+        if not json_files:
+            raise FileNotFoundError(f"No se encontraron archivos JSON de anotaciones en {ann_folder}")
+
+        coco_files = []
+
+        for json_file in json_files:
+            with open(json_file, 'r') as f:
+                coco_data = json.load(f)
+
+            coco_files.append(CocoFormat.create_coco_file_from_json(coco_data, json_file.name))
+
+        # Construir y devolver un CocoFormat
+        return CocoFormat.build(
+            name=folder.name,
+            files=coco_files
+        )
