@@ -54,3 +54,15 @@ class DatasetFormat(ABC, Generic[X]):
     
     def addFile(self, file: X) -> None:
         self.files.append(file)
+
+    @staticmethod
+    @abstractmethod
+    def build(*args, **kwargs) -> 'DatasetFormat':
+        """Construye un objeto DatasetFormat con parámetros específicos"""
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def read_from_folder(folder_path: str) -> 'DatasetFormat':
+        """Lee el dataset desde una carpeta y devuelve una instancia"""
+        pass

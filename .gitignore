@@ -1,1 +1,10 @@
-.venv
+# Python
+__pycache__/
+*.pyc
+
+# uv
+uv.lock
+
+# Entornos virtuales
+.venv/
+env/

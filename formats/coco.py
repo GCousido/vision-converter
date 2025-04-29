@@ -1,4 +1,7 @@
 from dataclasses import dataclass
+from pathlib import Path
+import json
+
 from .base import Annotation, BoundingBox, DatasetFormat, FileFormat
 
 class CocoBoundingBox(BoundingBox):
@@ -91,3 +94,4 @@ class CocoFormat(DatasetFormat[CocoFile]):
 
     def __init__(self, name: str, files: list[CocoFile]) -> None:
         super().__init__(name, files)
+
