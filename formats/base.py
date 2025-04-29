@@ -25,9 +25,6 @@ class FileFormat(ABC, Generic[K]):
     def __init__(self, filename: str, annotations: list[K]) -> None:
         self.filename = filename
         self.annotations = annotations
-
-    def getFilename(self) -> str:
-        return self.filename
     
     def getAnnotations(self) -> list[K]:
         return self.annotations
@@ -54,15 +51,3 @@ class DatasetFormat(ABC, Generic[X]):
     
     def addFile(self, file: X) -> None:
         self.files.append(file)
-
-    @staticmethod
-    @abstractmethod
-    def build(*args, **kwargs) -> 'DatasetFormat':
-        """Build a DatasetFormat with specific params"""
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def read_from_folder(folder_path: str) -> 'DatasetFormat':
-        """Create dataset from folder"""
-        pass
