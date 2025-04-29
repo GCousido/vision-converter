@@ -1,49 +1,48 @@
 import pytest
 from pathlib import Path
 import json
-from dataclasses import asdict
 
 from formats.coco import CocoFormat, RLESegmentation
 
 def test_coco_format_creation(sample_coco_dataset):
-    # Cargar dataset
+    # Load dataset
     coco_format = CocoFormat.read_from_folder(sample_coco_dataset)
     
-    # 1. Verificación de estructura básica
+    # 1. Checking basic structure
     assert coco_format.name == "test_coco"
     assert len(coco_format.files) == 1
     
-    # 2. Verificación de metadatos
+    # 2. Checking metadata
     coco_file = coco_format.files[0]
     assert coco_file.info.description == "Test dataset"
     assert coco_file.info.version == "1.0"
     
-    # 3. Verificación de licencias
+    # 3. Checking licenses
     assert len(coco_file.licenses) == 1
     assert coco_file.licenses[0].name == "CC-BY-4.0"
     
-    # 4. Verificación de imágenes
+    # 4. Checking coco_images
     assert len(coco_file.images) == 2
     img_filenames = {img.file_name for img in coco_file.images}
     assert "image1.jpg" in img_filenames
     assert "image2.jpg" in img_filenames
     
-    # 5. Verificación de categorías
+    # 5. Checking categories
     assert len(coco_file.categories) == 2
     category_names = {c.name for c in coco_file.categories}
     assert "person" in category_names
     assert "car" in category_names
     
-    # 6. Verificación de anotaciones
+    # 6. Checking annotations
     assert len(coco_file.annotations) == 3
     
-    # Verificar bounding boxes
+    # Checking bounding boxes
     person_ann = [a for a in coco_file.annotations if a.category_id == 1]
     assert len(person_ann) == 1
     assert person_ann[0].bbox.x_min == 100
     assert person_ann[0].bbox.width == 50
     
-    # Verificar segmentación poligonal
+    # Checking polygon segmentation
     polygon_seg1 = next(a for a in coco_file.annotations if a.id == 1).segmentation
     assert isinstance(polygon_seg1, list)
     assert isinstance(polygon_seg1[0], list)
@@ -52,7 +51,7 @@ def test_coco_format_creation(sample_coco_dataset):
     polygon_seg2 = next(a for a in coco_file.annotations if a.id == 2).segmentation
     assert not polygon_seg2
     
-    # Verificar segmentación RLE
+    # Checking RLE segmentation
     rle_seg = next(a for a in coco_file.annotations if a.id == 3).segmentation
     assert isinstance(rle_seg, RLESegmentation)
     assert rle_seg.alto == 600
@@ -61,15 +60,14 @@ def test_coco_format_creation(sample_coco_dataset):
 
 
 def test_invalid_coco_structure(tmp_path):
-    # Caso sin directorio annotations
+    # Case without Annotations directory
     with pytest.raises(FileNotFoundError):
         CocoFormat.read_from_folder(tmp_path)
     
-    # Crear directorio annotations vacío
-    ann_dir = tmp_path / "annotations"
+    ann_dir = tmp_path / "Annotations"
     ann_dir.mkdir()
     
-    # Caso sin archivos JSON
+    # Case without JSON archive
     with pytest.raises(FileNotFoundError):
         CocoFormat.read_from_folder(tmp_path)
     

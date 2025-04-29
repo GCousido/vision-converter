@@ -97,13 +97,12 @@ class CocoFormat(DatasetFormat[CocoFile]):
 
     @staticmethod
     def build(name: str, files: list[CocoFile]) -> 'CocoFormat':
-        """Construye un objeto YoloFormat con parámetros específicos"""
         return CocoFormat(name, files)
     
     @staticmethod
     def create_coco_file_from_json(coco_data, name: str) -> CocoFile:
 
-        # Extraer información
+        # Extract info
         info_data = coco_data.get('info', {})
         info = Info(
             description=info_data.get('description', ''),
@@ -114,7 +113,7 @@ class CocoFormat(DatasetFormat[CocoFile]):
             date_created=info_data.get('date_created', '')
         )
 
-        # Extraer licencias
+        # Extract licenses
         licenses = []
         for license_data in coco_data.get('licenses', []):
             licenses.append(License(
@@ -123,7 +122,7 @@ class CocoFormat(DatasetFormat[CocoFile]):
                 url=license_data.get('url', '')
             ))
         
-        # Extraer imágenes
+        # Extract images
         images = []
         for image_data in coco_data.get('images', []):
             images.append(CocoImages(
@@ -137,7 +136,7 @@ class CocoFormat(DatasetFormat[CocoFile]):
                 date_captured=image_data.get('date_captured', '')
             ))
         
-        # Extraer categorías
+        # Extract categories
         categories = []
         for category_data in coco_data.get('categories', []):
             categories.append(Category(
@@ -146,7 +145,7 @@ class CocoFormat(DatasetFormat[CocoFile]):
                 supercategory=category_data.get('supercategory', '')
             ))
         
-        # Extraer anotaciones
+        # Extract annotations
         annotations = []
         for ann_data in coco_data.get('annotations', []):
             bbox_data = ann_data.get('bbox', [0, 0, 0, 0])
@@ -157,10 +156,10 @@ class CocoFormat(DatasetFormat[CocoFile]):
                 height=bbox_data[3] if len(bbox_data) > 3 else 0
             )
             
-            # Procesar datos de segmentación
+            # Procesing segmentation data
             segmentation_data = ann_data.get('segmentation', [])
             if isinstance(segmentation_data, dict) and 'counts' in segmentation_data:
-                # Formato RLE: es un único dict, no una lista
+                # RLE: dict
                 size = segmentation_data.get('size', [0, 0])
                 segmentation = RLESegmentation(
                     alto=size[0] if len(size) > 0 else 0,
@@ -168,12 +167,11 @@ class CocoFormat(DatasetFormat[CocoFile]):
                     counts=segmentation_data.get('counts', '')
                 )
             elif isinstance(segmentation_data, list):
-                # Formato polígono: es una lista de listas de floats
+                # Polygon: list
                 segmentation = segmentation_data
             else:
                 segmentation = []
 
-            
             annotations.append(CocoLabel(
                 bbox=bbox,
                 id=ann_data.get('id', 0),
@@ -196,32 +194,32 @@ class CocoFormat(DatasetFormat[CocoFile]):
     @staticmethod
     def read_from_folder(folder_path: str) -> 'CocoFormat':
         """
-        Lee un dataset en formato COCO desde una carpeta.
+        Create a dataset in COCO format from folder.
 
-        El formato COCO típicamente consiste en:
-        - Una carpeta de imágenes
-        - Archivos JSON de anotaciones en una carpeta 'annotations'
+        A standar COCO format consist of:
+        - A images folder
+        - One or more JSON files with annotations in an 'annotations' folder
 
         Args:
-            folder_path (str): Ruta a la carpeta del dataset
+            folder_path (str): Path to the folder
 
         Returns:
-            CocoFormat: Objeto con el dataset COCO cargado
+            CocoFormat: Object with the COCO dataset
         """
 
         folder = Path(folder_path)
 
         if not folder.exists():
-            raise FileNotFoundError(f"No se encontró la carpeta {folder_path}")
+            raise FileNotFoundError(f"Folder {folder_path} was not found")
 
         # Buscar archivos de anotaciones JSON
         ann_folder = folder / "annotations"
         if not ann_folder.exists():
-            raise FileNotFoundError(f"No se encontró la carpeta de anotaciones en {folder_path}")
+            raise FileNotFoundError(f"Annotations folder was not found in {folder_path}")
 
         json_files = list(ann_folder.glob("*.json"))
         if not json_files:
-            raise FileNotFoundError(f"No se encontraron archivos JSON de anotaciones en {ann_folder}")
+            raise FileNotFoundError(f"JSON files were not found in {ann_folder}")
 
         coco_files = []
 

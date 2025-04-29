@@ -46,32 +46,43 @@ class YoloFormat(DatasetFormat[YoloFile]):
     
     @staticmethod
     def build(name: str, files: list[YoloFile], class_labels: list[str]) -> 'YoloFormat':
-        """Construye un objeto YoloFormat con parámetros específicos"""
         return YoloFormat(name, files, class_labels)
 
     @staticmethod
     def read_from_folder(folder_path: str) -> 'YoloFormat':
-        """Lee archivos YOLO desde una carpeta y construye el formato"""
+        """
+        Create a dataset in YOLO format from folder.
+
+        A standar YOLO format consist of:
+        - A images folder
+        - A labels folder with text files with the annotations
+
+        Args:
+            folder_path (str): Path to the folder
+
+        Returns:
+            YoloFormat: Object with the YOLO dataset
+        """
         files = []
         class_labels = []
 
         if not Path(folder_path).exists():
-            raise FileNotFoundError(f"La carpeta {folder_path} no se encontró")
+            raise FileNotFoundError(f"Folder {folder_path} was not found")
 
         labels_dir = Path(folder_path) / "labels"
 
         if not labels_dir.exists():
-            raise FileNotFoundError(f"La subcarpeta 'labels' no se encontró en {folder_path}")
+            raise FileNotFoundError(f"Folder 'labels' was not found in {folder_path}")
         
-        # 1. Leer clases desde classes.txt
+        # 1. Read classes
         classes_file = labels_dir / "classes.txt"
         if classes_file.exists():
             with open(classes_file, 'r') as f:
                 class_labels = [line.strip() for line in f.readlines()]
         else:
-            raise FileNotFoundError(f"El archivo 'classes.txt' no se encontró en {labels_dir}")
+            raise FileNotFoundError(f"File 'classes.txt' was not found in {labels_dir}")
         
-        # 2. Leer anotaciones (archivos .txt)
+        # 2. Read annotations (archivos .txt)
         for ann_file in labels_dir.glob("*.txt"):
             if ann_file.name == "classes.txt":
                 continue
@@ -92,7 +103,6 @@ class YoloFormat(DatasetFormat[YoloFile]):
             
             files.append(YoloFile(ann_file.name, annotations))
         
-        # 3. Usar método build para creación
         return YoloFormat.build(
             name=Path(folder_path).name,
             files=files,

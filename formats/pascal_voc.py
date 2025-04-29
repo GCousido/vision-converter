@@ -35,10 +35,10 @@ class PascalVocObject(Annotation[PascalVocBoundingBox]):
 
 class PascalVocFile(FileFormat[PascalVocObject]):
     folder: str
-    # filename: str - en principio está en el base
+    # filename: str
     path: str
 
-    # forman la etiqueta de size
+    # size tag
     width: int
     height: int
     depth: int
@@ -62,13 +62,23 @@ class PascalVocFormat(DatasetFormat[PascalVocFile]):
 
     @staticmethod
     def build(name: str, files: list[PascalVocFile]) -> 'PascalVocFormat':
-        """Construye un objeto PascalVocFormat con parámetros específicos"""
         return PascalVocFormat(name, files)
 
     @staticmethod
     def read_from_folder(folder_path: str) -> 'PascalVocFormat':
         """
-        Lee archivos Pascal VOC XML desde una carpeta y construye el formato.
+        Create a dataset in Pascal Voc format from folder.
+
+        A standar Pascal Voc format consist of:
+        - A images folder
+        - A folder with text files that have the different sets of images for training
+        - XML files with annotations in an 'annotations' folder
+
+        Args:
+            folder_path (str): Path to the folder
+
+        Returns:
+            PascalVocFormat: Object with the Pascal Voc dataset
         """
         if not Path(folder_path).exists():
             raise FileNotFoundError(f"La carpeta {folder_path} no se encontró")

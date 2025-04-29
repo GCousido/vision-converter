@@ -134,4 +134,4 @@ def test_invalid_pascalvoc_structure(tmp_path):
     try:
         PascalVocFormat.read_from_folder(tmp_path)
     except Exception as exc:
-        assert False, f"Se lanzó una excepción inesperada: {exc}"
+        assert False, f"Excepcion: {exc}"

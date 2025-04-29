@@ -3,23 +3,24 @@ import pytest
 
 from formats.yolo import YoloFormat
 
-# Fixture para dataset YOLO de prueba
+# Fixture for YOLO dataset
 @pytest.fixture
 def sample_yolo_dataset(tmp_path):
-    # Crear estructura de directorios
+
+    # Creating file structure
     labels_dir = tmp_path / "labels"
     labels_dir.mkdir()
     
-    # Archivo de clases
+    # Classes files
     (labels_dir / "classes.txt").write_text("person\ncar\ntruck")
     
-    # Archivo de anotaciones 1
+    # First Annotation file
     (labels_dir / "image1.txt").write_text(
         "0 0.5 0.5 0.3 0.3\n"
         "1 0.2 0.2 0.1 0.1"
     )
     
-    # Archivo de anotaciones 2
+    # Second Annotations file
     (labels_dir / "image2.txt").write_text(
         "2 0.7 0.7 0.4 0.4"
     )
@@ -27,28 +28,28 @@ def sample_yolo_dataset(tmp_path):
     return tmp_path
 
 def test_yolo_format_construction(sample_yolo_dataset):
-    # Ejecutar método bajo prueba
+
     yolo_format = YoloFormat.read_from_folder(sample_yolo_dataset)
     
-    # 1. Verificación básica de estructura
+    # 1. Checking basic structure
     assert yolo_format.name == sample_yolo_dataset.name
     assert isinstance(yolo_format.files, list)
     
-    # 2. Verificación de clases
+    # 2. Checking class labels
     assert yolo_format.class_labels == ["person", "car", "truck"]
     assert len(yolo_format.class_labels) == 3
     
-    # 3. Verificación de archivos procesados
+    # 3. Checking files
     assert len(yolo_format.files) == 2
     filenames = {f.filename for f in yolo_format.files}
     assert "image1.txt" in filenames
     assert "image2.txt" in filenames
     
-    # 4. Verificación detallada de bounding boxes
+    # 4. Checking bounding boxes
     file1 = next(f for f in yolo_format.files if f.filename == "image1.txt")
     assert len(file1.annotations) == 2
     
-    # Primera anotación
+    # First annotation
     ann1 = file1.annotations[0]
     assert ann1.id_class == 0
     assert ann1.bbox.x_center == 0.5
@@ -56,7 +57,7 @@ def test_yolo_format_construction(sample_yolo_dataset):
     assert ann1.bbox.width == 0.3
     assert ann1.bbox.height == 0.3
     
-    # Segunda anotación
+    # Second annotation
     ann2 = file1.annotations[1]
     assert ann2.id_class == 1
     assert ann2.bbox.x_center == 0.2
@@ -66,19 +67,19 @@ def test_yolo_format_construction(sample_yolo_dataset):
 
 
 def test_invalid_dataset_structure(tmp_path):
-    # Caso sin directorio labels
+    # Case without labels directory
     with pytest.raises(FileNotFoundError):
         YoloFormat.read_from_folder(tmp_path)
     
-    # Crear directorio labels vacío
+    # Create empty labels directory
     (tmp_path / "labels").mkdir()
     
-    # Caso sin classes.txt
+    # Case without classes.txt
     with pytest.raises(FileNotFoundError):
         YoloFormat.read_from_folder(tmp_path)
 
-    # Archivo de clases
+    # Creating classes.txt
     (tmp_path / "labels" / "classes.txt").write_text("person\ncar\ntruck")
 
-    # Caso con classes.txt
+    # Case with classes.txt
     assert (tmp_path / "labels" / "classes.txt").exists()
