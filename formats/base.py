@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
+from typing import Generic, Optional, TypeVar
 
 class BoundingBox(ABC):
 
@@ -38,10 +38,12 @@ X = TypeVar("X", bound=FileFormat)
 class DatasetFormat(ABC, Generic[X]):
     name: str
     files: list[X]
+    folder_path: Optional[str]
 
-    def __init__(self, name: str, files: list[X]) -> None:
+    def __init__(self, name: str, files: list[X], folder_path: Optional[str] = None) -> None:
         self.name = name
         self.files = files
+        self.folder_path = folder_path
 
     def getName(self) -> str:
         return self.name

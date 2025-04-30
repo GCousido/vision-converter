@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 import xml.etree.ElementTree as ET
 
 from .base import Annotation, BoundingBox, DatasetFormat, FileFormat
@@ -57,12 +58,12 @@ class PascalVocFile(FileFormat[PascalVocObject]):
 
 class PascalVocFormat(DatasetFormat[PascalVocFile]):
 
-    def __init__(self, name: str, files: list[PascalVocFile]) -> None:
-        super().__init__(name, files)
+    def __init__(self, name: str, files: list[PascalVocFile], folder_path: Optional[str] = None) -> None:
+        super().__init__(name, files, folder_path)
 
     @staticmethod
-    def build(name: str, files: list[PascalVocFile]) -> 'PascalVocFormat':
-        return PascalVocFormat(name, files)
+    def build(name: str, files: list[PascalVocFile], folder_path: Optional[str] = None) -> 'PascalVocFormat':
+        return PascalVocFormat(name, files, folder_path)
 
     @staticmethod
     def read_from_folder(folder_path: str) -> 'PascalVocFormat':
@@ -133,5 +134,6 @@ class PascalVocFormat(DatasetFormat[PascalVocFile]):
 
         return PascalVocFormat.build(
             name=Path(folder_path).name,
-            files=pascal_files
+            files=pascal_files,
+            folder_path=folder_path
         )

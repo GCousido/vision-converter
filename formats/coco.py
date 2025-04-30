@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 import json
+from typing import Optional
 
 from .base import Annotation, BoundingBox, DatasetFormat, FileFormat
 
@@ -92,12 +93,12 @@ class CocoFile(FileFormat[CocoLabel]):
 
 class CocoFormat(DatasetFormat[CocoFile]):
 
-    def __init__(self, name: str, files: list[CocoFile]) -> None:
-        super().__init__(name, files)
+    def __init__(self, name: str, files: list[CocoFile], folder_path: Optional[str] = None) -> None:
+        super().__init__(name, files, folder_path)
 
     @staticmethod
-    def build(name: str, files: list[CocoFile]) -> 'CocoFormat':
-        return CocoFormat(name, files)
+    def build(name: str, files: list[CocoFile], folder_path: Optional[str] = None) -> 'CocoFormat':
+        return CocoFormat(name, files, folder_path)
     
     @staticmethod
     def create_coco_file_from_json(coco_data, name: str) -> CocoFile:
@@ -232,5 +233,6 @@ class CocoFormat(DatasetFormat[CocoFile]):
         # Construir y devolver un CocoFormat
         return CocoFormat.build(
             name=folder.name,
-            files=coco_files
+            files=coco_files,
+            folder_path=folder_path
         )

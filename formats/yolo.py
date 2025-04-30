@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 
 from .base import Annotation, BoundingBox, DatasetFormat, FileFormat
 
@@ -34,8 +35,8 @@ class YoloFile(FileFormat[YoloAnnotation]):
 class YoloFormat(DatasetFormat[YoloFile]):
     class_labels: list[str]
 
-    def __init__(self, name: str, files: list[YoloFile], class_labels: list[str]) -> None:
-        super().__init__(name,files)
+    def __init__(self, name: str, files: list[YoloFile], class_labels: list[str], folder_path: Optional[str] = None, ) -> None:
+        super().__init__(name,files, folder_path)
         self.class_labels = class_labels
 
     def addClassLabel(self, class_label: str) -> None:
@@ -45,8 +46,8 @@ class YoloFormat(DatasetFormat[YoloFile]):
         return self.class_labels
     
     @staticmethod
-    def build(name: str, files: list[YoloFile], class_labels: list[str]) -> 'YoloFormat':
-        return YoloFormat(name, files, class_labels)
+    def build(name: str, files: list[YoloFile], class_labels: list[str], folder_path: Optional[str] = None) -> 'YoloFormat':
+        return YoloFormat(name, files, class_labels, folder_path)
 
     @staticmethod
     def read_from_folder(folder_path: str) -> 'YoloFormat':
@@ -106,5 +107,6 @@ class YoloFormat(DatasetFormat[YoloFile]):
         return YoloFormat.build(
             name=Path(folder_path).name,
             files=files,
+            folder_path=folder_path,
             class_labels=class_labels
         )

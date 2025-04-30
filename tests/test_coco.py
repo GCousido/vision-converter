@@ -9,6 +9,7 @@ def test_coco_format_creation(sample_coco_dataset):
     coco_format = CocoFormat.read_from_folder(sample_coco_dataset)
     
     # 1. Checking basic structure
+    assert coco_format.folder_path == sample_coco_dataset
     assert coco_format.name == "test_coco"
     assert len(coco_format.files) == 1
     

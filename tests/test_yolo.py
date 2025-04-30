@@ -32,6 +32,7 @@ def test_yolo_format_construction(sample_yolo_dataset):
     yolo_format = YoloFormat.read_from_folder(sample_yolo_dataset)
     
     # 1. Checking basic structure
+    assert yolo_format.folder_path == sample_yolo_dataset
     assert yolo_format.name == sample_yolo_dataset.name
     assert isinstance(yolo_format.files, list)
     

@@ -67,6 +67,7 @@ def test_pascalvoc_format_construction(sample_pascalvoc_dataset):
     pascalvoc_format = PascalVocFormat.read_from_folder(sample_pascalvoc_dataset)
 
     # 1. Checking normal structure
+    assert pascalvoc_format.folder_path == sample_pascalvoc_dataset
     assert pascalvoc_format.name == sample_pascalvoc_dataset.name
     assert isinstance(pascalvoc_format.files, list)
 
