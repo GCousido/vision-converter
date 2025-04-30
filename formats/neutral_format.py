@@ -25,16 +25,14 @@ class NeutralAnnotation(Annotation[PascalVocBoundingBox]):
 class NeutralFile(FileFormat[NeutralAnnotation]):
 
     # image information
-    image_path: str
     width: int
     height: int
     depth: int
 
     params: dict[str, list[str] | str]
 
-    def __init__(self, filename: str, annotations: list[NeutralAnnotation], image_path: str, width: int, height: int, depth: int, params: Optional[dict[str, list[str] | str]] = None) -> None:
+    def __init__(self, filename: str, annotations: list[NeutralAnnotation], width: int, height: int, depth: int, params: Optional[dict[str, list[str] | str]] = None) -> None:
         super().__init__(filename, annotations)
-        self.image_path = image_path
         self.width = width
         self.height = height
         self.depth = depth
