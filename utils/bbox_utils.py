@@ -23,15 +23,13 @@ def YoloBBox_to_PascalVocBBox(bbox: YoloBoundingBox, image_width: int, image_hei
     )
 
 def CocoBBox_to_PascalVocBBox(bbox: CocoBoundingBox) -> PascalVocBoundingBox:
-    # Calcula las coordenadas máximas
-    x_max = bbox.x_min + bbox.width
-    y_max = bbox.y_min + bbox.height
+    x_max_raw = bbox.x_min + bbox.width
+    y_max_raw = bbox.y_min + bbox.height
 
-    # Redondea a enteros (como en Pascal VOC)
     x_min = round(bbox.x_min)
     y_min = round(bbox.y_min)
-    x_max = round(x_max)
-    y_max = round(y_max)
+    x_max = round(x_max_raw)
+    y_max = round(y_max_raw)
 
     return PascalVocBoundingBox(
         x_min=x_min,
