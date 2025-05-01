@@ -37,7 +37,11 @@ def test_yolo_format_construction(sample_yolo_dataset):
     assert isinstance(yolo_format.files, list)
     
     # 2. Checking class labels
-    assert yolo_format.class_labels == ["person", "car", "truck"]
+    assert yolo_format.class_labels == {
+                                            0: "person", 
+                                            1: "car", 
+                                            2: "truck"
+                                        }
     assert len(yolo_format.class_labels) == 3
     
     # 3. Checking files

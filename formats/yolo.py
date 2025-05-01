@@ -33,20 +33,18 @@ class YoloFile(FileFormat[YoloAnnotation]):
 
 
 class YoloFormat(DatasetFormat[YoloFile]):
-    class_labels: list[str]
+    class_labels: dict[int, str]
 
-    def __init__(self, name: str, files: list[YoloFile], class_labels: list[str], folder_path: Optional[str] = None, ) -> None:
+    def __init__(self, name: str, files: list[YoloFile], class_labels: dict[int, str], folder_path: Optional[str] = None, ) -> None:
         super().__init__(name,files, folder_path)
         self.class_labels = class_labels
 
-    def addClassLabel(self, class_label: str) -> None:
-        self.class_labels.append(class_label)
+    def addClass(self, class_id: int, class_label: str) -> None:
+        self.class_labels[class_id] = class_label
 
-    def getClassLabels(self) -> list[str]:
-        return self.class_labels
     
     @staticmethod
-    def build(name: str, files: list[YoloFile], class_labels: list[str], folder_path: Optional[str] = None) -> 'YoloFormat':
+    def build(name: str, files: list[YoloFile], class_labels: dict[int, str], folder_path: Optional[str] = None) -> 'YoloFormat':
         return YoloFormat(name, files, class_labels, folder_path)
 
     @staticmethod
@@ -65,7 +63,7 @@ class YoloFormat(DatasetFormat[YoloFile]):
             YoloFormat: Object with the YOLO dataset
         """
         files = []
-        class_labels = []
+        class_labels = {}
 
         if not Path(folder_path).exists():
             raise FileNotFoundError(f"Folder {folder_path} was not found")
@@ -79,7 +77,7 @@ class YoloFormat(DatasetFormat[YoloFile]):
         classes_file = labels_dir / "classes.txt"
         if classes_file.exists():
             with open(classes_file, 'r') as f:
-                class_labels = [line.strip() for line in f.readlines()]
+                class_labels = {i: line.strip() for i, line in enumerate(f.readlines())}
         else:
             raise FileNotFoundError(f"File 'classes.txt' was not found in {labels_dir}")
         
