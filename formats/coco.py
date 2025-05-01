@@ -6,12 +6,12 @@ from typing import Optional
 from .base import Annotation, BoundingBox, DatasetFormat, FileFormat
 
 class CocoBoundingBox(BoundingBox):
-    x_min: int
-    y_min: int
-    width: int
-    height: int
+    x_min: float
+    y_min: float
+    width: float
+    height: float
 
-    def __init__(self, x_min: int, y_min: int, width: int, height: int) -> None:
+    def __init__(self, x_min: float, y_min: float, width: float, height: float) -> None:
         self.x_min = x_min
         self.y_min = y_min
         self.width = width
@@ -60,13 +60,13 @@ class License:
     url: str
 
 @dataclass
-class CocoImages:
+class CocoImage:
     id: int
     width: int
     height: int
     file_name: str
     license: int
-    flicker_url: str
+    flickr_url: str
     coco_url: str
     date_captured: str
 
@@ -80,10 +80,10 @@ class Category:
 class CocoFile(FileFormat[CocoLabel]):
     info: Info
     licenses: list[License]
-    images: list[CocoImages]
+    images: list[CocoImage]
     categories: list[Category]
 
-    def __init__(self, filename: str, annotations: list[CocoLabel], info: Info, licenses: list[License], images: list[CocoImages], categories: list[Category]) -> None:
+    def __init__(self, filename: str, annotations: list[CocoLabel], info: Info, licenses: list[License], images: list[CocoImage], categories: list[Category]) -> None:
         super().__init__(filename, annotations)
         self.info = info
         self.licenses = licenses
@@ -126,13 +126,13 @@ class CocoFormat(DatasetFormat[CocoFile]):
         # Extract images
         images = []
         for image_data in coco_data.get('images', []):
-            images.append(CocoImages(
+            images.append(CocoImage(
                 id=image_data.get('id', 0),
                 width=image_data.get('width', 0),
                 height=image_data.get('height', 0),
                 file_name=image_data.get('file_name', ''),
                 license=image_data.get('license', 0),
-                flicker_url=image_data.get('flickr_url', ''),
+                flickr_url=image_data.get('flickr_url', ''),
                 coco_url=image_data.get('coco_url', ''),
                 date_captured=image_data.get('date_captured', '')
             ))
