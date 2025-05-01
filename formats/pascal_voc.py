@@ -33,11 +33,40 @@ class PascalVocObject(Annotation[PascalVocBoundingBox]):
         self.truncated = truncated
         self.difficult = difficult
 
+class PascalVocSource:
+    database: str
+    annotation: str
+    image: str
+    flickrid: str
+
+    def __init__(self, database: str = "", annotation: str = "", image: str = "", flickrid: str = "") -> None:
+        self.database = database
+        self.annotation = annotation
+        self.image = image
+        self.flickrid = flickrid
+
+    def to_dict(self) -> dict:
+        return {
+            "database": self.database,
+            "annotation": self.annotation,
+            "image": self.image,
+            "flickrid": self.flickrid
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "PascalVocSource":
+        return cls(
+            database=data.get("database", ""),
+            annotation=data.get("annotation", ""),
+            image=data.get("image", ""),
+            flickrid=data.get("flickrid", "")
+        )
+
 
 class PascalVocFile(FileFormat[PascalVocObject]):
     folder: str
-    # filename: str
     path: str
+    source: PascalVocSource 
 
     # size tag
     width: int
@@ -46,10 +75,11 @@ class PascalVocFile(FileFormat[PascalVocObject]):
 
     segmented: int
 
-    def __init__(self, filename: str, annotations: list[PascalVocObject], folder: str, path: str, width: int, height: int, depth: int, segmented: int) -> None:
+    def __init__(self, filename: str, annotations: list[PascalVocObject], folder: str, path: str, source: PascalVocSource, width: int, height: int, depth: int, segmented: int) -> None:
         super().__init__(filename, annotations)
         self.folder = folder
         self.path = path
+        self.source = source
         self.width = width
         self.height = height
         self.depth = depth
@@ -82,11 +112,11 @@ class PascalVocFormat(DatasetFormat[PascalVocFile]):
             PascalVocFormat: Object with the Pascal Voc dataset
         """
         if not Path(folder_path).exists():
-            raise FileNotFoundError(f"La carpeta {folder_path} no se encontró")
+            raise FileNotFoundError(f"Folder {folder_path} was not found")
 
         annotations_folder = Path(folder_path) / "Annotations"
         if not Path(annotations_folder).exists():
-            raise FileNotFoundError(f"La subcarpeta Annotations no se encontró en {annotations_folder}")
+            raise FileNotFoundError(f"Subfolder Annotations was not found in {annotations_folder}")
 
         pascal_files = []
 
@@ -94,7 +124,7 @@ class PascalVocFormat(DatasetFormat[PascalVocFile]):
             tree = ET.parse(xml_file)
             root = tree.getroot()
 
-            # Leer metadatos del archivo
+            # Read file metadata
             folder_tag = root.findtext('folder', default="")
             path_tag = root.findtext('path', default="")
             size_tag = root.find('size')
@@ -103,7 +133,19 @@ class PascalVocFormat(DatasetFormat[PascalVocFile]):
             depth = int(size_tag.findtext('depth', default="0")) if size_tag is not None else 0
             segmented = int(root.findtext('segmented', default="0"))
 
-            # Leer objetos anotados
+            # Read source tag
+            source_tag = root.find('source')
+            if source_tag is not None:
+                source = PascalVocSource(
+                    database=source_tag.findtext('database', default=""),
+                    annotation=source_tag.findtext('annotation', default=""),
+                    image=source_tag.findtext('image', default=""),
+                    flickrid=source_tag.findtext('flickrid', default="")
+                )
+            else:
+                source = PascalVocSource()  # Empty instance
+
+            # Read annotation objects
             annotations = []
             for obj in root.findall('object'):
                 name = obj.findtext('name', default="")
@@ -125,6 +167,7 @@ class PascalVocFormat(DatasetFormat[PascalVocFile]):
                     annotations=annotations,
                     folder=folder_tag,
                     path=path_tag,
+                    source=source,
                     width=width,
                     height=height,
                     depth=depth,

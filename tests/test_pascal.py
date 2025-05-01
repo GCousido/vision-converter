@@ -1,16 +1,29 @@
 from pathlib import Path
 import pytest
-from formats.pascal_voc import PascalVocFormat
+from formats.pascal_voc import PascalVocFormat, PascalVocSource
 
 # Helper for creating XML Pascal VOC files
-def create_pascalvoc_xml(path, filename, objects, width=800, height=600, depth=3, folder="VOC", segmented=0):
+def create_pascalvoc_xml(path, filename, objects, width=800, height=600, depth=3, folder="VOC", segmented=0, source=None):
+    if source is None:
+        source = {
+            "database": "Unknown",
+            "annotation": "",
+            "image": "",
+            "flickrid": ""
+        }
+    source_xml = f'''
+    <source>
+        <database>{source.get("database", "")}</database>
+        <annotation>{source.get("annotation", "")}</annotation>
+        <image>{source.get("image", "")}</image>
+        <flickrid>{source.get("flickrid", "")}</flickrid>
+    </source>
+    '''
     content = f'''<annotation>
     <folder>{folder}</folder>
     <filename>{filename}</filename>
     <path>{path / filename}</path>
-    <source>
-        <database>Unknown</database>
-    </source>
+    {source_xml}
     <size>
         <width>{width}</width>
         <height>{height}</height>
@@ -41,18 +54,19 @@ def sample_pascalvoc_dataset(tmp_path):
     ann_dir = tmp_path / "Annotations"
     ann_dir.mkdir()
 
-    # File 1 with 2 objects
+    # File 1 with 2 objects, custom source
     xml1 = create_pascalvoc_xml(
         ann_dir, "image1.xml",
         [
             make_object("person", 10, 20, 110, 220, pose="Left", truncated=0, difficult=0),
             make_object("car", 30, 40, 130, 240, pose="Right", truncated=1, difficult=1)
         ],
-        width=800, height=600, depth=3
+        width=800, height=600, depth=3,
+        source={"database": "TestDB", "annotation": "VOC2007", "image": "synthetic", "flickrid": "none"}
     )
     (ann_dir / "image1.xml").write_text(xml1)
 
-    # File 2 with 1 object
+    # File 2 with 1 object, default source
     xml2 = create_pascalvoc_xml(
         ann_dir, "image2.xml",
         [
@@ -71,21 +85,26 @@ def test_pascalvoc_format_construction(sample_pascalvoc_dataset):
     assert pascalvoc_format.name == sample_pascalvoc_dataset.name
     assert isinstance(pascalvoc_format.files, list)
 
-
     # 2. Checking files
     assert len(pascalvoc_format.files) == 2
     filenames = {f.filename for f in pascalvoc_format.files}
     assert "image1.xml" in filenames
     assert "image2.xml" in filenames
 
-
-    # 3. Checking bounding boxes and objects
+    # 3. Checking bounding boxes, objects, and source
     file1 = next(f for f in pascalvoc_format.files if f.filename == "image1.xml")
     assert file1.width == 800
     assert file1.height == 600
     assert file1.depth == 3
     assert len(file1.annotations) == 2
-    
+
+    # Check source fields for file1 (custom)
+    assert isinstance(file1.source, PascalVocSource)
+    assert file1.source.database == "TestDB"
+    assert file1.source.annotation == "VOC2007"
+    assert file1.source.image == "synthetic"
+    assert file1.source.flickrid == "none"
+
     ann1 = file1.annotations[0]
     assert ann1.name == "person"
     assert ann1.pose == "Left"
@@ -102,13 +121,19 @@ def test_pascalvoc_format_construction(sample_pascalvoc_dataset):
     assert ann2.bbox.x_max == 130
     assert ann2.bbox.y_min == 40
 
-
     # Checking second file
     file2 = next(f for f in pascalvoc_format.files if f.filename == "image2.xml")
     assert file2.width == 1024
     assert file2.height == 768
     assert file2.depth == 3
     assert len(file2.annotations) == 1
+
+    # Check source fields for file2 (default)
+    assert isinstance(file2.source, PascalVocSource)
+    assert file2.source.database == "Unknown"
+    assert file2.source.annotation == ""
+    assert file2.source.image == ""
+    assert file2.source.flickrid == ""
 
     ann3 = file2.annotations[0]
     assert ann3.name == "dog"
@@ -119,7 +144,6 @@ def test_pascalvoc_format_construction(sample_pascalvoc_dataset):
     assert ann3.bbox.x_max == 150
 
 def test_invalid_pascalvoc_structure(tmp_path):
-
     # Case with a path that doesnt exist
     with pytest.raises(FileNotFoundError):
         PascalVocFormat.read_from_folder("incorrect_path")
