@@ -61,19 +61,12 @@ def test_coco_format_creation(sample_coco_dataset):
 
 
 def test_invalid_coco_structure(tmp_path):
-    # Case without Annotations directory
-    with pytest.raises(FileNotFoundError):
-        CocoFormat.read_from_folder(tmp_path)
-    
-    ann_dir = tmp_path / "Annotations"
-    ann_dir.mkdir()
-    
     # Case without JSON archive
     with pytest.raises(FileNotFoundError):
         CocoFormat.read_from_folder(tmp_path)
     
     # Archivo JSON inválido
-    (ann_dir / "invalid.json").write_text("{invalid_json}")
+    (tmp_path / "invalid.json").write_text("{invalid_json}")
     with pytest.raises(json.JSONDecodeError):
         CocoFormat.read_from_folder(tmp_path)
 
@@ -115,8 +108,6 @@ def sample_coco_dataset(tmp_path):
     # Crear estructura de directorios
     dataset_dir = tmp_path / "test_coco"
     dataset_dir.mkdir()
-    ann_dir = dataset_dir / "annotations"
-    ann_dir.mkdir()
 
     # Crear archivo COCO JSON de prueba
     coco_data = {
@@ -193,5 +184,5 @@ def sample_coco_dataset(tmp_path):
         ]
     }
 
-    (ann_dir / "instances_train.json").write_text(json.dumps(coco_data))
+    (dataset_dir / "instances_train.json").write_text(json.dumps(coco_data))
     return dataset_dir

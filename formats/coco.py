@@ -213,14 +213,9 @@ class CocoFormat(DatasetFormat[CocoFile]):
         if not folder.exists():
             raise FileNotFoundError(f"Folder {folder_path} was not found")
 
-        # Buscar archivos de anotaciones JSON
-        ann_folder = folder / "annotations"
-        if not ann_folder.exists():
-            raise FileNotFoundError(f"Annotations folder was not found in {folder_path}")
-
-        json_files = list(ann_folder.glob("*.json"))
+        json_files = list(folder.glob("*.json"))
         if not json_files:
-            raise FileNotFoundError(f"JSON files were not found in {ann_folder}")
+            raise FileNotFoundError(f"JSON files were not found in {folder}")
 
         coco_files = []
 
