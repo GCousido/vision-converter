@@ -28,8 +28,15 @@ class YoloAnnotation(Annotation[YoloBoundingBox]):
 
 class YoloFile(FileFormat[YoloAnnotation]):
 
-    def __init__(self, filename: str, annotations: list[YoloAnnotation]) -> None:
+    width: Optional[int]
+    height: Optional[int]
+    depth: Optional[int]
+
+    def __init__(self, filename: str, annotations: list[YoloAnnotation], width: Optional[int] = None, height: Optional[int] = None, depth: Optional[int] = None) -> None:
         super().__init__(filename, annotations)
+        self.width = width
+        self.height = height
+        self.depth = depth
 
 
 class YoloFormat(DatasetFormat[YoloFile]):
