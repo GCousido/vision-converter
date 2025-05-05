@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Any, Optional
 from formats.base import Annotation, DatasetFormat, FileFormat
 from formats.pascal_voc import PascalVocBoundingBox
@@ -5,15 +6,34 @@ from formats.pascal_voc import PascalVocBoundingBox
 
 class NeutralAnnotation(Annotation[PascalVocBoundingBox]):
     class_name: str
-    params: dict[str, Any]
+    attributes: dict[str, Any]
 
-    def __init__(self, bbox: PascalVocBoundingBox, class_name: str, params: Optional[dict[str, Any]] = None) -> None:
+    def __init__(self, bbox: PascalVocBoundingBox, class_name: str, attributes: Optional[dict[str, Any]] = None) -> None:
         super().__init__(bbox)
         self.class_name = class_name
-        self.params = params if params is not None else {}
+        self.attributes = attributes if attributes is not None else {}
 
-    def addParam(self, key: str, value: Any) -> None:
-        self.params[key] = value
+    def addAttribute(self, key: str, value: Any) -> None:
+        self.attributes[key] = value
+
+
+@dataclass
+class ImageOrigin:
+    source_type: Optional[str] = None        # "flickr", "synthetic", "web"
+    source_id: Optional[str] = None          # flickrid, coco_id, etc
+    source_dataset: Optional[str] = None     # "VOC2007", "COCO2017"
+    
+    image_provider: Optional[str] = None     # "flickr", "user_upload", "stock"
+    image_license: Optional[str] = None      # "CC BY 4.0", "proprietary"
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "source_type": self.source_type,
+            "source_id": self.source_id,
+            "source_dataset": self.source_dataset,
+            "image_provider": self.image_provider,
+            "image_license": self.image_license
+        }
 
 
 class NeutralFile(FileFormat[NeutralAnnotation]):
@@ -23,13 +43,17 @@ class NeutralFile(FileFormat[NeutralAnnotation]):
     height: int
     depth: int
 
+    # image metadata
+    image_origin: Optional[ImageOrigin]
+
     params: dict[str, Any]
 
-    def __init__(self, filename: str, annotations: list[NeutralAnnotation], width: int, height: int, depth: int, params: Optional[dict[str, Any]] = None) -> None:
+    def __init__(self, filename: str, annotations: list[NeutralAnnotation], width: int, height: int, depth: int, image_origin: Optional[ImageOrigin] = None, params: Optional[dict[str, Any]] = None) -> None:
         super().__init__(filename, annotations)
         self.width = width
         self.height = height
         self.depth = depth
+        self.image_origin = image_origin
         self.params = params if params is not None else {}
 
     def addParam(self, key: str, value: Any) -> None:
@@ -39,13 +63,15 @@ class NeutralFile(FileFormat[NeutralAnnotation]):
 class NeutralFormat(DatasetFormat[NeutralFile]):
     metadata: dict[str, Any]
     class_map: dict[int, str]
+    original_format: str
 
-    def __init__(self, name: str, files: list[NeutralFile], 
+    def __init__(self, name: str, files: list[NeutralFile], original_format: str,
                  metadata: Optional[dict[str, Any]] = None, 
                  class_map: Optional[dict[int, str]] = None) -> None:
         super().__init__(name, files)
         self.metadata = metadata if metadata is not None else {}
         self.class_map = class_map if class_map is not None else {}
+        self.original_format = original_format
 
     def addMetadata(self, key: str, value: Any) -> None:
         self.metadata[key] = value

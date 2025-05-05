@@ -33,7 +33,8 @@ class YoloConverter(DatasetConverter[YoloFormat]):
 
         return NeutralFormat(
                 name = df.name, 
-                files = neutral_files, 
+                files = neutral_files,
+                original_format = "yolo",
                 metadata = None,
                 class_map = df.class_labels
             )
@@ -107,11 +108,11 @@ def YoloFile_to_NeutralFile(file: YoloFile, class_labels: dict[int, str], folder
     ]
 
     return NeutralFile(
-        filename=file.filename,
-        annotations=neutral_annotations,
-        width=image_width,
-        height=image_height,
-        depth=image_depth
+        filename = file.filename,
+        annotations = neutral_annotations,
+        width = image_width,
+        height = image_height,
+        depth = image_depth
     )
 
 
