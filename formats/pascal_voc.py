@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 import xml.etree.ElementTree as ET
 
 from .base import Annotation, BoundingBox, DatasetFormat, FileFormat
@@ -18,7 +18,7 @@ class PascalVocBoundingBox(BoundingBox):
 
     def getBoundingBox(self):
         return [self.x_min, self.y_min, self.x_max,  self.y_max]
-    
+
 
 class PascalVocObject(Annotation[PascalVocBoundingBox]):
     name: str
@@ -33,24 +33,22 @@ class PascalVocObject(Annotation[PascalVocBoundingBox]):
         self.truncated = truncated
         self.difficult = difficult
 
+
 class PascalVocSource:
     database: str
     annotation: str
     image: str
-    flickrid: str
 
-    def __init__(self, database: str = "", annotation: str = "", image: str = "", flickrid: str = "") -> None:
+    def __init__(self, database: str = "", annotation: str = "", image: str = "") -> None:
         self.database = database
         self.annotation = annotation
         self.image = image
-        self.flickrid = flickrid
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "database": self.database,
             "annotation": self.annotation,
-            "image": self.image,
-            "flickrid": self.flickrid
+            "image": self.image
         }
 
     @classmethod
@@ -58,8 +56,7 @@ class PascalVocSource:
         return cls(
             database=data.get("database", ""),
             annotation=data.get("annotation", ""),
-            image=data.get("image", ""),
-            flickrid=data.get("flickrid", "")
+            image=data.get("image", "")
         )
 
 
@@ -139,8 +136,7 @@ class PascalVocFormat(DatasetFormat[PascalVocFile]):
                 source = PascalVocSource(
                     database=source_tag.findtext('database', default=""),
                     annotation=source_tag.findtext('annotation', default=""),
-                    image=source_tag.findtext('image', default=""),
-                    flickrid=source_tag.findtext('flickrid', default="")
+                    image=source_tag.findtext('image', default="")
                 )
             else:
                 source = PascalVocSource()  # Empty instance

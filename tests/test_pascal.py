@@ -8,15 +8,13 @@ def create_pascalvoc_xml(path, filename, objects, width=800, height=600, depth=3
         source = {
             "database": "Unknown",
             "annotation": "",
-            "image": "",
-            "flickrid": ""
+            "image": ""
         }
     source_xml = f'''
     <source>
         <database>{source.get("database", "")}</database>
         <annotation>{source.get("annotation", "")}</annotation>
         <image>{source.get("image", "")}</image>
-        <flickrid>{source.get("flickrid", "")}</flickrid>
     </source>
     '''
     content = f'''<annotation>
@@ -62,7 +60,7 @@ def sample_pascalvoc_dataset(tmp_path):
             make_object("car", 30, 40, 130, 240, pose="Right", truncated=1, difficult=1)
         ],
         width=800, height=600, depth=3,
-        source={"database": "TestDB", "annotation": "VOC2007", "image": "synthetic", "flickrid": "none"}
+        source={"database": "TestDB", "annotation": "VOC2007", "image": "synthetic"}
     )
     (ann_dir / "image1.xml").write_text(xml1)
 
@@ -103,7 +101,6 @@ def test_pascalvoc_format_construction(sample_pascalvoc_dataset):
     assert file1.source.database == "TestDB"
     assert file1.source.annotation == "VOC2007"
     assert file1.source.image == "synthetic"
-    assert file1.source.flickrid == "none"
 
     ann1 = file1.annotations[0]
     assert ann1.name == "person"
@@ -133,7 +130,6 @@ def test_pascalvoc_format_construction(sample_pascalvoc_dataset):
     assert file2.source.database == "Unknown"
     assert file2.source.annotation == ""
     assert file2.source.image == ""
-    assert file2.source.flickrid == ""
 
     ann3 = file2.annotations[0]
     assert ann3.name == "dog"
