@@ -22,19 +22,23 @@ class CocoBoundingBox(BoundingBox):
 
 @dataclass
 class RLESegmentation:
-    alto: int
-    ancho: int
+    size: list[int] # [height, width]
     counts: str
+
+    def __post_init__(self):
+        # Validate that size have only 2 elements
+        if len(self.size) != 2 or not all(isinstance(x, int) for x in self.size):
+            raise ValueError("'size' has to be a list of 2 ints [height, width].")
 
 class CocoLabel(Annotation[CocoBoundingBox]):
     id: int
     image_id: int
     category_id: int
-    segmentation: list[list[float]] | RLESegmentation
-    area: float
-    iscrowd: bool
+    segmentation: Optional[list[list[float]] | RLESegmentation]
+    area: Optional[float]
+    iscrowd: Optional[bool]
 
-    def __init__(self, bbox: CocoBoundingBox, id: int, image_id: int, category_id: int, segmentation: list[list[float]] | RLESegmentation, area: float, iscrowd: bool) -> None:
+    def __init__(self, bbox: CocoBoundingBox, id: int, image_id: int, category_id: int, segmentation: Optional[list[list[float]] | RLESegmentation] = None, area: Optional[float] = None, iscrowd: Optional[bool] = None) -> None:
         super().__init__(bbox)
         self.id = id
         self.image_id = image_id
@@ -65,25 +69,25 @@ class CocoImage:
     width: int
     height: int
     file_name: str
-    license: int
-    flickr_url: str
-    coco_url: str
     date_captured: str
+    flickr_url: Optional[str] = None
+    coco_url: Optional[str] = None
+    license: Optional[int] = None
 
 @dataclass
 class Category:
     id: int
     name: str
-    supercategory: str
+    supercategory: Optional[str] = None
 
 
 class CocoFile(FileFormat[CocoLabel]):
-    info: Info
-    licenses: list[License]
+    info: Optional[Info]
+    licenses: Optional[list[License]]
     images: list[CocoImage]
     categories: list[Category]
 
-    def __init__(self, filename: str, annotations: list[CocoLabel], info: Info, licenses: list[License], images: list[CocoImage], categories: list[Category]) -> None:
+    def __init__(self, filename: str, annotations: list[CocoLabel], images: list[CocoImage], categories: list[Category], info: Optional[Info] = None, licenses: Optional[list[License]] = None) -> None:
         super().__init__(filename, annotations)
         self.info = info
         self.licenses = licenses
@@ -131,9 +135,9 @@ class CocoFormat(DatasetFormat[CocoFile]):
                 width=image_data.get('width', 0),
                 height=image_data.get('height', 0),
                 file_name=image_data.get('file_name', ''),
-                license=image_data.get('license', 0),
-                flickr_url=image_data.get('flickr_url', ''),
-                coco_url=image_data.get('coco_url', ''),
+                license=image_data.get('license', None),
+                flickr_url=image_data.get('flickr_url', None),
+                coco_url=image_data.get('coco_url', None),
                 date_captured=image_data.get('date_captured', '')
             ))
         
@@ -143,7 +147,7 @@ class CocoFormat(DatasetFormat[CocoFile]):
             categories.append(Category(
                 id=category_data.get('id', 0),
                 name=category_data.get('name', ''),
-                supercategory=category_data.get('supercategory', '')
+                supercategory=category_data.get('supercategory', None)
             ))
         
         # Extract annotations
@@ -161,10 +165,8 @@ class CocoFormat(DatasetFormat[CocoFile]):
             segmentation_data = ann_data.get('segmentation', [])
             if isinstance(segmentation_data, dict) and 'counts' in segmentation_data:
                 # RLE: dict
-                size = segmentation_data.get('size', [0, 0])
                 segmentation = RLESegmentation(
-                    alto=size[0] if len(size) > 0 else 0,
-                    ancho=size[1] if len(size) > 1 else 0,
+                    size=segmentation_data.get('size', [0, 0]),
                     counts=segmentation_data.get('counts', '')
                 )
             elif isinstance(segmentation_data, list):

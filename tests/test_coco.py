@@ -15,10 +15,12 @@ def test_coco_format_creation(sample_coco_dataset):
     
     # 2. Checking metadata
     coco_file = coco_format.files[0]
+    assert coco_file.info
     assert coco_file.info.description == "Test dataset"
     assert coco_file.info.version == "1.0"
     
     # 3. Checking licenses
+    assert coco_file.licenses
     assert len(coco_file.licenses) == 1
     assert coco_file.licenses[0].name == "CC-BY-4.0"
     
@@ -55,8 +57,8 @@ def test_coco_format_creation(sample_coco_dataset):
     # Checking RLE segmentation
     rle_seg = next(a for a in coco_file.annotations if a.id == 3).segmentation
     assert isinstance(rle_seg, RLESegmentation)
-    assert rle_seg.alto == 600
-    assert rle_seg.ancho == 800
+    assert rle_seg.size[0] == 600
+    assert rle_seg.size[1] == 800
     assert rle_seg.counts == "abc123XYZ"
 
 
@@ -84,8 +86,8 @@ def test_rle_segmentation_handling():
     ).annotations[0].segmentation
     
     assert isinstance(segmentation, RLESegmentation)
-    assert segmentation.alto == 640
-    assert segmentation.ancho == 480
+    assert segmentation.size[0] == 640
+    assert segmentation.size[1] == 480
     assert segmentation.counts == "ABCDE1234"
 
 def test_polygon_segmentation_handling():
@@ -101,6 +103,10 @@ def test_polygon_segmentation_handling():
     assert isinstance(segmentation[0], list)
     assert len(segmentation[0]) == 6
     assert all(isinstance(x, float) for x in segmentation[0])
+
+def test_invalid_rle_segmentation():
+    with pytest.raises(ValueError):
+        RLESegmentation(size=[640], counts="invalid")
 
 # Fixture para dataset COCO de prueba
 @pytest.fixture
