@@ -8,6 +8,8 @@ from formats.coco import CocoFile, CocoFormat, CocoImage
 from formats.neutral_format import NeutralFormat
 from formats.pascal_voc import PascalVocFormat
 from formats.yolo import YoloFormat
+from utils.bbox_utils import PascalVocBBox_to_CocoBBox, PascalVocBBox_to_YoloBBox, YoloBBox_to_PascalVocBBox
+from utils.file_utils import get_image_info_from_file, get_image_path
 
 
 def test_yolo_to_pascalvoc():
@@ -23,13 +25,18 @@ def test_yolo_to_pascalvoc():
     
     # Check Pascal VOC
     assert isinstance(pascal_converted, PascalVocFormat)
-    assert len(pascal_converted.files) == 2
-    assert len(pascal_converted.files[0].annotations) == 1
-    assert pascal_converted.files[0].width > 0
-    assert pascal_converted.files[0].height > 0
-    assert not pascal_converted.files[0].segmented
-    assert pascal_converted.files[0].filename == yolo_original.files[0].filename
-    assert pascal_converted.files[0].annotations[0].name == yolo_original.class_labels[yolo_original.files[0].annotations[0].id_class]
+    assert len(pascal_converted.files) == len(yolo_original.files)
+
+    for pascal_file, yolo_file in zip(pascal_converted.files, yolo_original.files):
+        assert len(pascal_file.annotations) == len(yolo_file.annotations)
+        assert pascal_file.width > 0
+        assert pascal_file.height > 0
+        assert not pascal_file.segmented
+        assert pascal_file.filename == yolo_file.filename
+
+        for pascal_annotation, yolo_annotation in zip(pascal_file.annotations, yolo_file.annotations):
+            assert pascal_annotation.name == yolo_original.class_labels[yolo_annotation.id_class]
+            assert pytest.approx(PascalVocBBox_to_YoloBBox(pascal_annotation.bbox, pascal_file.width, pascal_file.height).getBoundingBox(), rel=1e-3, abs=1e-3) == yolo_annotation.bbox.getBoundingBox() 
 
 
 def test_yolo_original_and_yolo_reconverted():
@@ -55,18 +62,13 @@ def test_yolo_original_and_yolo_reconverted():
         for i, (orig_ann, reconv_ann) in enumerate(zip(orig_file.annotations, reconv_file.annotations)):
 
             # Check bbox
-            orig_bbox = orig_file.annotations[0].bbox.getBoundingBox()
-            reconv_bbox = reconv_file.annotations[0].bbox.getBoundingBox()
+            orig_bbox = orig_ann.bbox.getBoundingBox()
+            reconv_bbox = reconv_ann.bbox.getBoundingBox()
             assert orig_bbox == pytest.approx(reconv_bbox, rel=1e-3, abs=1e-3)
 
-
-            # Get class ID
-            orig_class_id = orig_ann.id_class
-            reconv_class_id = reconv_ann.id_class
-            
             # Get name from the map
-            orig_class_name = yolo_original.class_labels[orig_class_id]
-            reconv_class_name = yolo_reconverted.class_labels[reconv_class_id]
+            orig_class_name = yolo_original.class_labels[orig_ann.id_class]
+            reconv_class_name = yolo_reconverted.class_labels[reconv_ann.id_class]
             
             # Check name matches
             assert orig_class_name == reconv_class_name, f"Annotation {i}: class '{orig_class_name}' != '{reconv_class_name}'"
@@ -85,14 +87,19 @@ def test_pascalvoc_to_yolo():
 
     # Check YOLO
     assert isinstance(yolo_converted, YoloFormat)
-    assert len(yolo_converted.files) == 2
-    assert len(yolo_converted.files[0].annotations) == 2
-    assert len(yolo_converted.files[1].annotations) == 1
-    assert yolo_converted.files[0].filename == pascal_original.files[0].filename
-    assert yolo_converted.files[1].filename == pascal_original.files[1].filename
-    assert yolo_converted.class_labels[yolo_converted.files[0].annotations[0].id_class] == pascal_original.files[0].annotations[0].name
-    assert yolo_converted.class_labels[yolo_converted.files[0].annotations[1].id_class] == pascal_original.files[0].annotations[1].name
-    assert yolo_converted.class_labels[yolo_converted.files[1].annotations[0].id_class] == pascal_original.files[1].annotations[0].name
+    assert len(yolo_converted.files) == len(pascal_original.files)
+
+    for yolo_file, pascal_file in zip(yolo_converted.files, pascal_original.files):
+        assert len(yolo_file.annotations) == len(pascal_file.annotations)
+        assert yolo_file.filename == pascal_file.filename
+        assert yolo_file.height == pascal_file.height
+        assert yolo_file.width == pascal_file.width
+        assert yolo_file.depth == pascal_file.depth
+        
+        for yolo_annotation, pascal_annotation in zip(yolo_file.annotations, pascal_file.annotations):
+            assert yolo_converted.class_labels[yolo_annotation.id_class] == pascal_annotation.name
+            assert yolo_annotation.bbox.getBoundingBox() == pytest.approx(PascalVocBBox_to_YoloBBox(pascal_annotation.bbox, pascal_file.width, pascal_file.height).getBoundingBox(), rel=1e-9, abs=1e-9)
+
 
 
 def test_pascalvoc_original_and_pascalvoc_reconverted():
@@ -150,6 +157,10 @@ def test_coco_to_yolo():
     assert all(v in [c.name for c in coco_original.files[0].categories] for v in yolo_converted.class_labels.values())
 
 
+def bbox_almost_equal(bbox1, bbox2, epsilon=1e-3):
+    return all(abs(a - b) < epsilon for a, b in zip(bbox1, bbox2))
+
+
 def test_yolo_to_coco():
     base_dir = os.path.dirname(__file__)
     yolo_path = os.path.join(base_dir, "test_resources/YOLO_TEST")
@@ -164,8 +175,9 @@ def test_yolo_to_coco():
     # Check COCO
     assert isinstance(coco_converted, CocoFormat)
     assert len(coco_converted.files) == 1
-    assert len(coco_converted.files[0].annotations) == 2
+    assert len(coco_converted.files[0].annotations) == 5
     
+    i = 1
     for file in coco_converted.files:
         assert isinstance(file, CocoFile)
         for image in file.images:
@@ -173,8 +185,31 @@ def test_yolo_to_coco():
             assert image.width > 0
             assert image.height > 0
 
-        for annotation in file.annotations:
-            assert annotation.area == (annotation.bbox.width * annotation.bbox.height)
+        for coco_annotation in file.annotations:
+            assert coco_annotation.area == (coco_annotation.bbox.width * coco_annotation.bbox.height)
+            coco_category_name = next((c.name for c in file.categories if c.id == coco_annotation.category_id), None)
+            
+            yolo_class_name = None
+            found = False  # <-- Variable de control
+
+            for yolo_file in yolo_original.files:
+                if found:
+                    break
+                if yolo_original.folder_path:
+                    image_path = get_image_path(yolo_original.folder_path, "images", yolo_file.filename)
+                    if image_path:
+                        width, height, depth = get_image_info_from_file(image_path)
+                        for yolo_annotation in yolo_file.annotations:
+                            bbox1 = PascalVocBBox_to_CocoBBox(YoloBBox_to_PascalVocBBox(yolo_annotation.bbox, width, height)).getBoundingBox()
+                            bbox2 = coco_annotation.bbox.getBoundingBox()
+                            if bbox_almost_equal(bbox1, bbox2, 2):
+                                yolo_class_name = yolo_original.class_labels[yolo_annotation.id_class]
+                                found = True
+                                break  # <-- Rompe el bucle de anotaciones YOLO
+
+            assert coco_category_name == yolo_class_name
+            i += 1
+
 
 
 def test_coco_original_and_coco_reconverted():
@@ -212,9 +247,8 @@ def test_coco_original_and_coco_reconverted():
             reconv_anns_by_image[image_id].append(ann)
         
         # Check by image
-        for image in orig_file.images:
-            image_name = image.file_name
-            orig_anns = orig_anns_by_image.get(image.id, [])
+        for orig_image in orig_file.images:
+            image_name = orig_image.file_name
             
             # Find the other image
             reconv_image = next((img for img in reconv_file.images if img.file_name == image_name), None)
@@ -222,6 +256,33 @@ def test_coco_original_and_coco_reconverted():
             # Check image exist
             assert reconv_image is not None, f"Image {image_name} not found in reconverted"
 
+            # Get licenses
+            license_orig = next(
+                (l for l in (orig_file.licenses or []) if l.id == orig_image.license), 
+                None
+            )
+            license_reconv = next(
+                (l for l in (reconv_file.licenses or []) if l.id == reconv_image.license), 
+                None
+            )
+
+            # Check both licenses exist
+            assert license_orig is not None, f"Original license ID {orig_image.license} not found in original dataset for {image_name}"
+            assert license_reconv is not None, f"Reconverted license ID {reconv_image.license} not found in reconverted dataset for {image_name}"
+
+            # Check license details
+            assert license_orig.name == license_reconv.name, f"License name mismatch in {image_name} ({license_orig.name} vs {license_reconv.name})"
+            assert license_orig.url == license_reconv.url, f"License URL mismatch in {image_name} ({license_orig.url} vs {license_reconv.url})"
+
+            i = 1
+            # Check image metadata
+            assert orig_image.date_captured == reconv_image.date_captured, f"Date captured mismatch in {image_name}"
+            assert orig_image.flickr_url == reconv_image.flickr_url, f"Flickr URL mismatch in {image_name}"
+            assert orig_image.coco_url == reconv_image.coco_url, f"COCO URL mismatch in {image_name}"
+            i += 1
+
+            # Get annotations
+            orig_anns = orig_anns_by_image.get(orig_image.id, [])
             reconv_anns = reconv_anns_by_image.get(reconv_image.id, [])
             
             # Sort annotations by bbox
