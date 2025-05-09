@@ -19,21 +19,18 @@ class NeutralAnnotation(Annotation[PascalVocBoundingBox]):
 
 @dataclass
 class ImageOrigin:
-    source_type: Optional[str] = None        # "flickr", "synthetic", "web"
-    source_id: Optional[str] = None          # flickrid, coco_id, etc
-    source_dataset: Optional[str] = None     # "VOC2007", "COCO2017"
-    
-    image_provider: Optional[str] = None     # "flickr", "user_upload", "stock"
-    image_license: Optional[str] = None      # "CC BY 4.0", "proprietary"
+    # This list have to be aligned
+    source_type: Optional[list[str]] = None    # "flickr", "synthetic", "web"
+    source_id: Optional[list[str]] = None      # flickrid, etc
+    image_url: Optional[list[str]] = None
 
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "source_type": self.source_type,
-            "source_id": self.source_id,
-            "source_dataset": self.source_dataset,
-            "image_provider": self.image_provider,
-            "image_license": self.image_license
-        }
+    image_provider: Optional[str] = None     # "flickr", "user_upload", "stock"
+    source_dataset: Optional[str] = None     # "VOC2007", "COCO2017"
+
+    date_captured: Optional[str] = None      # 2025/05/02
+
+    image_license: Optional[str] = None      # "CC BY 4.0", "proprietary"
+    license_url: Optional[str] = None        # URL
 
 
 class NeutralFile(FileFormat[NeutralAnnotation]):
