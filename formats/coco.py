@@ -227,7 +227,6 @@ class CocoFormat(DatasetFormat[CocoFile]):
 
             coco_files.append(CocoFormat.create_coco_file_from_json(coco_data, json_file.name))
 
-        # Construir y devolver un CocoFormat
         return CocoFormat.build(
             name=folder.name,
             files=coco_files,

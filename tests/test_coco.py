@@ -67,19 +67,16 @@ def test_invalid_coco_structure(tmp_path):
     with pytest.raises(FileNotFoundError):
         CocoFormat.read_from_folder(tmp_path)
     
-    # Archivo JSON inválido
     (tmp_path / "invalid.json").write_text("{invalid_json}")
     with pytest.raises(json.JSONDecodeError):
         CocoFormat.read_from_folder(tmp_path)
 
 def test_rle_segmentation_handling():
-    # Crear datos de prueba RLE
     rle_data = {
         "size": [640, 480],
         "counts": "ABCDE1234"
     }
     
-    # Procesar a través de la clase
     segmentation = CocoFormat.create_coco_file_from_json(
         {"annotations": [{"segmentation": rle_data}]}, 
         "test"
@@ -91,10 +88,8 @@ def test_rle_segmentation_handling():
     assert segmentation.counts == "ABCDE1234"
 
 def test_polygon_segmentation_handling():
-    # Crear datos de prueba polígono
     poly_data = [[10.5, 20.3, 30.1, 40.7, 50.9, 60.2]]
     
-    # Procesar a través de la clase
     segmentation = CocoFormat.create_coco_file_from_json(
         {"annotations": [{"segmentation": poly_data}]}, 
         "test"
@@ -111,11 +106,11 @@ def test_invalid_rle_segmentation():
 # Fixture para dataset COCO de prueba
 @pytest.fixture
 def sample_coco_dataset(tmp_path):
-    # Crear estructura de directorios
+    # Create file structure
     dataset_dir = tmp_path / "test_coco"
     dataset_dir.mkdir()
 
-    # Crear archivo COCO JSON de prueba
+    # Create COCO file
     coco_data = {
         "info": {
             "description": "Test dataset",
