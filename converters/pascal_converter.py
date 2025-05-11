@@ -69,7 +69,7 @@ def PascalFile_to_NeutralFile(file: PascalVocFile) -> NeutralFile:
     neutral_annotations: list[NeutralAnnotation] = [PascalAnnotation_to_NeutralAnnotation(i) for i in file.annotations] 
 
     image_origin = ImageOrigin(
-        source_type = file.source.image if file.source.image else None,
+        source_type = [file.source.image] if file.source.image else None,
         source_dataset = file.source.database if file.source.database else None
     )
 
@@ -123,7 +123,7 @@ def NeutralFile_to_PascalFile(file: NeutralFile, original_dataset_name: str) -> 
         source: PascalVocSource = PascalVocSource(
                 database = file.image_origin.source_dataset or original_dataset_name,
                 annotation = "Pascal Voc", # annotation standard
-                image = file.image_origin.source_type or ""
+                image = file.image_origin.source_type[0] if file.image_origin.source_type else ""
             )
     else:
         source = PascalVocSource()
