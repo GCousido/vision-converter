@@ -232,3 +232,84 @@ class CocoFormat(DatasetFormat[CocoFile]):
             files=coco_files,
             folder_path=folder_path
         )
+    
+    @staticmethod
+    def read_from_json(json_data) -> "CocoFormat":
+        return CocoFormat.build(
+            name = "COCO_DATASET",
+            files = [CocoFormat.create_coco_file_from_json(json_data, "annotations.json")],
+        )
+
+    @staticmethod
+    def load(folder_path: Optional[str] = None, json_data = None):
+        if folder_path:
+            CocoFormat.read_from_folder(folder_path)
+        elif json_data:
+            CocoFormat.read_from_json(json_data)
+        else:
+            raise Exception("Data not provided for loading dataset, provide:\n" +
+                            "  - folder_path: if you want to load from a folder" +
+                            "  - json_data: if you want to load from json")
+        
+
+    def save(self, output_folder: str):
+        # Save the dataset in output_folder and create a folder with the dataset name
+        folder_path = Path(output_folder + self.name)
+
+        # Create any folder if necesary
+        folder_path.mkdir(parents=True, exist_ok=True)
+
+        # Path to create the json file
+        json_path = folder_path / "annotations.json"
+
+        # 1 file = Coco Dataset
+        coco_file = self.files[0]
+
+        # Info dictionary
+        info = vars(coco_file.info) if coco_file.info else {}
+
+        # Licenses dictionary
+        licenses = [vars(lic) for lic in coco_file.licenses] if coco_file.licenses else []
+
+        # Images dictionary
+        images = [vars(img) for img in coco_file.images]
+
+        # Categories dictionary
+        categories = [vars(cat) for cat in coco_file.categories]
+
+        # Annotations dictionary
+        annotations = []
+        for ann in coco_file.annotations:
+            ann_dict = {
+                "id": ann.id,
+                "image_id": ann.image_id,
+                "category_id": ann.category_id,
+                "bbox": ann.bbox.getBoundingBox(),
+                "area": ann.area if ann.area is not None else 0.0,
+                "iscrowd": int(ann.iscrowd) if ann.iscrowd is not None else 0,
+            }
+
+            # Segmentation
+            if isinstance(ann.segmentation, list):
+                ann_dict["segmentation"] = ann.segmentation
+            elif isinstance(ann.segmentation, RLESegmentation):
+                ann_dict["segmentation"] = {
+                    "size": ann.segmentation.size,
+                    "counts": ann.segmentation.counts,
+                }
+            else:
+                ann_dict["segmentation"] = []
+            annotations.append(ann_dict)
+
+        # Build COCO dictionary
+        coco_dict = {
+            "info": info,
+            "licenses": licenses,
+            "images": images,
+            "categories": categories,
+            "annotations": annotations,
+        }
+
+        # Save as json
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(coco_dict, f, ensure_ascii=False, indent=4)

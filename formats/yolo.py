@@ -115,3 +115,43 @@ class YoloFormat(DatasetFormat[YoloFile]):
             folder_path=folder_path,
             class_labels=class_labels
         )
+    
+    @staticmethod
+    def load(folder_path: Optional[str] = None, json_data = None):
+        if folder_path:
+            YoloFormat.read_from_folder(folder_path)
+        elif json_data:
+            # Create YoloFormat from a JSON
+            pass
+        else:
+            raise Exception("Data not provided for loading dataset, provide:\n" +
+                            "  - folder_path: if you want to load from a folder" +
+                            "  - json_data: if you want to load from json")
+        
+    def save(self, folder: str):
+        folder_path = Path(folder)
+        
+        # # Create any folder if necesary
+        folder_path.mkdir(parents=True, exist_ok=True)
+        
+        # Create subfolders labels and images
+        labels_dir = folder_path / "labels"
+        images_dir = folder_path / "images"
+        labels_dir.mkdir(exist_ok=True)
+        images_dir.mkdir(exist_ok=True)
+        
+        # Save classes.txt
+        classes_file = labels_dir / "classes.txt"
+        with open(classes_file, "w") as f:
+            for class_id in sorted(self.class_labels):
+                f.write(f"{self.class_labels[class_id]}\n")
+        
+        # Save annotations in labels folder
+        for yolo_file in self.files:
+            file_path = labels_dir / yolo_file.filename
+            with open(file_path, "w") as f:
+                for ann in yolo_file.annotations:
+                    bbox = ann.bbox
+                    line = f"{ann.id_class} {bbox.x_center} {bbox.y_center} {bbox.width} {bbox.height}\n"
+                    f.write(line)
+        

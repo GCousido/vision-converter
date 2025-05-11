@@ -20,6 +20,7 @@ class PascalVocBoundingBox(BoundingBox):
         return [self.x_min, self.y_min, self.x_max,  self.y_max]
 
 
+
 class PascalVocObject(Annotation[PascalVocBoundingBox]):
     name: str
     pose: str
@@ -176,3 +177,76 @@ class PascalVocFormat(DatasetFormat[PascalVocFile]):
             files=pascal_files,
             folder_path=folder_path
         )
+    
+    @staticmethod
+    def load(folder_path: Optional[str] = None, json_data = None):
+        if folder_path:
+            PascalVocFormat.read_from_folder(folder_path)
+        elif json_data:
+            # Create PascalVocFormat from a JSON
+            pass
+        else:
+            raise Exception("Data not provided for loading dataset, provide:\n" +
+                            "  - folder_path: if you want to load from a folder" +
+                            "  - json_data: if you want to load from json")
+
+
+    def save(self, folder: str):
+        folder_path = Path(folder)
+        
+        # Create any folder if necesary
+        folder_path.mkdir(parents=True, exist_ok=True)
+        
+        # Create folder structure for PascalVoc
+        annotations_dir = folder_path / "Annotations"
+        imagesets_dir = folder_path / "ImageSets"
+        jpegs_dir = folder_path / "JPEGImages"
+        
+        annotations_dir.mkdir(exist_ok=True)
+        imagesets_dir.mkdir(exist_ok=True)
+        jpegs_dir.mkdir(exist_ok=True)
+        
+        # Save all XML Annotations files
+        for file in self.files:
+            xml_path = annotations_dir / file.filename
+            
+            root = ET.Element("annotation")
+            
+            # Basic metadata
+            ET.SubElement(root, "folder").text = file.folder
+            ET.SubElement(root, "filename").text = file.filename
+            ET.SubElement(root, "path").text = file.path
+            
+            # Source tag
+            source = ET.SubElement(root, "source")
+            ET.SubElement(source, "database").text = file.source.database
+            ET.SubElement(source, "annotation").text = file.source.annotation
+            ET.SubElement(source, "image").text = file.source.image
+            
+            # Size tag
+            size = ET.SubElement(root, "size")
+            ET.SubElement(size, "width").text = str(file.width)
+            ET.SubElement(size, "height").text = str(file.height)
+            ET.SubElement(size, "depth").text = str(file.depth)
+            
+            # Segmentation tag
+            ET.SubElement(root, "segmented").text = str(file.segmented)
+            
+            # Pascal Voc objects
+            for obj in file.annotations:
+                obj_elem = ET.SubElement(root, "object")
+                ET.SubElement(obj_elem, "name").text = obj.name
+                ET.SubElement(obj_elem, "pose").text = obj.pose
+                ET.SubElement(obj_elem, "truncated").text = str(int(obj.truncated))
+                ET.SubElement(obj_elem, "difficult").text = str(int(obj.difficult))
+                
+                bndbox = ET.SubElement(obj_elem, "bndbox")
+                ET.SubElement(bndbox, "xmin").text = str(obj.bbox.x_min)
+                ET.SubElement(bndbox, "ymin").text = str(obj.bbox.y_min)
+                ET.SubElement(bndbox, "xmax").text = str(obj.bbox.x_max)
+                ET.SubElement(bndbox, "ymax").text = str(obj.bbox.y_max)
+            
+            # Save XML
+            tree = ET.ElementTree(root)
+            tree.write(xml_path, encoding="utf-8", xml_declaration=True)
+
