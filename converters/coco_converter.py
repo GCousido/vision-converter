@@ -150,17 +150,21 @@ class CocoConverter(DatasetConverter[CocoFormat]):
             else:
                 license_id = None  # default value
 
-            # Managing flickr
+            flickr_url = None
+            coco_url = None
+            # Managing flickr_url
             if neutral_file.image_origin and neutral_file.image_origin.source_type and "flickr" in neutral_file.image_origin.source_type and neutral_file.image_origin.image_url:
-                flickr_url = neutral_file.image_origin.image_url[neutral_file.image_origin.source_type.index("flickr")]
-            else:
-                flickr_url = None
+                try:
+                    flickr_url = neutral_file.image_origin.image_url[neutral_file.image_origin.source_type.index("flickr")]
+                except ValueError:
+                    pass
 
-            # Managing coco
+            # Managing coco_url
             if neutral_file.image_origin and neutral_file.image_origin.source_type and "coco" in neutral_file.image_origin.source_type and neutral_file.image_origin.image_url:
-                coco_url = neutral_file.image_origin.image_url[neutral_file.image_origin.source_type.index("coco")]
-            else:
-                coco_url = None
+                try:
+                    coco_url = neutral_file.image_origin.image_url[neutral_file.image_origin.source_type.index("coco")]
+                except ValueError:
+                    pass
 
             # Managing date_captured
             if neutral_file.image_origin and neutral_file.image_origin.date_captured is not None:
