@@ -12,31 +12,8 @@ from utils.bbox_utils import PascalVocBBox_to_CocoBBox, PascalVocBBox_to_YoloBBo
 from utils.file_utils import get_image_info_from_file, get_image_path
 
 
-def test_yolo_to_pascalvoc():
-    base_dir = os.path.dirname(__file__)
-    yolo_path = os.path.join(base_dir, "test_resources/YOLO_TEST")
-
-    # 1. Load YOLO Dataset
-    yolo_original: YoloFormat = YoloFormat.read_from_folder(yolo_path)
-    
-    # 2. YOLO → Neutral → Pascal VOC
-    neutral_from_yolo: NeutralFormat = YoloConverter.toNeutral(yolo_original)
-    pascal_converted: PascalVocFormat = PascalVocConverter.fromNeutral(neutral_from_yolo)
-    
-    # Check Pascal VOC
-    assert isinstance(pascal_converted, PascalVocFormat)
-    assert len(pascal_converted.files) == len(yolo_original.files)
-
-    for pascal_file, yolo_file in zip(pascal_converted.files, yolo_original.files):
-        assert len(pascal_file.annotations) == len(yolo_file.annotations)
-        assert pascal_file.width > 0
-        assert pascal_file.height > 0
-        assert not pascal_file.segmented
-        assert pascal_file.filename == yolo_file.filename
-
-        for pascal_annotation, yolo_annotation in zip(pascal_file.annotations, yolo_file.annotations):
-            assert pascal_annotation.name == yolo_original.class_labels[yolo_annotation.id_class]
-            assert pytest.approx(PascalVocBBox_to_YoloBBox(pascal_annotation.bbox, pascal_file.width, pascal_file.height).getBoundingBox(), rel=1e-3, abs=1e-3) == yolo_annotation.bbox.getBoundingBox() 
+def bbox_almost_equal(bbox1, bbox2, epsilon=1e-3) -> bool:
+    return all(abs(a - b) < epsilon for a, b in zip(bbox1, bbox2))
 
 
 def test_yolo_original_and_yolo_reconverted():
@@ -74,91 +51,36 @@ def test_yolo_original_and_yolo_reconverted():
             assert orig_class_name == reconv_class_name, f"Annotation {i}: class '{orig_class_name}' != '{reconv_class_name}'"
 
 
-def test_pascalvoc_to_yolo():
+def test_yolo_to_pascalvoc():
     base_dir = os.path.dirname(__file__)
-    pascal_path = os.path.join(base_dir, "test_resources/PASCAL_VOC_TEST")
+    yolo_path = os.path.join(base_dir, "test_resources/YOLO_TEST")
 
-    # 1. Load PASCAL Dataset
-    pascal_original: PascalVocFormat = PascalVocFormat.read_from_folder(pascal_path)
+    # 1. Load YOLO Dataset
+    yolo_original: YoloFormat = YoloFormat.read_from_folder(yolo_path)
     
-    # 2. Pascal Voc → Neutral → YOLO
-    neutral_from_pascal: NeutralFormat = PascalVocConverter.toNeutral(pascal_original)
-    yolo_converted: YoloFormat = YoloConverter.fromNeutral(neutral_from_pascal)
-
-    # Check YOLO
-    assert isinstance(yolo_converted, YoloFormat)
-    assert len(yolo_converted.files) == len(pascal_original.files)
-
-    for yolo_file, pascal_file in zip(yolo_converted.files, pascal_original.files):
-        assert len(yolo_file.annotations) == len(pascal_file.annotations)
-        assert yolo_file.filename == pascal_file.filename
-        assert yolo_file.height == pascal_file.height
-        assert yolo_file.width == pascal_file.width
-        assert yolo_file.depth == pascal_file.depth
-        
-        for yolo_annotation, pascal_annotation in zip(yolo_file.annotations, pascal_file.annotations):
-            assert yolo_converted.class_labels[yolo_annotation.id_class] == pascal_annotation.name
-            assert yolo_annotation.bbox.getBoundingBox() == pytest.approx(PascalVocBBox_to_YoloBBox(pascal_annotation.bbox, pascal_file.width, pascal_file.height).getBoundingBox(), rel=1e-9, abs=1e-9)
-
-
-
-def test_pascalvoc_original_and_pascalvoc_reconverted():
-    base_dir = os.path.dirname(__file__)
-    pascal_path = os.path.join(base_dir, "test_resources/PASCAL_VOC_TEST")
-
-    # 1. Load PASCAL Dataset
-    pascal_original: PascalVocFormat = PascalVocFormat.read_from_folder(pascal_path)
+    # 2. YOLO → Neutral → Pascal VOC
+    neutral_from_yolo: NeutralFormat = YoloConverter.toNeutral(yolo_original)
+    pascal_converted: PascalVocFormat = PascalVocConverter.fromNeutral(neutral_from_yolo)
     
-    # 2. Pascal Voc → Neutral → Pascal Voc
-    neutral_from_pascal: NeutralFormat = PascalVocConverter.toNeutral(pascal_original)
-    pascal_reconverted: PascalVocFormat = PascalVocConverter.fromNeutral(neutral_from_pascal)
-    
-    # Check idempotence
-    assert pascal_original.name == pascal_reconverted.name
-    assert len(pascal_original.files) == len(pascal_reconverted.files)
-    
-    for orig_file, reconv_file in zip(pascal_original.files, pascal_reconverted.files):
+    # Check Pascal VOC
+    assert isinstance(pascal_converted, PascalVocFormat)
+    assert len(pascal_converted.files) == len(yolo_original.files)
 
-        assert len(orig_file.annotations) == len(reconv_file.annotations)
+    # Check file values
+    for pascal_file, yolo_file in zip(pascal_converted.files, yolo_original.files):
+        assert len(pascal_file.annotations) == len(yolo_file.annotations)
+        assert pascal_file.width > 0
+        assert pascal_file.height > 0
+        assert not pascal_file.segmented
+        assert pascal_file.filename == yolo_file.filename
+        assert pascal_file.source.database == yolo_original.name
+        assert pascal_file.source.annotation == "Pascal Voc"
+        assert pascal_file.source.image == ""
 
-        for i, (orig_ann, reconv_ann) in enumerate(zip(orig_file.annotations, reconv_file.annotations)):
-            # Check name matches
-            assert orig_ann.name == reconv_ann.name, f"Annotation {i}: class '{orig_ann.name}' != '{reconv_ann.name}'"
-
-            # Check bbox
-            orig_bbox = orig_file.annotations[0].bbox.getBoundingBox()
-            reconv_bbox = reconv_file.annotations[0].bbox.getBoundingBox()
-            assert orig_bbox == pytest.approx(reconv_bbox, rel=1e-6, abs=1e-6)
-
-
-def test_coco_to_yolo():
-    base_dir = os.path.dirname(__file__)
-    coco_path = os.path.join(base_dir, "test_resources/COCO_TEST")
-
-    # 1. Load COCO Dataset
-    coco_original: CocoFormat = CocoFormat.read_from_folder(coco_path)
-    
-    # 2. COCO → Neutral → YOLO
-    neutral_from_coco: NeutralFormat = CocoConverter.toNeutral(coco_original)
-    yolo_converted: YoloFormat = YoloConverter.fromNeutral(neutral_from_coco)
-    
-    # Check YOLO
-    assert isinstance(yolo_converted, YoloFormat)
-    assert len(yolo_converted.files) == 4
-    assert sum(len(file.annotations) for file in yolo_converted.files) == 48
-    assert len(yolo_converted.files[0].annotations) == 11
-    assert len(yolo_converted.files[1].annotations) == 7
-    assert len(yolo_converted.files[2].annotations) == 7
-    assert len(yolo_converted.files[3].annotations) == 23
-    assert yolo_converted.files[0].filename == coco_original.files[0].images[0].file_name
-    assert yolo_converted.files[1].filename == coco_original.files[0].images[1].file_name
-    assert yolo_converted.files[2].filename == coco_original.files[0].images[2].file_name
-    assert yolo_converted.files[3].filename == coco_original.files[0].images[3].file_name
-    assert all(v in [c.name for c in coco_original.files[0].categories] for v in yolo_converted.class_labels.values())
-
-
-def bbox_almost_equal(bbox1, bbox2, epsilon=1e-3):
-    return all(abs(a - b) < epsilon for a, b in zip(bbox1, bbox2))
+        # Check annotation values
+        for pascal_annotation, yolo_annotation in zip(pascal_file.annotations, yolo_file.annotations):
+            assert pascal_annotation.name == yolo_original.class_labels[yolo_annotation.id_class]
+            assert pytest.approx(PascalVocBBox_to_YoloBBox(pascal_annotation.bbox, pascal_file.width, pascal_file.height).getBoundingBox(), rel=1e-3, abs=1e-3) == yolo_annotation.bbox.getBoundingBox() 
 
 
 def test_yolo_to_coco():
@@ -186,11 +108,12 @@ def test_yolo_to_coco():
             assert image.height > 0
 
         for coco_annotation in file.annotations:
+            # Check annotation values
             assert coco_annotation.area == (coco_annotation.bbox.width * coco_annotation.bbox.height)
             coco_category_name = next((c.name for c in file.categories if c.id == coco_annotation.category_id), None)
             
             yolo_class_name = None
-            found = False  # <-- Variable de control
+            found = False
 
             for yolo_file in yolo_original.files:
                 if found:
@@ -205,11 +128,120 @@ def test_yolo_to_coco():
                             if bbox_almost_equal(bbox1, bbox2, 2):
                                 yolo_class_name = yolo_original.class_labels[yolo_annotation.id_class]
                                 found = True
-                                break  # <-- Rompe el bucle de anotaciones YOLO
-
+                                break
+            
+            # Check category name is the same category as the one in the yolo annotation
             assert coco_category_name == yolo_class_name
-            i += 1
 
+
+def test_pascalvoc_original_and_pascalvoc_reconverted():
+    base_dir = os.path.dirname(__file__)
+    pascal_path = os.path.join(base_dir, "test_resources/PASCAL_VOC_TEST")
+
+    # 1. Load PASCAL Dataset
+    pascal_original: PascalVocFormat = PascalVocFormat.read_from_folder(pascal_path)
+    
+    # 2. Pascal Voc → Neutral → Pascal Voc
+    neutral_from_pascal: NeutralFormat = PascalVocConverter.toNeutral(pascal_original)
+    pascal_reconverted: PascalVocFormat = PascalVocConverter.fromNeutral(neutral_from_pascal)
+    
+    # Check idempotence
+    assert pascal_original.name == pascal_reconverted.name
+    assert len(pascal_original.files) == len(pascal_reconverted.files)
+    
+
+    for orig_file, reconv_file in zip(pascal_original.files, pascal_reconverted.files):
+        # Check source metadata
+        assert orig_file.source.database == reconv_file.source.database
+        assert reconv_file.source.annotation == "Pascal Voc"
+        assert orig_file.source.image == reconv_file.source.image
+
+        assert len(orig_file.annotations) == len(reconv_file.annotations)
+
+        for i, (orig_ann, reconv_ann) in enumerate(zip(orig_file.annotations, reconv_file.annotations)):
+            # Check name matches
+            assert orig_ann.name == reconv_ann.name, f"Annotation {i}: class '{orig_ann.name}' != '{reconv_ann.name}'"
+
+            # Check bbox
+            orig_bbox = orig_file.annotations[0].bbox.getBoundingBox()
+            reconv_bbox = reconv_file.annotations[0].bbox.getBoundingBox()
+            assert orig_bbox == pytest.approx(reconv_bbox, rel=1e-6, abs=1e-6)
+
+
+def test_pascalvoc_to_yolo():
+    base_dir = os.path.dirname(__file__)
+    pascal_path = os.path.join(base_dir, "test_resources/PASCAL_VOC_TEST")
+
+    # 1. Load PASCAL Dataset
+    pascal_original: PascalVocFormat = PascalVocFormat.read_from_folder(pascal_path)
+    
+    # 2. Pascal Voc → Neutral → YOLO
+    neutral_from_pascal: NeutralFormat = PascalVocConverter.toNeutral(pascal_original)
+    yolo_converted: YoloFormat = YoloConverter.fromNeutral(neutral_from_pascal)
+
+    # Check YOLO
+    assert isinstance(yolo_converted, YoloFormat)
+    assert len(yolo_converted.files) == len(pascal_original.files)
+
+    # Check file values
+    for yolo_file, pascal_file in zip(yolo_converted.files, pascal_original.files):
+        assert len(yolo_file.annotations) == len(pascal_file.annotations)
+        assert yolo_file.filename == pascal_file.filename
+        assert yolo_file.height == pascal_file.height
+        assert yolo_file.width == pascal_file.width
+        assert yolo_file.depth == pascal_file.depth
+        
+        # Check annotation values
+        for yolo_annotation, pascal_annotation in zip(yolo_file.annotations, pascal_file.annotations):
+            assert yolo_converted.class_labels[yolo_annotation.id_class] == pascal_annotation.name
+            assert yolo_annotation.bbox.getBoundingBox() == pytest.approx(PascalVocBBox_to_YoloBBox(pascal_annotation.bbox, pascal_file.width, pascal_file.height).getBoundingBox(), rel=1e-9, abs=1e-9)
+
+
+def test_pascalvoc_to_coco():
+    base_dir = os.path.dirname(__file__)
+    pascal_path = os.path.join(base_dir, "test_resources/PASCAL_VOC_TEST")
+
+    # 1. Load PASCAL Dataset
+    pascal_original: PascalVocFormat = PascalVocFormat.read_from_folder(pascal_path)
+    
+    # 2. Pascal Voc → Neutral → COCO
+    neutral_from_pascal: NeutralFormat = PascalVocConverter.toNeutral(pascal_original)
+    coco_converted: CocoFormat = CocoConverter.fromNeutral(neutral_from_pascal)
+
+    # Check COCO
+    assert isinstance(coco_converted, CocoFormat)
+    assert len(coco_converted.files) == 1
+
+    for coco_file in coco_converted.files:
+        pascal_number_of_annotations = 0
+
+        # Check image metadata
+        for pascal_file, coco_images in zip(pascal_original.files, coco_file.images):
+            pascal_number_of_annotations += len(pascal_file.annotations)
+            assert coco_images.file_name == pascal_file.filename
+            assert coco_images.height == pascal_file.height
+            assert coco_images.width == pascal_file.width
+
+        # Check same number of annotations
+        assert len(coco_file.annotations) == pascal_number_of_annotations
+
+        found = False
+        pascal_class_name = None
+
+        for coco_annotation in coco_file.annotations:
+            for pascal_file in pascal_original.files:
+                if found:
+                    break
+                for pascal_annotation in pascal_file.annotations:
+                    bbox1 = PascalVocBBox_to_CocoBBox(pascal_annotation.bbox).getBoundingBox()
+                    bbox2 = coco_annotation.bbox.getBoundingBox()
+                    if bbox_almost_equal(bbox1, bbox2, 2):
+                        pascal_class_name = pascal_annotation.name
+                        found = True
+                        break
+
+            # Check coco category in an annotation is the same class name as in the pascal annotation
+            assert next((c.name for c in coco_file.categories if c.id == coco_annotation.category_id), None) == pascal_class_name
 
 
 def test_coco_original_and_coco_reconverted():
@@ -295,6 +327,67 @@ def test_coco_original_and_coco_reconverted():
                 name_reconv = next(c.name for c in reconv_file.categories if c.id == reconv_ann.category_id)
                 assert name_orig == name_reconv, f"Image {image_name}, annotation {i}: class '{name_orig}' != '{name_reconv}'"
                 
+                # Check bbox aprox values
                 orig_bbox = orig_ann.bbox.getBoundingBox()
                 reconv_bbox = reconv_ann.bbox.getBoundingBox()
                 assert orig_bbox == pytest.approx(reconv_bbox, rel=0.5, abs=0.5), f"Image {image_name}, annotation {i}: bbox do not match"
+
+
+def test_coco_to_yolo():
+    base_dir = os.path.dirname(__file__)
+    coco_path = os.path.join(base_dir, "test_resources/COCO_TEST")
+
+    # 1. Load COCO Dataset
+    coco_original: CocoFormat = CocoFormat.read_from_folder(coco_path)
+    
+    # 2. COCO → Neutral → YOLO
+    neutral_from_coco: NeutralFormat = CocoConverter.toNeutral(coco_original)
+    yolo_converted: YoloFormat = YoloConverter.fromNeutral(neutral_from_coco)
+    
+    # Check YOLO
+    assert isinstance(yolo_converted, YoloFormat)
+    assert len(yolo_converted.files) == 4
+    assert sum(len(file.annotations) for file in yolo_converted.files) == 48
+    assert len(yolo_converted.files[0].annotations) == 11
+    assert len(yolo_converted.files[1].annotations) == 7
+    assert len(yolo_converted.files[2].annotations) == 7
+    assert len(yolo_converted.files[3].annotations) == 23
+    assert yolo_converted.files[0].filename == coco_original.files[0].images[0].file_name
+    assert yolo_converted.files[1].filename == coco_original.files[0].images[1].file_name
+    assert yolo_converted.files[2].filename == coco_original.files[0].images[2].file_name
+    assert yolo_converted.files[3].filename == coco_original.files[0].images[3].file_name
+
+    # Check every yolo class is in categories
+    assert all(v in [c.name for c in coco_original.files[0].categories] for v in yolo_converted.class_labels.values())
+
+
+def test_coco_to_pascalvoc():
+    base_dir = os.path.dirname(__file__)
+    coco_path = os.path.join(base_dir, "test_resources/COCO_TEST")
+
+    # 1. Load COCO Dataset
+    coco_original: CocoFormat = CocoFormat.read_from_folder(coco_path)
+    
+    # 2. COCO → Neutral → Pascal Voc
+    neutral_from_coco: NeutralFormat = CocoConverter.toNeutral(coco_original)
+    pascal_converted: PascalVocFormat = PascalVocConverter.fromNeutral(neutral_from_coco)
+    
+    # Check Pascal Voc
+    assert isinstance(pascal_converted, PascalVocFormat)
+    assert len(pascal_converted.files) == 4
+    assert sum(len(file.annotations) for file in pascal_converted.files) == 48
+    assert len(pascal_converted.files[0].annotations) == 11
+    assert len(pascal_converted.files[1].annotations) == 7
+    assert len(pascal_converted.files[2].annotations) == 7
+    assert len(pascal_converted.files[3].annotations) == 23
+    assert pascal_converted.files[0].filename == coco_original.files[0].images[0].file_name
+    assert pascal_converted.files[1].filename == coco_original.files[0].images[1].file_name
+    assert pascal_converted.files[2].filename == coco_original.files[0].images[2].file_name
+    assert pascal_converted.files[3].filename == coco_original.files[0].images[3].file_name
+    
+    # Check that every class name is in the coco original
+    assert all(
+        ann.name in [c.name for c in coco_original.files[0].categories]
+        for file in pascal_converted.files
+        for ann in file.annotations
+    )
