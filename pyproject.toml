@@ -12,10 +12,15 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=8.3.5",
+    "pytest-mock>=3.14.0",
 ]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+
+
+[project.scripts]
+dconverter = "cli.main:dconverter"
 
 [build-system]
 requires = ["setuptools", "wheel"]
