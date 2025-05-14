@@ -2,7 +2,7 @@ import pytest
 import os
 
 from converters.coco_converter import CocoConverter
-from converters.pascal_converter import PascalVocConverter
+from converters.pascal_voc_converter import PascalVocConverter
 from converters.yolo_converter import YoloConverter
 from formats.coco import CocoFile, CocoFormat, CocoImage
 from formats.neutral_format import NeutralFormat
