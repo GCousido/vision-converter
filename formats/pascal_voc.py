@@ -177,18 +177,6 @@ class PascalVocFormat(DatasetFormat[PascalVocFile]):
             files=pascal_files,
             folder_path=folder_path
         )
-    
-    @staticmethod
-    def load(folder_path: Optional[str] = None, json_data = None):
-        if folder_path:
-            PascalVocFormat.read_from_folder(folder_path)
-        elif json_data:
-            # Create PascalVocFormat from a JSON
-            pass
-        else:
-            raise Exception("Data not provided for loading dataset, provide:\n" +
-                            "  - folder_path: if you want to load from a folder" +
-                            "  - json_data: if you want to load from json")
 
 
     def save(self, folder: str):
@@ -206,15 +194,17 @@ class PascalVocFormat(DatasetFormat[PascalVocFile]):
         imagesets_dir.mkdir(exist_ok=True)
         jpegs_dir.mkdir(exist_ok=True)
         
+        
         # Save all XML Annotations files
         for file in self.files:
-            xml_path = annotations_dir / file.filename
+            filename = Path(file.filename).stem + ".xml"
+            xml_path = annotations_dir / filename
             
             root = ET.Element("annotation")
             
             # Basic metadata
             ET.SubElement(root, "folder").text = file.folder
-            ET.SubElement(root, "filename").text = file.filename
+            ET.SubElement(root, "filename").text = filename
             ET.SubElement(root, "path").text = file.path
             
             # Source tag

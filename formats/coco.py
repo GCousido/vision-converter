@@ -240,17 +240,6 @@ class CocoFormat(DatasetFormat[CocoFile]):
             files = [CocoFormat.create_coco_file_from_json(json_data, "annotations.json")],
         )
 
-    @staticmethod
-    def load(folder_path: Optional[str] = None, json_data = None):
-        if folder_path:
-            CocoFormat.read_from_folder(folder_path)
-        elif json_data:
-            CocoFormat.read_from_json(json_data)
-        else:
-            raise Exception("Data not provided for loading dataset, provide:\n" +
-                            "  - folder_path: if you want to load from a folder" +
-                            "  - json_data: if you want to load from json")
-        
 
     def save(self, output_folder: str):
         # Save the dataset in output_folder and create a folder with the dataset name
