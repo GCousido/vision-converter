@@ -1,4 +1,5 @@
 from pathlib import Path
+from PIL import Image
 import pytest
 
 from formats.yolo import YoloFormat
@@ -10,6 +11,15 @@ def sample_yolo_dataset(tmp_path):
     # Creating file structure
     labels_dir = tmp_path / "labels"
     labels_dir.mkdir()
+    images_dir = tmp_path / "images"
+    images_dir.mkdir()
+
+    # Creating images
+    image1 = Image.new('RGB', (100, 100), color='red')
+    image2 = Image.new('RGB', (100, 100), color='blue')
+
+    image1.save(images_dir / 'image1.png')
+    image2.save(images_dir / 'image2.png')
     
     # Classes files
     (labels_dir / "classes.txt").write_text("person\ncar\ntruck")
@@ -47,11 +57,11 @@ def test_yolo_format_construction(sample_yolo_dataset):
     # 3. Checking files
     assert len(yolo_format.files) == 2
     filenames = {f.filename for f in yolo_format.files}
-    assert "image1.txt" in filenames
-    assert "image2.txt" in filenames
+    assert "image1.png" in filenames
+    assert "image2.png" in filenames
     
     # 4. Checking bounding boxes
-    file1 = next(f for f in yolo_format.files if f.filename == "image1.txt")
+    file1 = next(f for f in yolo_format.files if f.filename == "image1.png")
     assert len(file1.annotations) == 2
     
     # First annotation

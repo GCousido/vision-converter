@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Optional
 
+from utils.file_utils import get_image_path
+
 from .base import Annotation, BoundingBox, DatasetFormat, FileFormat
 
 class YoloBoundingBox(BoundingBox):
@@ -106,8 +108,13 @@ class YoloFormat(DatasetFormat[YoloFile]):
                             height=float(parts[4])
                         )
                         annotations.append(YoloAnnotation(bbox, class_id))
-            
-            files.append(YoloFile(ann_file.name, annotations))
+
+            filename = get_image_path(folder_path, "images", ann_file.name)
+
+            if not filename:
+                raise Exception("Dataset structure error in the YOLO Dataset, annotations file must have the same name as the image")
+
+            files.append(YoloFile(Path(filename).name, annotations))
         
         return YoloFormat.build(
             name=Path(folder_path).name,
