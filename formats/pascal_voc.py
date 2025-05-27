@@ -124,7 +124,9 @@ class PascalVocFormat(DatasetFormat[PascalVocFile]):
 
             # Read file metadata
             folder_tag = root.findtext('folder', default="")
+            filename = root.findtext('filename', default="")
             path_tag = root.findtext('path', default="")
+
             size_tag = root.find('size')
             width = int(size_tag.findtext('width', default="0")) if size_tag is not None else 0
             height = int(size_tag.findtext('height', default="0")) if size_tag is not None else 0
@@ -160,7 +162,7 @@ class PascalVocFormat(DatasetFormat[PascalVocFile]):
 
             pascal_files.append(
                 PascalVocFile(
-                    filename=xml_file.name,
+                    filename=filename,
                     annotations=annotations,
                     folder=folder_tag,
                     path=path_tag,
@@ -197,14 +199,12 @@ class PascalVocFormat(DatasetFormat[PascalVocFile]):
         
         # Save all XML Annotations files
         for file in self.files:
-            filename = Path(file.filename).stem + ".xml"
-            xml_path = annotations_dir / filename
             
             root = ET.Element("annotation")
             
             # Basic metadata
             ET.SubElement(root, "folder").text = file.folder
-            ET.SubElement(root, "filename").text = filename
+            ET.SubElement(root, "filename").text = file.filename
             ET.SubElement(root, "path").text = file.path
             
             # Source tag
@@ -236,6 +236,9 @@ class PascalVocFormat(DatasetFormat[PascalVocFile]):
                 ET.SubElement(bndbox, "xmax").text = str(obj.bbox.x_max)
                 ET.SubElement(bndbox, "ymax").text = str(obj.bbox.y_max)
             
+            filename = Path(file.filename).stem + ".xml"
+            xml_path = annotations_dir / filename
+
             # Save XML
             tree = ET.ElementTree(root)
             tree.write(xml_path, encoding="utf-8", xml_declaration=True)
