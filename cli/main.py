@@ -2,9 +2,7 @@ import click
 import importlib
 import sys
 import os
-from pathlib import Path
 
-# Añadir directorio padre al path para importar desde otros módulos
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from formats.neutral_format import NeutralFormat
@@ -27,17 +25,24 @@ FORMATS = ['coco', 'pascal_voc', 'yolo']
 @click.option('--output-path', '-op', 
                 required=True, 
                 type=click.Path(), 
-                help='Path to the Output dataset')
+                help='Path to save the Output dataset')
 def dconverter(input_format, input_path, output_format, output_path):
-    """Convert one dataset from one format to another
-    
-    This command takes as input one dataset in a specific format, and converts it to the neutral format. Then it converts the neutral format to the output wanted format.
+    """Convert object detection datasets between popular annotation formats.
 
-    FORMATS:
+    This CLI tool provides conversion between COCO, YOLO, and Pascal VOC
+    annotation formats through a neutral intermediate representation.
+
     \b
-        - coco
-        - yolo
-        - pascal_voc
+    Conversion Process:
+        1. Reads input format and converts to neutral internal representation
+        2. Transforms neutral format to target output format
+        3. Saves converted format in output path
+
+    \b
+    Supported Formats:
+        • COCO (JSON format with COCO dataset structure)
+        • YOLO (TXT files with normalized coordinates)
+        • Pascal VOC (XML files with Pascal VOC metadata)
     """
 
     # Check if it has permissions to write
@@ -64,7 +69,7 @@ def dconverter(input_format, input_path, output_format, output_path):
         output_converter_class = getattr(output_converter_module, output_converter_class_name)
         
         # Load input dataset
-        click.echo(f"Loading dataset {input_format} from {input_path}...")
+        click.echo(f"Loading dataset {input_format} from {input_path}")
         input_dataset = input_format_class.read_from_folder(folder_path = input_path)
         
         # Convert to NeutralFormat
@@ -76,7 +81,7 @@ def dconverter(input_format, input_path, output_format, output_path):
         output_dataset = output_converter_class.fromNeutral(neutral_format)
         
         # Save output dataset 
-        click.echo(f"Saving dataset {output_format} in {output_path}...")
+        click.echo(f"Saving dataset {output_format} in {output_path}")
         output_dataset.save(output_path)
         
     except ImportError as e:
@@ -89,8 +94,8 @@ def dconverter(input_format, input_path, output_format, output_path):
         click.echo(f"Error while converting: {e}", err=True)
         sys.exit(1)
 
-def to_camel_case(snake_str: str) -> str:
-    return "".join(word.capitalize() for word in snake_str.split("_"))
+def to_camel_case(input: str) -> str:
+    return "".join(word.capitalize() for word in input.split("_"))
 
 
 if __name__ == "__main__":
