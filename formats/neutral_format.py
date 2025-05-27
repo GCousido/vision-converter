@@ -19,18 +19,22 @@ class NeutralAnnotation(Annotation[PascalVocBoundingBox]):
 
 @dataclass
 class ImageOrigin:
-    # This list have to be aligned
-    source_type: Optional[list[str]] = None    # "flickr", "synthetic", "web"
-    source_id: Optional[list[str]] = None      # flickrid, etc
+
+    extension: str                              # ".jpg", ".png"
+
+    # This lists have to be aligned
+    source_type: Optional[list[str]] = None     # "flickr", "synthetic", "web"
+    source_id: Optional[list[str]] = None       # flickrid, etc
     image_url: Optional[list[str]] = None
 
-    image_provider: Optional[str] = None     # "flickr", "user_upload", "stock"
-    source_dataset: Optional[str] = None     # "VOC2007", "COCO2017"
+    image_provider: Optional[str] = None        # "flickr", "user_upload", "stock"
+    source_dataset: Optional[str] = None        # "VOC2007", "COCO2017"
 
-    date_captured: Optional[str] = None      # 2025/05/02
+    date_captured: Optional[str] = None         # 2025/05/02
 
-    image_license: Optional[str] = None      # "CC BY 4.0", "proprietary"
-    license_url: Optional[str] = None        # URL
+    image_license: Optional[str] = None         # "CC BY 4.0", "proprietary"
+    license_url: Optional[str] = None           # URL
+
 
 
 class NeutralFile(FileFormat[NeutralAnnotation]):
@@ -41,11 +45,11 @@ class NeutralFile(FileFormat[NeutralAnnotation]):
     depth: int
 
     # image metadata
-    image_origin: Optional[ImageOrigin]
+    image_origin: ImageOrigin
 
     params: dict[str, Any]
 
-    def __init__(self, filename: str, annotations: list[NeutralAnnotation], width: int, height: int, depth: int, image_origin: Optional[ImageOrigin] = None, params: Optional[dict[str, Any]] = None) -> None:
+    def __init__(self, filename: str, annotations: list[NeutralAnnotation], width: int, height: int, depth: int, image_origin: ImageOrigin, params: Optional[dict[str, Any]] = None) -> None:
         super().__init__(filename, annotations)
         self.width = width
         self.height = height

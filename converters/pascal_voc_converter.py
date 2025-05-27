@@ -1,3 +1,4 @@
+from pathlib import Path
 from converters.dataset_converter import DatasetConverter
 from formats.neutral_format import ImageOrigin, NeutralAnnotation, NeutralFile, NeutralFormat
 from formats.pascal_voc import PascalVocFile, PascalVocFormat, PascalVocObject, PascalVocSource
@@ -70,11 +71,12 @@ def PascalFile_to_NeutralFile(file: PascalVocFile) -> NeutralFile:
 
     image_origin = ImageOrigin(
         source_type = [file.source.image] if file.source.image else None,
-        source_dataset = file.source.database if file.source.database else None
+        source_dataset = file.source.database if file.source.database else None,
+        extension = Path(file.filename).suffix
     )
 
     return NeutralFile(
-        filename = file.filename,
+        filename = Path(file.filename).stem,
         annotations = neutral_annotations,
         width = file.width,
         height = file.height,
@@ -121,17 +123,17 @@ def NeutralFile_to_PascalFile(file: NeutralFile, original_dataset_name: str) -> 
 
 
     source: PascalVocSource = PascalVocSource(
-            database = file.image_origin.source_dataset if file.image_origin and file.image_origin.source_dataset else original_dataset_name,
+            database = file.image_origin.source_dataset if file.image_origin.source_dataset else original_dataset_name,
             annotation = "Pascal Voc", # annotation standard
-            image = file.image_origin.source_type[0] if file.image_origin and file.image_origin.source_type else ""
+            image = file.image_origin.source_type[0] if file.image_origin.source_type else ""
     )
 
 
     return PascalVocFile(
-        filename = file.filename,
+        filename = file.filename + file.image_origin.extension,
         annotations = pascal_annotations,
         folder = "Annotations",
-        path = "Annotations/" + file.filename,
+        path = "Annotations/" + file.filename + file.image_origin.extension,
         source = source,
         width = file.width,
         height = file.height,

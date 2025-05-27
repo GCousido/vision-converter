@@ -1,7 +1,7 @@
 from typing import Optional
 
 from converters.dataset_converter import DatasetConverter
-from formats.neutral_format import NeutralAnnotation, NeutralFile, NeutralFormat
+from formats.neutral_format import ImageOrigin, NeutralAnnotation, NeutralFile, NeutralFormat
 from formats.pascal_voc import PascalVocBoundingBox
 from formats.yolo import YoloAnnotation, YoloBoundingBox, YoloFile, YoloFormat
 from utils.bbox_utils import PascalVocBBox_to_YoloBBox, YoloBBox_to_PascalVocBBox
@@ -92,6 +92,7 @@ def YoloFile_to_NeutralFile(file: YoloFile, class_labels: dict[int, str], folder
         image_path = get_image_path(folder_path, "images", file.filename)
         if not image_path:
             raise FileNotFoundError(f"Image {file.filename} not found")
+
         image_width, image_height, image_depth = get_image_info_from_file(image_path)
     else:
         # Check all dimensions exist
@@ -107,12 +108,17 @@ def YoloFile_to_NeutralFile(file: YoloFile, class_labels: dict[int, str], folder
         for i in file.annotations
     ]
 
+    image_origin = ImageOrigin(
+        extension = ""
+    )
+
     return NeutralFile(
         filename = file.filename,
         annotations = neutral_annotations,
         width = image_width,
         height = image_height,
-        depth = image_depth
+        depth = image_depth,
+        image_origin = image_origin
     )
 
 
@@ -157,7 +163,7 @@ def NeutralFile_to_YoloFile(file: NeutralFile, inverse_class_list: dict[str, int
     yolo_annotations: list[YoloAnnotation] = [NeutralAnnotation_to_YoloAnnotation(i, inverse_class_list, file.width, file.height) for i in file.annotations]
 
     return YoloFile(
-        filename = file.filename,
+        filename = file.filename + file.image_origin.extension,
         annotations = yolo_annotations,
         width = file.width,
         height = file.height,

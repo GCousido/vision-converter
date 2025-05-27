@@ -1,6 +1,8 @@
 from datetime import datetime
 import re
 
+from pathlib import Path
+
 from converters.dataset_converter import DatasetConverter
 from formats.coco import Category, CocoBoundingBox, CocoFile, CocoFormat, CocoImage, CocoLabel, Info, License
 from formats.neutral_format import ImageOrigin, NeutralAnnotation, NeutralFile, NeutralFormat
@@ -75,11 +77,12 @@ class CocoConverter(DatasetConverter[CocoFormat]):
                     image_url = urls,
                     image_license = image_license.name if image_license is not None else None,
                     license_url = image_license.url if image_license is not None else None,
-                    date_captured = image.date_captured
+                    date_captured = image.date_captured,
+                    extension = Path(image.file_name).suffix
                 )
                 
                 neutral_files.append(NeutralFile(
-                    filename = image.file_name,
+                    filename = Path(image.file_name).stem,
                     annotations = neutral_anns,
                     width = image.width,
                     height = image.height,
@@ -153,31 +156,30 @@ class CocoConverter(DatasetConverter[CocoFormat]):
             flickr_url = None
             coco_url = None
             # Managing flickr_url
-            if neutral_file.image_origin and neutral_file.image_origin.source_type and "flickr" in neutral_file.image_origin.source_type and neutral_file.image_origin.image_url:
+            if neutral_file.image_origin.source_type and "flickr" in neutral_file.image_origin.source_type and neutral_file.image_origin.image_url:
                 try:
                     flickr_url = neutral_file.image_origin.image_url[neutral_file.image_origin.source_type.index("flickr")]
                 except ValueError:
                     pass
 
             # Managing coco_url
-            if neutral_file.image_origin and neutral_file.image_origin.source_type and "coco" in neutral_file.image_origin.source_type and neutral_file.image_origin.image_url:
+            if neutral_file.image_origin.source_type and "coco" in neutral_file.image_origin.source_type and neutral_file.image_origin.image_url:
                 try:
                     coco_url = neutral_file.image_origin.image_url[neutral_file.image_origin.source_type.index("coco")]
                 except ValueError:
                     pass
 
             # Managing date_captured
-            if neutral_file.image_origin and neutral_file.image_origin.date_captured is not None:
+            if neutral_file.image_origin.date_captured is not None:
                 date_captured = neutral_file.image_origin.date_captured
             else:
                 date_captured = ""
-
 
             image = CocoImage(
                 id = next_img_id,
                 width = neutral_file.width,
                 height = neutral_file.height,
-                file_name = neutral_file.filename,
+                file_name = neutral_file.filename + neutral_file.image_origin.extension,
                 license = license_id,
                 flickr_url = flickr_url,
                 coco_url = coco_url,
@@ -218,7 +220,7 @@ class CocoConverter(DatasetConverter[CocoFormat]):
         coco_file = CocoFile(
             filename = "annotations.json",
             annotations = annotations,
-            info=Info(description="COCO Dataset created after conversion from " + nf.original_format, url="", version="1.0", year=actual_date.year, contributor="DatasetConverter", date_created=actual_date.strftime("%Y/%m/%d")),
+            info=Info(description="COCO Dataset created after conversion from " + nf.original_format.replace('_',' ').title(), url="", version="1.0", year=actual_date.year, contributor="DatasetConverter", date_created=actual_date.strftime("%Y/%m/%d")),
             licenses = licenses,
             images = images,
             categories = categories
