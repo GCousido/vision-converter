@@ -5,6 +5,18 @@ from formats.pascal_voc import PascalVocBoundingBox
 
 
 class NeutralAnnotation(Annotation[PascalVocBoundingBox]):
+    """Generic annotation for objects in images with extended metadata.
+
+    Inherits from:
+        Annotation[PascalVocBoundingBox]: Base annotation class with Pascal VOC bounding box
+
+    Attributes:
+        class_name (str): Name of the object class (e.g., 'person', 'car').
+        attributes (dict[str, Any]): Additional object metadata key-value pairs.
+        bbox (PascalVocBoundingBox): Inherited attribute - bounding box coordinates
+            in Pascal VOC format (xmin, ymin, xmax, ymax).
+    """
+
     class_name: str
     attributes: dict[str, Any]
 
@@ -13,12 +25,31 @@ class NeutralAnnotation(Annotation[PascalVocBoundingBox]):
         self.class_name = class_name
         self.attributes = attributes if attributes is not None else {}
 
-    def addAttribute(self, key: str, value: Any) -> None:
-        self.attributes[key] = value
-
 
 @dataclass
 class ImageOrigin:
+    """Metadata container describing the origin and provenance of an image.
+
+    Attributes:
+        extension (str): File extension with leading dot (e.g., ".jpg", ".png")
+        
+        source_type (Optional[list[str]]): Types of original sources, must be aligned with
+            source_id and image_url lists. Typical values: ["flickr", "synthetic", "web"]
+        source_id (Optional[list[str]]): Unique identifiers from original sources
+        image_url (Optional[list[str]]): Original URLs where the image was obtained
+        
+        image_provider (Optional[str]): Current provider/service hosting the image
+            (e.g., "flickr", "user_upload", "stock")
+        source_dataset (Optional[str]): Original dataset identifier
+            (e.g., "VOC2007", "COCO2017")
+        
+        date_captured (Optional[str]): Capture date in YYYY/MM/DD format
+        image_license (Optional[str]): License type (e.g., "CC BY 4.0", "proprietary")
+        license_url (Optional[str]): URL to full license text
+
+    Note:
+        The lists source_type, source_id, and image_url must be index-aligned
+    """
 
     extension: str                              # ".jpg", ".png"
 
@@ -38,6 +69,20 @@ class ImageOrigin:
 
 
 class NeutralFile(FileFormat[NeutralAnnotation]):
+    """Container for image file data and annotations in neutral format.
+
+    Inherits from:
+        FileFormat[NeutralAnnotation]: Base file format class with a list neutral annotations
+
+    Attributes:
+        width (int): Image width in pixels
+        height (int): Image height in pixels
+        depth (int): Color depth (typically 3 for RGB)
+        image_origin (ImageOrigin): Metadata about image provenance
+        params (dict[str, Any]): Additional processing parameters
+        filename (str): Inherited attribute - name of the image file
+        annotations (list[NeutralAnnotation]): Inherited attribute - list of annotations
+    """
 
     # image information
     width: int
@@ -57,25 +102,29 @@ class NeutralFile(FileFormat[NeutralAnnotation]):
         self.image_origin = image_origin
         self.params = params if params is not None else {}
 
-    def addParam(self, key: str, value: Any) -> None:
-        self.params[key] = value
-
 
 class NeutralFormat(DatasetFormat[NeutralFile]):
+    """Container for a dataset in neutral format. This is designed to be a unified 
+
+    Inherits from:
+        DatasetFormat[NeutralFile]: Base dataset format with neutral file type
+
+    Attributes:
+        metadata (dict[str, Any]): Global dataset metadata (e.g., version, creator)
+        class_map (dict[int, str]): Mapping of numeric IDs to class names
+            (e.g., {0: 'person', 1: 'car'})
+        original_format (str): Original dataset format name (e.g., "PascalVOC")
+        name (str): Inherited attribute - dataset name
+        files (list[NeutralFile]): Inherited attribute - list of image files of NeutralFile class
+    """
     metadata: dict[str, Any]
     class_map: dict[int, str]
     original_format: str
 
     def __init__(self, name: str, files: list[NeutralFile], original_format: str,
-                 metadata: Optional[dict[str, Any]] = None, 
-                 class_map: Optional[dict[int, str]] = None) -> None:
+                metadata: Optional[dict[str, Any]] = None, 
+                class_map: Optional[dict[int, str]] = None) -> None:
         super().__init__(name, files)
         self.metadata = metadata if metadata is not None else {}
         self.class_map = class_map if class_map is not None else {}
         self.original_format = original_format
-
-    def addMetadata(self, key: str, value: Any) -> None:
-        self.metadata[key] = value
-
-    def addClass(self, class_id: int, class_label: str) -> None:
-        self.class_map[class_id] = class_label
