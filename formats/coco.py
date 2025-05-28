@@ -352,7 +352,7 @@ class CocoFormat(DatasetFormat[CocoFile]):
             output_folder (str): Path to the output directory.
         """
         # Save the dataset in output_folder and create a folder with the dataset name
-        folder_path = Path(output_folder + self.name)
+        folder_path = Path(output_folder)
 
         # Create any folder if necesary
         folder_path.mkdir(parents=True, exist_ok=True)
