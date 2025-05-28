@@ -5,6 +5,14 @@ import xml.etree.ElementTree as ET
 from .base import Annotation, BoundingBox, DatasetFormat, FileFormat
 
 class PascalVocBoundingBox(BoundingBox):
+    """Bounding box in Pascal VOC format (absolute pixel coordinates).
+
+    Attributes:
+        x_min (int): Minimum x (left).
+        y_min (int): Minimum y (top).
+        x_max (int): Maximum x (right).
+        y_max (int): Maximum y (bottom).
+    """
     x_min: int
     y_min: int
     x_max: int
@@ -17,11 +25,21 @@ class PascalVocBoundingBox(BoundingBox):
         self.y_max = y_max
 
     def getBoundingBox(self):
+        """Returns Pascal Voc coordinates as [x_min, y_min, x_max, y_max]."""
         return [self.x_min, self.y_min, self.x_max,  self.y_max]
 
 
 
 class PascalVocObject(Annotation[PascalVocBoundingBox]):
+    """Annotation for a single Pascal VOC Object, with bounding box and metadata.
+
+    Attributes:
+        name (str): Class name of the object.
+        pose (str): Pose label (e.g., 'Unspecified').
+        truncated (bool): True if object is truncated in the image.
+        difficult (bool): True if object is difficult to detect.
+        bbox (PascalVocBoundingBox): Inherited. Bounding box of the object.
+    """
     name: str
     pose: str
     truncated: bool
@@ -36,6 +54,13 @@ class PascalVocObject(Annotation[PascalVocBoundingBox]):
 
 
 class PascalVocSource:
+    """Metadata for the 'source' tag in Pascal VOC XML files.
+
+    Attributes:
+        database (str): Name of the database.
+        annotation (str): Annotation type.
+        image (str): Image source.
+    """
     database: str
     annotation: str
     image: str
@@ -45,23 +70,21 @@ class PascalVocSource:
         self.annotation = annotation
         self.image = image
 
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "database": self.database,
-            "annotation": self.annotation,
-            "image": self.image
-        }
-
-    @classmethod
-    def from_dict(cls, data: dict) -> "PascalVocSource":
-        return cls(
-            database=data.get("database", ""),
-            annotation=data.get("annotation", ""),
-            image=data.get("image", "")
-        )
-
 
 class PascalVocFile(FileFormat[PascalVocObject]):
+    """Represents a Pascal VOC annotated file with metadata and object annotations.
+
+    Attributes:
+        folder (str): Name of the folder containing the image.
+        path (str): Path to the image file.
+        source (PascalVocSource): Metadata about the data source.
+        width (int): Image width in pixels.
+        height (int): Image height in pixels.
+        depth (int): Number of color channels (e.g., 3 for RGB).
+        segmented (int): Segmentation flag (0 or 1).
+        filename (str): Inherited. Name of the image file.
+        annotations (list[PascalVocObject]): Inherited. List of object annotations.
+    """
     folder: str
     path: str
     source: PascalVocSource 
@@ -85,6 +108,13 @@ class PascalVocFile(FileFormat[PascalVocObject]):
 
 
 class PascalVocFormat(DatasetFormat[PascalVocFile]):
+    """Dataset in Pascal VOC format, including files and folder structure.
+
+    Attributes:
+        name (str): Inherited. Name of the dataset.
+        files (list[PascalVocFile]): Inherited. List of PascalVocFile objects.
+        folder_path (Optional[str]): Inherited. Path to the dataset folder.
+    """
 
     def __init__(self, name: str, files: list[PascalVocFile], folder_path: Optional[str] = None) -> None:
         super().__init__(name, files, folder_path)
@@ -95,20 +125,20 @@ class PascalVocFormat(DatasetFormat[PascalVocFile]):
 
     @staticmethod
     def read_from_folder(folder_path: str) -> 'PascalVocFormat':
-        """
-        Create a dataset in Pascal Voc format from folder.
+        """Create a dataset in Pascal VOC format from a folder.
 
-        A standar Pascal Voc format consist of:
-        - A images folder
-        - A folder with text files that have the different sets of images for training
-        - XML files with annotations in an 'annotations' folder
+        Expecting annotations in Annotations folder.
 
         Args:
-            folder_path (str): Path to the folder
+            folder_path (str): Path to the Pascal VOC dataset root folder.
 
         Returns:
-            PascalVocFormat: Object with the Pascal Voc dataset
+            PascalVocFormat: Object with the Pascal VOC dataset.
+
+        Raises:
+            FileNotFoundError: If the required folders or files are missing.
         """
+
         if not Path(folder_path).exists():
             raise FileNotFoundError(f"Folder {folder_path} was not found")
 
@@ -181,7 +211,20 @@ class PascalVocFormat(DatasetFormat[PascalVocFile]):
         )
 
 
-    def save(self, folder: str):
+    def save(self, folder: str) -> None:
+        """Save the Pascal VOC dataset to the specified folder, creating the standard structure.
+
+        The following structure will be created:
+        ```
+        {folder}/
+            ├── Annotations/    # XML annotation files
+            ├── JPEGImages/     # Image files (not written here)
+            └── ImageSets/      # Image set text files (not written here)
+        ```
+
+        Args:
+            folder (str): Output directory path.
+        """
         folder_path = Path(folder)
         
         # Create any folder if necesary

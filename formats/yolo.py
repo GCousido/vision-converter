@@ -6,6 +6,14 @@ from utils.file_utils import get_image_path
 from .base import Annotation, BoundingBox, DatasetFormat, FileFormat
 
 class YoloBoundingBox(BoundingBox):
+    """YOLO format bounding box implementation using normalized coordinates.
+    
+    Attributes:
+        x_center (float): Normalized x-coordinate of center (0.0-1.0)
+        y_center (float): Normalized y-coordinate of center (0.0-1.0)
+        width (float): Normalized width (0.0-1.0)
+        height (float): Normalized height (0.0-1.0)
+    """
     x_center: float
     y_center: float
     width: float
@@ -18,10 +26,17 @@ class YoloBoundingBox(BoundingBox):
         self.height = height
 
     def getBoundingBox(self):
+        """Returns YOLO format coordinates as [x_center, y_center, width, height]."""
         return [self.x_center, self.y_center, self.width, self.height]
 
 
 class YoloAnnotation(Annotation[YoloBoundingBox]):
+    """YOLO format annotation with class ID and bounding box in YoloBoundingBox format.
+    
+    Attributes:
+        id_class (int): Numeric class ID corresponding to class_labels
+        bbox (YoloBoundingBox): Inherited attribute - YOLO format bounding box
+    """
     id_class: int
 
     def __init__(self, bbox: YoloBoundingBox, id_class: int) -> None:
@@ -29,6 +44,15 @@ class YoloAnnotation(Annotation[YoloBoundingBox]):
         self.id_class = id_class
 
 class YoloFile(FileFormat[YoloAnnotation]):
+    """Represents a YOLO format image file with annotations in YoloAnnotation format.
+    
+    Attributes:
+        filename (str): Inherited - Image filename
+        annotations (list[YoloAnnotation]): Inherited - List of YOLO annotations
+        width (Optional[int]): Image width in pixels (optional)
+        height (Optional[int]): Image height in pixels (optional)
+        depth (Optional[int]): Color channels (optional, typically 3 for RGB)
+    """
 
     width: Optional[int]
     height: Optional[int]
@@ -42,14 +66,19 @@ class YoloFile(FileFormat[YoloAnnotation]):
 
 
 class YoloFormat(DatasetFormat[YoloFile]):
+    """YOLO format dataset container.
+    
+    Attributes:
+        class_labels (dict[int, str]): Mapping of class IDs to names
+        name (str): Inherited - Dataset name
+        files (list[YoloFile]): Inherited - List of YOLO files
+        folder_path (Optional[str]): Inherited - Dataset root path
+    """
     class_labels: dict[int, str]
 
     def __init__(self, name: str, files: list[YoloFile], class_labels: dict[int, str], folder_path: Optional[str] = None, ) -> None:
         super().__init__(name,files, folder_path)
         self.class_labels = class_labels
-
-    def addClass(self, class_id: int, class_label: str) -> None:
-        self.class_labels[class_id] = class_label
 
     
     @staticmethod
@@ -58,18 +87,23 @@ class YoloFormat(DatasetFormat[YoloFile]):
 
     @staticmethod
     def read_from_folder(folder_path: str) -> 'YoloFormat':
-        """
-        Create a dataset in YOLO format from folder.
+        """Constructs YOLO dataset from standard folder structure.
 
-        A standar YOLO format consist of:
-        - A images folder
-        - A labels folder with text files with the annotations
-
+        Expected structure:
+        ``` 
+        - {folder_path}/  
+            ├── images/      # Contains image files  
+            └── labels/      # Contains .txt annotations and classes.txt
+        ```
         Args:
-            folder_path (str): Path to the folder
-
+            folder_path (str): Root directory of YOLO dataset
+            
         Returns:
-            YoloFormat: Object with the YOLO dataset
+            YoloFormat: Dataset object
+            
+        Raises:
+            FileNotFoundError: If required folders/files are missing
+            Exception: If image-annotation name mismatch occurs
         """
         files = []
         class_labels = {}
@@ -124,7 +158,19 @@ class YoloFormat(DatasetFormat[YoloFile]):
         )
 
 
-    def save(self, folder: str):
+    def save(self, folder: str) -> None:
+        """Saves YOLO dataset to standard folder structure.
+        
+        ```
+        {folder}/  
+            ├── images/      # (Note: copies images if path exists)  
+            └── labels/  
+                ├── classes.txt
+                └── *.txt    # Annotation files  
+        ```
+        Args:
+            folder: Output directory path
+        """
         folder_path = Path(folder)
         
         # # Create any folder if necesary

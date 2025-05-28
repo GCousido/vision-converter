@@ -6,6 +6,14 @@ from typing import Optional
 from .base import Annotation, BoundingBox, DatasetFormat, FileFormat
 
 class CocoBoundingBox(BoundingBox):
+    """COCO format bounding box using absolute pixel coordinates.
+
+    Attributes:
+        x_min (float): Minimum x (left).
+        y_min (float): Minimum y (top).
+        width (float): Box width in pixels.
+        height (float): Box height in pixels.
+    """
     x_min: float
     y_min: float
     width: float
@@ -18,19 +26,41 @@ class CocoBoundingBox(BoundingBox):
         self.height = height
 
     def getBoundingBox(self):
+        """Returns COCO format coordinates as [x_min, y_min, width, height]."""
         return [self.x_min, self.y_min, self.width, self.height]
 
 @dataclass
 class RLESegmentation:
+    """Run-Length Encoding (RLE) segmentation for COCO.
+
+    Attributes:
+        size (list[int]): [height, width] of the mask.
+        counts (str): RLE-encoded mask.
+    """
     size: list[int] # [height, width]
     counts: str
 
     def __post_init__(self):
-        # Validate that size have only 2 elements
+        """Validates that size is a list of two integers.
+
+        Raises:
+            ValueError: If size is not [height, width].
+        """
         if len(self.size) != 2 or not all(isinstance(x, int) for x in self.size):
             raise ValueError("'size' has to be a list of 2 ints [height, width].")
 
 class CocoLabel(Annotation[CocoBoundingBox]):
+    """COCO annotation label for an object instance.
+
+    Attributes:
+        id (int): Annotation ID.
+        image_id (int): ID of the image this annotation belongs to.
+        category_id (int): Category ID.
+        segmentation (Optional[list[list[float]] | RLESegmentation]): Polygon or RLE segmentation.
+        area (Optional[float]): Area of the object.
+        iscrowd (Optional[bool]): Whether the annotation is a crowd region.
+        bbox (CocoBoundingBox): Inherited. Bounding box for the object.
+    """
     id: int
     image_id: int
     category_id: int
@@ -50,6 +80,16 @@ class CocoLabel(Annotation[CocoBoundingBox]):
 
 @dataclass
 class Info:
+    """General information about the COCO dataset.
+
+    Attributes:
+        description (str): Description of the dataset.
+        url (str): URL with more information.
+        version (str): Version string.
+        year (int): Year of release.
+        contributor (str): Dataset contributor.
+        date_created (str): Creation date.
+    """
     description: str
     url: str
     version: str
@@ -59,12 +99,31 @@ class Info:
 
 @dataclass
 class License:
+    """License information for the COCO dataset.
+
+    Attributes:
+        id (int): License ID.
+        name (str): License name.
+        url (str): URL to the license text.
+    """
     id: int
     name: str
     url: str
 
 @dataclass
 class CocoImage:
+    """Image metadata for COCO.
+
+    Attributes:
+        id (int): Image ID.
+        width (int): Image width in pixels.
+        height (int): Image height in pixels.
+        file_name (str): Filename of the image.
+        date_captured (str): Date the image was captured.
+        flickr_url (Optional[str]): Optional Flickr URL.
+        coco_url (Optional[str]): Optional COCO URL.
+        license (Optional[int]): License ID.
+    """
     id: int
     width: int
     height: int
@@ -76,12 +135,29 @@ class CocoImage:
 
 @dataclass
 class Category:
+    """Object category for COCO.
+
+    Attributes:
+        id (int): Category ID.
+        name (str): Category name.
+        supercategory (Optional[str]): Supercategory name.
+    """
     id: int
     name: str
     supercategory: Optional[str] = None
 
 
 class CocoFile(FileFormat[CocoLabel]):
+    """Represents a single COCO annotation file and its metadata.
+
+    Attributes:
+        info (Optional[Info]): Dataset information.
+        licenses (Optional[list[License]]): List of licenses.
+        images (list[CocoImage]): List of images.
+        categories (list[Category]): List of categories.
+        filename (str): Inherited. Name of the annotation file.
+        annotations (list[CocoLabel]): Inherited. List of annotation labels.
+    """
     info: Optional[Info]
     licenses: Optional[list[License]]
     images: list[CocoImage]
@@ -96,6 +172,13 @@ class CocoFile(FileFormat[CocoLabel]):
 
 
 class CocoFormat(DatasetFormat[CocoFile]):
+    """Dataset container for COCO format.
+
+    Attributes:
+        name (str): Inherited. Name of the dataset.
+        files (list[CocoFile]): Inherited. List of COCO annotation files.
+        folder_path (Optional[str]): Inherited. Path to the dataset folder.
+    """
 
     def __init__(self, name: str, files: list[CocoFile], folder_path: Optional[str] = None) -> None:
         super().__init__(name, files, folder_path)
@@ -106,6 +189,15 @@ class CocoFormat(DatasetFormat[CocoFile]):
     
     @staticmethod
     def create_coco_file_from_json(coco_data, name: str) -> CocoFile:
+        """Creates a CocoFile object from a COCO-format JSON dictionary.
+
+        Args:
+            coco_data (dict): Dictionary loaded from COCO JSON.
+            name (str): Name for the annotation file.
+
+        Returns:
+            CocoFile: Parsed COCO annotation file.
+        """
 
         # Extract info
         info_data = coco_data.get('info', {})
@@ -196,18 +288,22 @@ class CocoFormat(DatasetFormat[CocoFile]):
 
     @staticmethod
     def read_from_folder(folder_path: str) -> 'CocoFormat':
-        """
-        Create a dataset in COCO format from folder.
+        """Loads a COCO dataset from a folder.
 
-        A standar COCO format consist of:
-        - A images folder
-        - One or more JSON files with annotations in an 'annotations' folder
+        The following folder structure is expected:
+
+            {folder_path}/
+                ├── images/        # Image files
+                └── *.json         # Annotation files in COCO format
 
         Args:
-            folder_path (str): Path to the folder
+            folder_path (str): Path to the dataset folder.
 
         Returns:
-            CocoFormat: Object with the COCO dataset
+            CocoFormat: Loaded COCO dataset.
+
+        Raises:
+            FileNotFoundError: If the folder or JSON files are missing.
         """
 
         folder = Path(folder_path)
@@ -235,13 +331,26 @@ class CocoFormat(DatasetFormat[CocoFile]):
     
     @staticmethod
     def read_from_json(json_data) -> "CocoFormat":
+        """Creates a CocoFormat from a single COCO-format JSON dictionary.
+
+        Args:
+            json_data (dict): COCO-format annotation dictionary.
+
+        Returns:
+            CocoFormat: Loaded dataset.
+        """
         return CocoFormat.build(
             name = "COCO_DATASET",
             files = [CocoFormat.create_coco_file_from_json(json_data, "annotations.json")],
         )
 
 
-    def save(self, output_folder: str):
+    def save(self, output_folder: str) -> None:
+        """Saves the COCO dataset to the specified output folder.
+
+        Args:
+            output_folder (str): Path to the output directory.
+        """
         # Save the dataset in output_folder and create a folder with the dataset name
         folder_path = Path(output_folder + self.name)
 
