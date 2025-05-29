@@ -2,7 +2,7 @@ from pathlib import Path
 from PIL import Image
 import pytest
 
-from formats.yolo import YoloFormat
+from formats.yolo import YoloAnnotation, YoloBoundingBox, YoloFile, YoloFormat
 
 # Fixture for YOLO dataset
 @pytest.fixture
@@ -98,3 +98,55 @@ def test_invalid_dataset_structure(tmp_path):
 
     # Case with classes.txt
     assert (tmp_path / "labels" / "classes.txt").exists()
+
+
+def test_yolo_format_save_full(tmp_path: Path):
+    # Prepare test data
+    class_labels = {1: "dog", 0: "cat", 2: "car"}
+    annotations1 = [
+        YoloAnnotation(YoloBoundingBox(0.5, 0.5, 0.1, 0.1), 0),
+        YoloAnnotation(YoloBoundingBox(0.2, 0.3, 0.4, 0.5), 1)
+    ]
+
+    annotations2 = [
+        YoloAnnotation(YoloBoundingBox(0.25, 0.25, 0.15, 0.8), 2),
+        YoloAnnotation(YoloBoundingBox(0.75, 0.3, 0.5, 0.1), 1)
+    ]
+
+    yolo_files = [
+        YoloFile("test_image.jpg", annotations1),
+        YoloFile("test2_image.jpg", annotations2)
+    ]
+    yolo = YoloFormat(
+        name="test_dataset",
+        files=yolo_files,
+        class_labels=class_labels,
+        folder_path=None
+    )
+
+    # Execute save
+    yolo.save(str(tmp_path.resolve()))
+
+    # Check file structure
+    assert (tmp_path / "labels").is_dir()
+    assert (tmp_path / "images").is_dir()
+
+    # Check classes.txt content
+    classes_file = tmp_path / "labels" / "classes.txt"
+    assert classes_file.exists()
+    assert classes_file.read_text().splitlines() == ["cat", "dog", "car"]
+
+    # Check annotations files and content
+    test_image = tmp_path / "labels" / "test_image.txt"
+    assert test_image.exists()
+    assert test_image.read_text() == (
+        "0 0.5 0.5 0.1 0.1\n"
+        "1 0.2 0.3 0.4 0.5\n"
+    )
+
+    test2_image = tmp_path / "labels" / "test2_image.txt"
+    assert test2_image.exists()
+    assert test2_image.read_text() == (
+        "2 0.25 0.25 0.15 0.8\n"
+        "1 0.75 0.3 0.5 0.1\n"
+    )

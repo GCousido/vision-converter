@@ -2,7 +2,7 @@ import pytest
 from pathlib import Path
 import json
 
-from formats.coco import CocoFormat, RLESegmentation
+from formats.coco import Category, CocoBoundingBox, CocoFile, CocoFormat, CocoImage, CocoLabel, Info, License, RLESegmentation
 
 def test_coco_format_creation(sample_coco_dataset):
     # Load dataset
@@ -187,3 +187,192 @@ def sample_coco_dataset(tmp_path):
 
     (dataset_dir / "instances_train.json").write_text(json.dumps(coco_data))
     return dataset_dir
+
+def test_coco_format_save(tmp_path):
+    # Prepare test data
+    categories = [
+        Category(id=1, name="cat", supercategory="animal"),
+        Category(id=2, name="dog", supercategory="animal"),
+    ]
+
+    images = [
+        CocoImage(
+            id=1, 
+            width=100, 
+            height=200, 
+            file_name="image1.jpg",
+            date_captured="2023-01-01",
+            license=1,
+            flickr_url="http://flickr.com/image1",
+            coco_url="http://cocodataset.org/image1"
+        ),
+        CocoImage(
+            id=2,
+            width=150,
+            height=300,
+            file_name="image2.jpg",
+            date_captured="2023-01-02"
+        )
+    ]
+
+    annotations = [
+        CocoLabel(
+            bbox=CocoBoundingBox(10, 20, 30, 40),
+            id=1,
+            image_id=1,
+            category_id=1,
+            segmentation=[[10,20,40,20,40,60,10,60]],
+            area=1200.0,
+            iscrowd=False
+        ),
+        CocoLabel(
+            bbox=CocoBoundingBox(50, 60, 70, 80),
+            id=2,
+            image_id=2,
+            category_id=2,
+            segmentation=RLESegmentation(size=[300,150], counts="abcd123"),
+            area=5600.0,
+            iscrowd=True
+        )
+    ]
+
+    info = Info(
+        description="Test Dataset",
+        url="http://example.com",
+        version="1.0",
+        year=2023,
+        contributor="Tester",
+        date_created="2023-01-01"
+    )
+
+    licenses = [
+        License(id=1, name="CC-BY", url="http://creativecommons.org/licenses/by/4.0/")
+    ]
+
+    coco_file = CocoFile(
+        filename="annotations.json",
+        annotations=annotations,
+        images=images,
+        categories=categories,
+        info=info,
+        licenses=licenses
+    )
+
+    coco_dataset = CocoFormat(
+        name="test_coco",
+        files=[coco_file],
+        folder_path=None
+    )
+
+    # Execute save
+    output_path = tmp_path / "output"
+    coco_dataset.save(str(output_path))
+    
+    # Check save file
+    json_path = output_path / "annotations.json"
+    assert json_path.exists()
+
+    with open(json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    # 1. Check basic structure
+    assert set(data.keys()) == {"info", "licenses", "images", "categories", "annotations"}
+    
+    # 2. Check info
+    assert data["info"] == {
+        "description": "Test Dataset",
+        "url": "http://example.com",
+        "version": "1.0",
+        "year": 2023,
+        "contributor": "Tester",
+        "date_created": "2023-01-01"
+    }
+
+    # 3. Check licenses
+    assert data["licenses"] == [{
+        "id": 1,
+        "name": "CC-BY",
+        "url": "http://creativecommons.org/licenses/by/4.0/"
+    }]
+
+    # 4. Check images
+    assert len(data["images"]) == 2
+    img1 = next(img for img in data["images"] if img["id"] == 1)
+    assert img1 == {
+        "id": 1,
+        "width": 100,
+        "height": 200,
+        "file_name": "image1.jpg",
+        "license": 1,
+        "flickr_url": "http://flickr.com/image1",
+        "coco_url": "http://cocodataset.org/image1",
+        "date_captured": "2023-01-01"
+    }
+
+    img2 = next(img for img in data["images"] if img["id"] == 2)
+    assert img2 == {
+        "id": 2,
+        "width": 150,
+        "height": 300,
+        "file_name": "image2.jpg",
+        "license": None,
+        "flickr_url": None,
+        "coco_url": None,
+        "date_captured": "2023-01-02"
+    }
+
+    # 5. Check categories
+    assert data["categories"] == [
+        {"id": 1, "name": "cat", "supercategory": "animal"},
+        {"id": 2, "name": "dog", "supercategory": "animal"}
+    ]
+
+    # 6. Check annotations
+    assert len(data["annotations"]) == 2
+    
+    # Annotation 1 (Polygon)
+    ann1 = next(ann for ann in data["annotations"] if ann["id"] == 1)
+    assert ann1 == {
+        "id": 1,
+        "image_id": 1,
+        "category_id": 1,
+        "bbox": [10.0, 20.0, 30.0, 40.0],
+        "area": 1200.0,
+        "iscrowd": 0,
+        "segmentation": [[10,20,40,20,40,60,10,60]]
+    }
+
+    # Annotation 2 (RLE)
+    ann2 = next(ann for ann in data["annotations"] if ann["id"] == 2)
+    assert ann2 == {
+        "id": 2,
+        "image_id": 2,
+        "category_id": 2,
+        "bbox": [50.0, 60.0, 70.0, 80.0],
+        "area": 5600.0,
+        "iscrowd": 1,
+        "segmentation": {
+            "size": [300, 150],
+            "counts": "abcd123"
+        }
+    }
+
+    # 7. Check relations with the ids
+    image_ids = {img["id"] for img in data["images"]}
+    for ann in data["annotations"]:
+        assert ann["image_id"] in image_ids, f"Image ID {ann['image_id']} do not exist"
+    
+    category_ids = {cat["id"] for cat in data["categories"]}
+    for ann in data["annotations"]:
+        assert ann["category_id"] in category_ids, f"Category ID {ann['category_id']} do not exist"
+
+    # 8. Check data type
+    for img in data["images"]:
+        assert isinstance(img["id"], int)
+        assert isinstance(img["width"], int)
+        assert isinstance(img["height"], int)
+    
+    for ann in data["annotations"]:
+        assert isinstance(ann["bbox"], list)
+        assert len(ann["bbox"]) == 4
+        assert all(isinstance(x, float) or isinstance(x, int) for x in ann["bbox"])

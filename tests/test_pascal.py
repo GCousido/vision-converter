@@ -1,6 +1,7 @@
 from pathlib import Path
 import pytest
-from formats.pascal_voc import PascalVocFormat, PascalVocSource
+import xml.etree.ElementTree as ET
+from formats.pascal_voc import PascalVocBoundingBox, PascalVocFile, PascalVocFormat, PascalVocObject, PascalVocSource
 
 # Helper for creating XML Pascal VOC files
 def create_pascalvoc_xml(path, filename, objects, width=800, height=600, depth=3, folder="VOC", segmented=0, source=None):
@@ -156,3 +157,153 @@ def test_invalid_pascalvoc_structure(tmp_path):
         PascalVocFormat.read_from_folder(tmp_path)
     except Exception as exc:
         assert False, f"Excepcion: {exc}"
+
+
+def test_pascalvoc_format_save_full_no_empty_annotations(tmp_path):
+    # Prepare test data
+    # ================================================
+    source = PascalVocSource(database="MyDB", annotation="PascalVOC", image="flickr")
+    
+    # File 1: 2 objects
+    bbox1 = PascalVocBoundingBox(10, 20, 50, 60)
+    bbox2 = PascalVocBoundingBox(15, 25, 55, 65)
+    obj1 = PascalVocObject(bbox1, name="cat", pose="Unspecified", truncated=False, difficult=False)
+    obj2 = PascalVocObject(bbox2, name="dog", pose="Left", truncated=True, difficult=True)
+    
+    # File 2: 2 objects
+    bbox3 = PascalVocBoundingBox(5, 15, 25, 35)
+    bbox4 = PascalVocBoundingBox(30, 40, 70, 80)
+    obj3 = PascalVocObject(bbox3, name="bird", pose="Back", truncated=False, difficult=True)
+    obj4 = PascalVocObject(bbox4, name="horse", pose="Frontal", truncated=False, difficult=False)
+    
+    # File 3: 1 objects
+    bbox5 = PascalVocBoundingBox(100, 120, 150, 160)
+    obj5 = PascalVocObject(bbox5, name="sheep", pose="Right", truncated=True, difficult=False)
+
+    pascal_files = [
+        PascalVocFile(
+            filename="image1.jpg",
+            annotations=[obj1, obj2],
+            folder="Images",
+            path="/test/path/JPEGImages/image1.jpg",
+            source=source,
+            width=100,
+            height=200,
+            depth=3,
+            segmented=0
+        ),
+        PascalVocFile(
+            filename="image2.jpg",
+            annotations=[obj3, obj4],
+            folder="Images",
+            path="/test/path/JPEGImages/image2.jpg",
+            source=source,
+            width=80,
+            height=120,
+            depth=3,
+            segmented=1
+        ),
+        PascalVocFile(
+            filename="image3.jpg",
+            annotations=[obj5],
+            folder="Images",
+            path="/test/path/JPEGImages/image3.jpg",
+            source=source,
+            width=640,
+            height=480,
+            depth=3,
+            segmented=0
+        )
+    ]
+
+    pascal_dataset = PascalVocFormat(
+        name="test_dataset",
+        files=pascal_files,
+        folder_path=None
+    )
+
+    # Execute save
+    pascal_dataset.save(str(tmp_path))
+
+    # Check file structure
+    assert (tmp_path / "Annotations").is_dir()
+    assert (tmp_path / "ImageSets").is_dir()
+    assert (tmp_path / "JPEGImages").is_dir()
+
+    # Check xml files
+    verify_xml_content(
+        tmp_path / "Annotations" / "image1.xml",
+        expected_objects=2,
+        expected_size=(100, 200, 3),
+        expected_objects_data=[
+            {"name": "cat", "xmin": 10, "ymin": 20, "xmax": 50, "ymax": 60, "truncated": "0"},
+            {"name": "dog", "xmin": 15, "ymin": 25, "xmax": 55, "ymax": 65, "truncated": "1"}
+        ]
+    )
+
+    verify_xml_content(
+        tmp_path / "Annotations" / "image2.xml",
+        expected_objects=2,
+        expected_size=(80, 120, 3),
+        expected_objects_data=[
+            {"name": "bird", "xmin": 5, "ymin": 15, "xmax": 25, "ymax": 35, "difficult": "1"},
+            {"name": "horse", "xmin": 30, "ymin": 40, "xmax": 70, "ymax": 80, "pose": "Frontal"}
+        ]
+    )
+
+    verify_xml_content(
+        tmp_path / "Annotations" / "image3.xml",
+        expected_objects=1,
+        expected_size=(640, 480, 3),
+        expected_objects_data=[
+            {"name": "sheep", "xmin": 100, "ymin": 120, "xmax": 150, "ymax": 160, "truncated": "1"}
+        ]
+    )
+
+def verify_xml_content(xml_path: Path, expected_objects: int, expected_size: tuple, expected_objects_data: list) -> None:
+    tree = ET.parse(xml_path)
+    root = tree.getroot()
+
+    # 1. Check basic metadata
+    assert root.findtext("folder") == "Images", f"Folder wrong in {xml_path.name}"
+    assert root.findtext("filename") == xml_path.stem + ".jpg", f"Filename wrong in {xml_path.name}"
+    assert root.findtext("path") == f"/test/path/JPEGImages/{xml_path.stem}.jpg", f"Path wrong in {xml_path.name}"
+
+    # 2. Check source tag
+    source = root.find("source")
+    assert source is not None, f"Missing node <source> in {xml_path.name}"
+    assert source.findtext("database") == "MyDB", f"Database wrong in {xml_path.name}"
+    
+    # 3. Check size tag
+    size = root.find("size")
+    assert size is not None, f"Missing node <size> in {xml_path.name}"
+    assert size.findtext("width") == str(expected_size[0]), f"Width wrong in {xml_path.name}"
+    assert size.findtext("height") == str(expected_size[1]), f"Height wrong in {xml_path.name}"
+    assert size.findtext("depth") == str(expected_size[2]), f"Depth wrong in {xml_path.name}"
+
+    # 4. Check object data
+    objects = root.findall("object")
+    assert len(objects) == expected_objects, f"Wrong number of objects in {xml_path.name}"
+
+    for i, obj in enumerate(objects):
+        expected = expected_objects_data[i]
+        
+        # Name
+        assert obj.findtext("name") == expected["name"], f"Name wrong in object {i} of {xml_path.name}"
+        
+        # Pascal Voc BoundingBox
+        bndbox = obj.find("bndbox")
+        assert bndbox is not None, f"Falta nodo <bndbox> en object {i} de {xml_path.name}"
+        assert bndbox.findtext("xmin") == str(expected["xmin"]), f"xmin wrong in object {i} of {xml_path.name}"
+        assert bndbox.findtext("ymin") == str(expected["ymin"]), f"ymin wrong in object {i} of {xml_path.name}"
+        assert bndbox.findtext("xmax") == str(expected["xmax"]), f"xmax wrong in object {i} of {xml_path.name}"
+        assert bndbox.findtext("ymax") == str(expected["ymax"]), f"ymax wrong in object {i} of {xml_path.name}"
+        
+        # Optional Attributes
+        if "truncated" in expected:
+            assert obj.findtext("truncated") == expected["truncated"], f"Truncated wrong in object {i} of {xml_path.name}"
+        if "difficult" in expected:
+            assert obj.findtext("difficult") == expected["difficult"], f"Difficult wrong in object {i} of {xml_path.name}"
+        if "pose" in expected:
+            assert obj.findtext("pose") == expected["pose"], f"Pose wrong in object {i} of {xml_path.name}"
+
