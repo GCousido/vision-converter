@@ -1,13 +1,32 @@
 [project]
 name = "datasetconverter"
 version = "0.1.0"
-description = "Add your description here"
+description = "This project consist of a library and a CLI for converting datasets between annotation formats."
 readme = "README.md"
 requires-python = ">=3.12"
+authors = [
+    { name = "Guillermo Cousido Martínez", email = "guillermo.cousido@gmail.com" }
+]
+keywords = ["dataset", "converter", "computer vision", "cli", "yolo", "coco", "pascal voc"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
 dependencies = [
     "click>=8.1.8",
     "pillow>=11.2.1",
 ]
+
+[project.scripts]
+dconverter = "cli.main:dconverter"
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [dependency-groups]
 dev = [
@@ -17,11 +36,4 @@ dev = [
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-
-
-[project.scripts]
-dconverter = "cli.main:dconverter"
-
-[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+testpaths = ["tests"]
