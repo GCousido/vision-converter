@@ -33,7 +33,9 @@ setup(
         "Programming Language :: Python :: 3.12",
         "Operating System :: OS Independent",
         "Intended Audience :: Developers",
-        "Topic :: Software Development :: Libraries :: Python Modules"
+        "Topic :: Software Development :: Libraries :: Python Modules",
+        "License :: OSI Approved :: MIT License",
     ],
     include_package_data=True,
+    license="MIT",
 )

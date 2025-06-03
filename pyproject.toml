@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 authors = [
     { name = "Guillermo Cousido Martínez", email = "guillermo.cousido@gmail.com" }
 ]
+license = { text = "MIT" }
 keywords = ["dataset", "converter", "computer vision", "cli", "yolo", "coco", "pascal voc"]
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -20,6 +21,13 @@ dependencies = [
     "click>=8.1.8",
     "pillow>=11.2.1",
 ]
+
+[project.urls]
+Homepage = "https://github.com/GCousido/TFG-DatasetConverter"
+Documentation = "https://github.com/GCousido/TFG-DatasetConverter#readme"
+Repository = "https://github.com/GCousido/TFG-DatasetConverter"
+Issues = "https://github.com/GCousido/TFG-DatasetConverter/issues"
+Changelog = "https://github.com/GCousido/TFG-DatasetConverter/releases"
 
 [project.scripts]
 dconverter = "cli.main:dconverter"
