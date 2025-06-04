@@ -1,7 +1,7 @@
-from formats.coco import CocoBoundingBox
-from formats.pascal_voc import PascalVocBoundingBox
-from formats.yolo import YoloBoundingBox
-from utils.bbox_utils import (
+from datasetconverter.formats.coco import CocoBoundingBox
+from datasetconverter.formats.pascal_voc import PascalVocBoundingBox
+from datasetconverter.formats.yolo import YoloBoundingBox
+from datasetconverter.utils.bbox_utils import (
     YoloBBox_to_PascalVocBBox,
     CocoBBox_to_PascalVocBBox,
     PascalVocBBox_to_YoloBBox,

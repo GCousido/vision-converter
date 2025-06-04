@@ -30,7 +30,7 @@ Issues = "https://github.com/GCousido/TFG-DatasetConverter/issues"
 Changelog = "https://github.com/GCousido/TFG-DatasetConverter/releases"
 
 [project.scripts]
-dconverter = "cli.main:dconverter"
+dconverter = "datasetconverter.cli.main:dconverter"
 
 [build-system]
 requires = ["setuptools", "wheel"]
@@ -44,4 +44,4 @@ dev = [
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-testpaths = ["tests"]
+testpaths = ["datasetconverter/tests"]

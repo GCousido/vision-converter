@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar
 
-from formats.base import DatasetFormat
-from formats.neutral_format import NeutralFormat
+from ..formats.base import DatasetFormat
+from ..formats.neutral_format import NeutralFormat
 
 T = TypeVar("T", bound=DatasetFormat)
 

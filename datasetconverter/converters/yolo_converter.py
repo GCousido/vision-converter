@@ -1,11 +1,11 @@
 from typing import Optional
 
-from converters.dataset_converter import DatasetConverter
-from formats.neutral_format import ImageOrigin, NeutralAnnotation, NeutralFile, NeutralFormat
-from formats.pascal_voc import PascalVocBoundingBox
-from formats.yolo import YoloAnnotation, YoloBoundingBox, YoloFile, YoloFormat
-from utils.bbox_utils import PascalVocBBox_to_YoloBBox, YoloBBox_to_PascalVocBBox
-from utils.file_utils import get_image_path, get_image_info_from_file
+from .dataset_converter import DatasetConverter
+from ..formats.neutral_format import ImageOrigin, NeutralAnnotation, NeutralFile, NeutralFormat
+from ..formats.pascal_voc import PascalVocBoundingBox
+from ..formats.yolo import YoloAnnotation, YoloBoundingBox, YoloFile, YoloFormat
+from ..utils.bbox_utils import PascalVocBBox_to_YoloBBox, YoloBBox_to_PascalVocBBox
+from ..utils.file_utils import get_image_path, get_image_info_from_file
 
 
 class YoloConverter(DatasetConverter[YoloFormat]):

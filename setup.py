@@ -19,7 +19,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "dconverter=cli.main:dconverter",
+            "dconverter=datasetconverter.cli.main:dconverter",
         ],
     },
     extras_require={

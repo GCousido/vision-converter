@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 # Import
-from cli.main import dconverter, FORMATS
+from datasetconverter.cli.main import dconverter, FORMATS, to_camel_case
 
 # Fixture for Click Runner
 @pytest.fixture
@@ -23,14 +23,14 @@ def mock_imports(mocker):
     converter_mocks = {}
     
     for fmt in FORMATS:
-        # 1. Mock for one format with a load() method that returns the format itself
+        # 1. Mock for one format with a read_from_folder method that returns the format itself
         fmt_mock = mocker.MagicMock()
         fmt_class_mock = mocker.MagicMock()
-        fmt_class_mock.load.return_value = mocker.MagicMock()
+        fmt_class_mock.read_from_folder.return_value = mocker.MagicMock()
         
         #  Configure the format to return a mock class when accesing with getattr
-        setattr(fmt_mock, f"{fmt.capitalize()}Format", fmt_class_mock)
-        format_mocks[f'formats.{fmt}'] = fmt_mock
+        setattr(fmt_mock, f"{to_camel_case(fmt)}Format", fmt_class_mock)
+        format_mocks[f'datasetconverter.formats.{fmt}'] = fmt_mock
         
         # 2. Mock for converter
         conv_mock = mocker.MagicMock()
@@ -45,8 +45,8 @@ def mock_imports(mocker):
         conv_class_mock.fromNeutral.return_value = output_dataset
         
         # Asign mock class to the converter
-        setattr(conv_mock, f"{fmt.capitalize()}Converter", conv_class_mock)
-        converter_mocks[f'converters.{fmt}_converter'] = conv_mock
+        setattr(conv_mock, f"{to_camel_case(fmt)}Converter", conv_class_mock)
+        converter_mocks[f'datasetconverter.converters.{fmt}_converter'] = conv_mock
     
     # All mocks in a single dictionary
     all_mocks = {**format_mocks, **converter_mocks}
@@ -110,7 +110,7 @@ def test_missing_converter_class(runner, mocker, tmp_path):
     input_dir = tmp_path / "input"
     input_dir.mkdir()
     
-    mocker.patch.dict('sys.modules', {'converters.coco_converter': None})
+    mocker.patch.dict('sys.modules', {'datasetconverter.converters.coco_converter': None})
     
     result = runner.invoke(
         dconverter,
@@ -126,7 +126,7 @@ def test_general_conversion_error(runner, mocker, tmp_path):
     input_dir.mkdir()
     
     mocker.patch(
-        'converters.coco_converter.CocoConverter.toNeutral',
+        'datasetconverter.converters.coco_converter.CocoConverter.toNeutral',
         side_effect=Exception("Conversion failed")
     )
     

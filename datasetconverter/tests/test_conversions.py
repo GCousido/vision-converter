@@ -1,15 +1,15 @@
 import pytest
 import os
 
-from converters.coco_converter import CocoConverter
-from converters.pascal_voc_converter import PascalVocConverter
-from converters.yolo_converter import YoloConverter
-from formats.coco import CocoFile, CocoFormat, CocoImage
-from formats.neutral_format import NeutralFormat
-from formats.pascal_voc import PascalVocFormat
-from formats.yolo import YoloFormat
-from utils.bbox_utils import PascalVocBBox_to_CocoBBox, PascalVocBBox_to_YoloBBox, YoloBBox_to_PascalVocBBox
-from utils.file_utils import get_image_info_from_file, get_image_path
+from datasetconverter.converters.coco_converter import CocoConverter
+from datasetconverter.converters.pascal_voc_converter import PascalVocConverter
+from datasetconverter.converters.yolo_converter import YoloConverter
+from datasetconverter.formats.coco import CocoFile, CocoFormat, CocoImage
+from datasetconverter.formats.neutral_format import NeutralFormat
+from datasetconverter.formats.pascal_voc import PascalVocFormat
+from datasetconverter.formats.yolo import YoloFormat
+from datasetconverter.utils.bbox_utils import PascalVocBBox_to_CocoBBox, PascalVocBBox_to_YoloBBox, YoloBBox_to_PascalVocBBox
+from datasetconverter.utils.file_utils import get_image_info_from_file, get_image_path
 
 
 def bbox_almost_equal(bbox1, bbox2, epsilon=1e-3) -> bool:

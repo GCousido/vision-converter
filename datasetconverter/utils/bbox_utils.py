@@ -1,6 +1,6 @@
-from formats.coco import CocoBoundingBox
-from formats.pascal_voc import PascalVocBoundingBox
-from formats.yolo import YoloBoundingBox
+from ..formats.coco import CocoBoundingBox
+from ..formats.pascal_voc import PascalVocBoundingBox
+from ..formats.yolo import YoloBoundingBox
 
 
 def YoloBBox_to_PascalVocBBox(bbox: YoloBoundingBox, image_width: int, image_height: int) -> PascalVocBoundingBox:

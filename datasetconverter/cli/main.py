@@ -5,7 +5,7 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from formats.neutral_format import NeutralFormat
+from ..formats.neutral_format import NeutralFormat
 
 FORMATS = ['coco', 'pascal_voc', 'yolo']
 
@@ -51,20 +51,20 @@ def dconverter(input_format, input_path, output_format, output_path):
 
     try:
         # Dynamic import of format classes
-        input_format_module = importlib.import_module(f'formats.{input_format}')
+        input_format_module = importlib.import_module(f'datasetconverter.formats.{input_format}')
         input_format_class_name = f"{to_camel_case(input_format)}Format"
         input_format_class = getattr(input_format_module, input_format_class_name)
 
-        output_format_module = importlib.import_module(f'formats.{output_format}')
+        output_format_module = importlib.import_module(f'datasetconverter.formats.{output_format}')
         output_format_class_name = f"{to_camel_case(output_format)}Format"
         output_format_class = getattr(output_format_module, output_format_class_name)
         
         # Dynamic import of converters
-        input_converter_module = importlib.import_module(f'converters.{input_format}_converter')
+        input_converter_module = importlib.import_module(f'datasetconverter.converters.{input_format}_converter')
         input_converter_class_name = f"{to_camel_case(input_format)}Converter"
         input_converter_class = getattr(input_converter_module,input_converter_class_name)
 
-        output_converter_module = importlib.import_module(f'converters.{output_format}_converter')
+        output_converter_module = importlib.import_module(f'datasetconverter.converters.{output_format}_converter')
         output_converter_class_name = f"{to_camel_case(output_format)}Converter"
         output_converter_class = getattr(output_converter_module, output_converter_class_name)
         

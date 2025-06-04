@@ -1,7 +1,7 @@
 from pathlib import Path
-from converters.dataset_converter import DatasetConverter
-from formats.neutral_format import ImageOrigin, NeutralAnnotation, NeutralFile, NeutralFormat
-from formats.pascal_voc import PascalVocFile, PascalVocFormat, PascalVocObject, PascalVocSource
+from .dataset_converter import DatasetConverter
+from ..formats.neutral_format import ImageOrigin, NeutralAnnotation, NeutralFile, NeutralFormat
+from ..formats.pascal_voc import PascalVocFile, PascalVocFormat, PascalVocObject, PascalVocSource
 
 
 class PascalVocConverter(DatasetConverter[PascalVocFormat]):

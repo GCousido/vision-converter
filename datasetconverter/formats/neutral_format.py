@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Optional
-from formats.base import Annotation, DatasetFormat, FileFormat
-from formats.pascal_voc import PascalVocBoundingBox
+from .base import Annotation, DatasetFormat, FileFormat
+from .pascal_voc import PascalVocBoundingBox
 
 
 class NeutralAnnotation(Annotation[PascalVocBoundingBox]):

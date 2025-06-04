@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional
 
-from utils.file_utils import get_image_path
+from ..utils.file_utils import get_image_path
 
 from .base import Annotation, BoundingBox, DatasetFormat, FileFormat
 

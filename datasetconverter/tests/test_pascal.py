@@ -1,7 +1,7 @@
 from pathlib import Path
 import pytest
 import xml.etree.ElementTree as ET
-from formats.pascal_voc import PascalVocBoundingBox, PascalVocFile, PascalVocFormat, PascalVocObject, PascalVocSource
+from datasetconverter.formats.pascal_voc import PascalVocBoundingBox, PascalVocFile, PascalVocFormat, PascalVocObject, PascalVocSource
 
 # Helper for creating XML Pascal VOC files
 def create_pascalvoc_xml(path, filename, objects, width=800, height=600, depth=3, folder="VOC", segmented=0, source=None):

@@ -3,11 +3,11 @@ import re
 
 from pathlib import Path
 
-from converters.dataset_converter import DatasetConverter
-from formats.coco import Category, CocoBoundingBox, CocoFile, CocoFormat, CocoImage, CocoLabel, Info, License
-from formats.neutral_format import ImageOrigin, NeutralAnnotation, NeutralFile, NeutralFormat
-from formats.pascal_voc import PascalVocBoundingBox
-from utils.bbox_utils import CocoBBox_to_PascalVocBBox, PascalVocBBox_to_CocoBBox
+from .dataset_converter import DatasetConverter
+from ..formats.coco import Category, CocoBoundingBox, CocoFile, CocoFormat, CocoImage, CocoLabel, Info, License
+from ..formats.neutral_format import ImageOrigin, NeutralAnnotation, NeutralFile, NeutralFormat
+from ..formats.pascal_voc import PascalVocBoundingBox
+from ..utils.bbox_utils import CocoBBox_to_PascalVocBBox, PascalVocBBox_to_CocoBBox
 
 
 class CocoConverter(DatasetConverter[CocoFormat]):

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 import xml.etree.ElementTree as ET
 
 from .base import Annotation, BoundingBox, DatasetFormat, FileFormat

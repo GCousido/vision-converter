@@ -2,7 +2,7 @@ from pathlib import Path
 from PIL import Image
 import pytest
 
-from formats.yolo import YoloAnnotation, YoloBoundingBox, YoloFile, YoloFormat
+from datasetconverter.formats.yolo import YoloAnnotation, YoloBoundingBox, YoloFile, YoloFormat
 
 # Fixture for YOLO dataset
 @pytest.fixture

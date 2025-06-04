@@ -2,7 +2,7 @@ import pytest
 from pathlib import Path
 import json
 
-from formats.coco import Category, CocoBoundingBox, CocoFile, CocoFormat, CocoImage, CocoLabel, Info, License, RLESegmentation
+from datasetconverter.formats.coco import Category, CocoBoundingBox, CocoFile, CocoFormat, CocoImage, CocoLabel, Info, License, RLESegmentation
 
 def test_coco_format_creation(sample_coco_dataset):
     # Load dataset
