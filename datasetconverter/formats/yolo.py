@@ -76,7 +76,7 @@ class YoloFormat(DatasetFormat[YoloFile]):
     """
     class_labels: dict[int, str]
 
-    def __init__(self, name: str, files: list[YoloFile], class_labels: dict[int, str], folder_path: Optional[str] = None, ) -> None:
+    def __init__(self, name: str, files: list[YoloFile], class_labels: dict[int, str], folder_path: Optional[str] = None) -> None:
         super().__init__(name,files, folder_path)
         self.class_labels = class_labels
 
@@ -163,7 +163,7 @@ class YoloFormat(DatasetFormat[YoloFile]):
         
         ```
         {folder}/  
-            ├── images/      # (Note: copies images if path exists)  
+            ├── images/
             └── labels/  
                 ├── classes.txt
                 └── *.txt    # Annotation files  
@@ -173,7 +173,7 @@ class YoloFormat(DatasetFormat[YoloFile]):
         """
         folder_path = Path(folder)
         
-        # # Create any folder if necesary
+        # Create any folder if necesary
         folder_path.mkdir(parents=True, exist_ok=True)
         
         # Create subfolders labels and images
