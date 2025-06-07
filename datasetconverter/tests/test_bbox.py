@@ -1,7 +1,10 @@
 from datasetconverter.formats.coco import CocoBoundingBox
+from datasetconverter.formats.createml import CreateMLBoundingBox
 from datasetconverter.formats.pascal_voc import PascalVocBoundingBox
 from datasetconverter.formats.yolo import YoloBoundingBox
 from datasetconverter.utils.bbox_utils import (
+    CreateMLBBox_to_PascalVocBBox,
+    PascalVocBBox_to_CreateMLBBox,
     YoloBBox_to_PascalVocBBox,
     CocoBBox_to_PascalVocBBox,
     PascalVocBBox_to_YoloBBox,
@@ -175,3 +178,108 @@ def test_PascalVocBBox_to_CocoBBox():
     assert new_bbox5.width == expected_bbox5.width
     assert new_bbox5.height == expected_bbox5.height
 
+
+def test_CreateMLBBox_to_PascalVocBBox():
+    """Test conversion from CreateML bounding box format to Pascal VOC format."""
+    
+    # Test cases with center coordinates + dimensions -> corner coordinates
+    createml_bbox1 = CreateMLBoundingBox(50, 50, 20, 30)    # Center at (50,50), size 20x30
+    createml_bbox2 = CreateMLBoundingBox(100, 150, 60, 80)  # Center at (100,150), size 60x80
+    createml_bbox3 = CreateMLBoundingBox(25, 75, 40, 50)    # Center at (25,75), size 40x50
+    createml_bbox4 = CreateMLBoundingBox(200, 300, 100, 200) # Center at (200,300), size 100x200
+    createml_bbox5 = CreateMLBoundingBox(15, 25, 10, 20)    # Center at (15,25), size 10x20
+
+    # Expected Pascal VOC format: (x_min, y_min, x_max, y_max)
+    expected_bbox1 = PascalVocBoundingBox(40, 35, 60, 65)   # 50±10, 50±15
+    expected_bbox2 = PascalVocBoundingBox(70, 110, 130, 190) # 100±30, 150±40
+    expected_bbox3 = PascalVocBoundingBox(5, 50, 45, 100)   # 25±20, 75±25
+    expected_bbox4 = PascalVocBoundingBox(150, 200, 250, 400) # 200±50, 300±100
+    expected_bbox5 = PascalVocBoundingBox(10, 15, 20, 35)   # 15±5, 25±10
+
+    # Case 1: Standard center conversion
+    result1 = CreateMLBBox_to_PascalVocBBox(createml_bbox1)
+    assert result1.x_min == expected_bbox1.x_min
+    assert result1.y_min == expected_bbox1.y_min
+    assert result1.x_max == expected_bbox1.x_max
+    assert result1.y_max == expected_bbox1.y_max
+
+    # Case 2: Medium sized box
+    result2 = CreateMLBBox_to_PascalVocBBox(createml_bbox2)
+    assert result2.x_min == expected_bbox2.x_min
+    assert result2.y_min == expected_bbox2.y_min
+    assert result2.x_max == expected_bbox2.x_max
+    assert result2.y_max == expected_bbox2.y_max
+
+    # Case 3: Box near image edge
+    result3 = CreateMLBBox_to_PascalVocBBox(createml_bbox3)
+    assert result3.x_min == expected_bbox3.x_min
+    assert result3.y_min == expected_bbox3.y_min
+    assert result3.x_max == expected_bbox3.x_max
+    assert result3.y_max == expected_bbox3.y_max
+
+    # Case 4: Large box
+    result4 = CreateMLBBox_to_PascalVocBBox(createml_bbox4)
+    assert result4.x_min == expected_bbox4.x_min
+    assert result4.y_min == expected_bbox4.y_min
+    assert result4.x_max == expected_bbox4.x_max
+    assert result4.y_max == expected_bbox4.y_max
+
+    # Case 5: Small box
+    result5 = CreateMLBBox_to_PascalVocBBox(createml_bbox5)
+    assert result5.x_min == expected_bbox5.x_min
+    assert result5.y_min == expected_bbox5.y_min
+    assert result5.x_max == expected_bbox5.x_max
+    assert result5.y_max == expected_bbox5.y_max
+
+
+def test_PascalVocBBox_to_CreateMLBBox():
+    """Test conversion from Pascal VOC bounding box format to CreateML format."""
+    
+    # Test cases with corner coordinates -> center coordinates + dimensions
+    pascal_bbox1 = PascalVocBoundingBox(40, 35, 60, 65) 
+    pascal_bbox2 = PascalVocBoundingBox(70, 110, 130, 190)  
+    pascal_bbox3 = PascalVocBoundingBox(5, 50, 45, 100)     
+    pascal_bbox4 = PascalVocBoundingBox(150, 200, 250, 400) 
+    pascal_bbox5 = PascalVocBoundingBox(10, 15, 20, 35)     
+
+    # Expected CreateML format: center coordinates + dimensions
+    expected_bbox1 = CreateMLBoundingBox(50, 50, 20, 30)
+    expected_bbox2 = CreateMLBoundingBox(100, 150, 60, 80)
+    expected_bbox3 = CreateMLBoundingBox(25, 75, 40, 50)
+    expected_bbox4 = CreateMLBoundingBox(200, 300, 100, 200)
+    expected_bbox5 = CreateMLBoundingBox(15, 25, 10, 20)
+
+    # Case 1: Standard corner to center conversion
+    result1 = PascalVocBBox_to_CreateMLBBox(pascal_bbox1)
+    assert result1.x_center == expected_bbox1.x_center
+    assert result1.y_center == expected_bbox1.y_center
+    assert result1.width == expected_bbox1.width
+    assert result1.height == expected_bbox1.height
+
+    # Case 2: Medium sized box
+    result2 = PascalVocBBox_to_CreateMLBBox(pascal_bbox2)
+    assert result2.x_center == expected_bbox2.x_center
+    assert result2.y_center == expected_bbox2.y_center
+    assert result2.width == expected_bbox2.width
+    assert result2.height == expected_bbox2.height
+
+    # Case 3: Box with edge coordinates
+    result3 = PascalVocBBox_to_CreateMLBBox(pascal_bbox3)
+    assert result3.x_center == expected_bbox3.x_center
+    assert result3.y_center == expected_bbox3.y_center
+    assert result3.width == expected_bbox3.width
+    assert result3.height == expected_bbox3.height
+
+    # Case 4: Large box
+    result4 = PascalVocBBox_to_CreateMLBBox(pascal_bbox4)
+    assert result4.x_center == expected_bbox4.x_center
+    assert result4.y_center == expected_bbox4.y_center
+    assert result4.width == expected_bbox4.width
+    assert result4.height == expected_bbox4.height
+
+    # Case 5: Small box
+    result5 = PascalVocBBox_to_CreateMLBBox(pascal_bbox5)
+    assert result5.x_center == expected_bbox5.x_center
+    assert result5.y_center == expected_bbox5.y_center
+    assert result5.width == expected_bbox5.width
+    assert result5.height == expected_bbox5.height
