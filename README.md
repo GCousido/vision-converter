@@ -34,21 +34,21 @@ Conversion Process:
 
 ### Install from Source
 
-Clone the repository and install the package in editable mode:
+Clone the repository and install the package:
 
 ```bash
 git clone https://github.com/GCousido/TFG-DatasetConverter.git
-cd dconverter
-pip install -e .
+cd TFG-DatasetConverter
+pip install  .
 ```
 
 ### Development Installation
 
-For development (including dependencies for testing):
+For development (including dependencies for testing) and in editable mode:
 
 ```bash
 git clone https://github.com/GCousido/TFG-DatasetConverter.git
-cd dconverter
+cd TFG-DatasetConverter
 pip install -e ".[dev]"
 ```
 
