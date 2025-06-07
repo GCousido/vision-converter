@@ -1,3 +1,4 @@
+from ..formats.createml import CreateMLBoundingBox
 from ..formats.coco import CocoBoundingBox
 from ..formats.pascal_voc import PascalVocBoundingBox
 from ..formats.yolo import YoloBoundingBox
@@ -63,6 +64,30 @@ def CocoBBox_to_PascalVocBBox(bbox: CocoBoundingBox) -> PascalVocBoundingBox:
         y_max=y_max
     )
 
+def CreateMLBBox_to_PascalVocBBox(bbox: CreateMLBoundingBox) -> PascalVocBoundingBox:
+    """Converts CreateML bounding box (center + size) to Pascal VOC absolute coordinates.
+    
+    Args:
+        bbox (CreateMLBoundingBox): CreateML format box with center coordinates and dimensions
+    
+    Returns:
+        PascalVocBoundingBox: Box in Pascal VOC format [x_min, y_min, x_max, y_max]
+    
+    Note:
+        CreateML format: [x_center, y_center, width, height] absolute pixels (center-based)
+        Pascal VOC: [x_min, y_min, x_max, y_max] absolute pixels (corner-based)
+    """
+    x_min = round(bbox.x_center - bbox.width / 2)
+    y_min = round(bbox.y_center - bbox.height / 2)
+    x_max = round(bbox.x_center + bbox.width / 2)
+    y_max = round(bbox.y_center + bbox.height / 2)
+    
+    return PascalVocBoundingBox(
+        x_min=x_min,
+        y_min=y_min,
+        x_max=x_max,
+        y_max=y_max
+    )
 
 
 def PascalVocBBox_to_YoloBBox(bbox: PascalVocBoundingBox, image_width: int, image_height: int) -> YoloBoundingBox:
@@ -114,6 +139,32 @@ def PascalVocBBox_to_CocoBBox(bbox: PascalVocBoundingBox) -> CocoBoundingBox:
     return CocoBoundingBox(
         x_min=x_min,
         y_min=y_min,
+        width=width,
+        height=height
+    )
+
+
+def PascalVocBBox_to_CreateMLBBox(bbox: PascalVocBoundingBox) -> CreateMLBoundingBox:
+    """Converts Pascal VOC absolute bounding box to CreateML center-based coordinates.
+    
+    Args:
+        bbox (PascalVocBoundingBox): Pascal VOC format box [x_min, y_min, x_max, y_max]
+    
+    Returns:
+        CreateMLBoundingBox: Box in CreateML format with center coordinates and dimensions
+    
+    Note:
+        Pascal VOC: [x_min, y_min, x_max, y_max] absolute pixels (corner-based)
+        CreateML format: [x_center, y_center, width, height] absolute pixels (center-based)
+    """
+    x_center = (bbox.x_min + bbox.x_max) / 2
+    y_center = (bbox.y_min + bbox.y_max) / 2
+    width = bbox.x_max - bbox.x_min
+    height = bbox.y_max - bbox.y_min
+    
+    return CreateMLBoundingBox(
+        x_center=x_center,
+        y_center=y_center,
         width=width,
         height=height
     )
