@@ -3,13 +3,15 @@ import os
 
 from datasetconverter.converters.coco_converter import CocoConverter
 from datasetconverter.converters.createml_converter import CreateMLConverter
+from datasetconverter.converters.labelme_converter import LabelMeConverter
 from datasetconverter.converters.pascal_voc_converter import PascalVocConverter
 from datasetconverter.converters.tensorflow_csv_converter import TensorflowCsvConverter
 from datasetconverter.converters.yolo_converter import YoloConverter
 from datasetconverter.formats.coco import CocoFile, CocoFormat, CocoImage
 from datasetconverter.formats.createml import CreateMLFormat
+from datasetconverter.formats.labelme import LabelMeCircle, LabelMeFormat
 from datasetconverter.formats.neutral_format import NeutralFormat
-from datasetconverter.formats.pascal_voc import PascalVocFormat
+from datasetconverter.formats.pascal_voc import PascalVocBoundingBox, PascalVocFormat
 from datasetconverter.formats.tensorflow_csv import TensorflowCsvFormat
 from datasetconverter.formats.yolo import YoloFormat
 from datasetconverter.utils.bbox_utils import CreateMLBBox_to_PascalVocBBox, PascalVocBBox_to_CocoBBox, PascalVocBBox_to_CreateMLBBox, PascalVocBBox_to_YoloBBox, YoloBBox_to_PascalVocBBox
@@ -832,3 +834,345 @@ def test_coco_to_tensorflow_csv():
         assert tf_csv_file.filename == corresponding_coco_image.file_name
         assert tf_csv_file.width == corresponding_coco_image.width
         assert tf_csv_file.height == corresponding_coco_image.height
+
+
+def test_labelme_original_and_labelme_reconverted():
+    """Test LabelMe format idempotence through neutral conversion."""
+    base_dir = os.path.dirname(__file__)
+    labelme_path = os.path.join(base_dir, "test_resources/LABELME_TEST")
+
+    # 1. Load LabelMe Dataset
+    labelme_original: LabelMeFormat = LabelMeFormat.read_from_folder(labelme_path)
+    
+    # 2. LabelMe → Neutral → LabelMe
+    neutral_from_labelme: NeutralFormat = LabelMeConverter.toNeutral(labelme_original)
+    labelme_reconverted: LabelMeFormat = LabelMeConverter.fromNeutral(neutral_from_labelme)
+    
+    # Check idempotence
+    assert labelme_original.name == labelme_reconverted.name
+    assert len(labelme_original.files) == len(labelme_reconverted.files)
+
+    for orig_file, reconv_file in zip(labelme_original.files, labelme_reconverted.files):
+        assert orig_file.filename == reconv_file.filename
+        assert orig_file.imageWidth == reconv_file.imageWidth
+        assert orig_file.imageHeight == reconv_file.imageHeight
+        assert len(orig_file.annotations) == len(reconv_file.annotations)
+
+        for i, (orig_ann, reconv_ann) in enumerate(zip(orig_file.annotations, reconv_file.annotations)):
+            # Check label matches
+            assert orig_ann.label == reconv_ann.label, f"Annotation {i}: label '{orig_ann.label}' != '{reconv_ann.label}'"
+            
+            # Check shape type matches
+            assert orig_ann.geometry.shape_type == reconv_ann.geometry.shape_type, f"Annotation {i}: shape_type mismatch"
+            
+            # Check coordinates match (allowing for small floating point differences)
+            orig_coords = orig_ann.geometry.getCoordinates()
+            reconv_coords = reconv_ann.geometry.getCoordinates()
+            
+            for j, (orig_coord, reconv_coord) in enumerate(zip(orig_coords, reconv_coords)):
+                assert orig_coord == pytest.approx(reconv_coord, rel=1e-3, abs=1e-3), f"Annotation {i}, coordinate {j} mismatch"
+            
+            # Check optional attributes
+            assert orig_ann.group_id == reconv_ann.group_id
+            assert orig_ann.description == reconv_ann.description
+
+
+def test_labelme_to_pascalvoc():
+    """Test conversion from LabelMe to Pascal VOC format."""
+    base_dir = os.path.dirname(__file__)
+    labelme_path = os.path.join(base_dir, "test_resources/LABELME_TEST")
+
+    # 1. Load LabelMe Dataset
+    labelme_original: LabelMeFormat = LabelMeFormat.read_from_folder(labelme_path)
+    
+    # 2. LabelMe → Neutral → Pascal VOC
+    neutral_from_labelme: NeutralFormat = LabelMeConverter.toNeutral(labelme_original)
+    pascal_converted: PascalVocFormat = PascalVocConverter.fromNeutral(neutral_from_labelme)
+    
+    # Check Pascal VOC structure
+    assert isinstance(pascal_converted, PascalVocFormat)
+    assert len(pascal_converted.files) == len(labelme_original.files)
+
+    # Check file values
+    for pascal_file, labelme_file in zip(pascal_converted.files, labelme_original.files):
+        assert len(pascal_file.annotations) == len(labelme_file.annotations)
+        assert pascal_file.width == labelme_file.imageWidth
+        assert pascal_file.height == labelme_file.imageHeight
+        assert not pascal_file.segmented
+        assert pascal_file.filename == labelme_file.filename
+        assert pascal_file.source.database == labelme_original.name
+        assert pascal_file.source.annotation == "Pascal Voc"
+        assert pascal_file.source.image == ""
+
+        # Check annotation values
+        for pascal_annotation, labelme_annotation in zip(pascal_file.annotations, labelme_file.annotations):
+            assert pascal_annotation.name == labelme_annotation.label
+            
+            # Check that bounding boxes match (LabelMe shapes converted to bounding boxes)
+            labelme_bbox = labelme_annotation.geometry.getBoundingBox()
+            pascal_bbox = pascal_annotation.geometry
+            assert isinstance(labelme_bbox, PascalVocBoundingBox)
+            assert labelme_bbox.x_min == pytest.approx(pascal_bbox.x_min, rel=1e-3, abs=1e-3)
+            assert labelme_bbox.y_min == pytest.approx(pascal_bbox.y_min, rel=1e-3, abs=1e-3)
+            assert labelme_bbox.x_max == pytest.approx(pascal_bbox.x_max, rel=1e-3, abs=1e-3)
+            assert labelme_bbox.y_max == pytest.approx(pascal_bbox.y_max, rel=1e-3, abs=1e-3)
+
+
+def test_labelme_to_yolo():
+    """Test conversion from LabelMe to YOLO format."""
+    base_dir = os.path.dirname(__file__)
+    labelme_path = os.path.join(base_dir, "test_resources/LABELME_TEST")
+
+    # 1. Load LabelMe Dataset
+    labelme_original: LabelMeFormat = LabelMeFormat.read_from_folder(labelme_path)
+    
+    # 2. LabelMe → Neutral → YOLO
+    neutral_from_labelme: NeutralFormat = LabelMeConverter.toNeutral(labelme_original)
+    yolo_converted: YoloFormat = YoloConverter.fromNeutral(neutral_from_labelme)
+    
+    # Check YOLO structure
+    assert isinstance(yolo_converted, YoloFormat)
+    assert len(yolo_converted.files) == len(labelme_original.files)
+
+    # Check file values
+    for yolo_file, labelme_file in zip(yolo_converted.files, labelme_original.files):
+        assert len(yolo_file.annotations) == len(labelme_file.annotations)
+        assert yolo_file.filename == labelme_file.filename
+        assert yolo_file.width == labelme_file.imageWidth
+        assert yolo_file.height == labelme_file.imageHeight
+        
+        # Check annotation values
+        for yolo_annotation, labelme_annotation in zip(yolo_file.annotations, labelme_file.annotations):
+            # Get class name from YOLO class_labels mapping
+            yolo_class_name = yolo_converted.class_labels[yolo_annotation.id_class]
+            assert yolo_class_name == labelme_annotation.label
+            
+            # Check bbox conversion (LabelMe bounding box to YOLO coordinates)
+            labelme_bbox = labelme_annotation.geometry.getBoundingBox()
+            assert isinstance(labelme_bbox, PascalVocBoundingBox)
+            expected_yolo_bbox = PascalVocBBox_to_YoloBBox(labelme_bbox, labelme_file.imageWidth, labelme_file.imageHeight)
+            assert yolo_annotation.geometry.getBoundingBox() == pytest.approx(expected_yolo_bbox.getBoundingBox(), rel=1e-3, abs=1e-3)
+
+
+def test_labelme_to_coco():
+    """Test conversion from LabelMe to COCO format."""
+    base_dir = os.path.dirname(__file__)
+    labelme_path = os.path.join(base_dir, "test_resources/LABELME_TEST")
+
+    # 1. Load LabelMe Dataset
+    labelme_original: LabelMeFormat = LabelMeFormat.read_from_folder(labelme_path)
+    
+    # 2. LabelMe → Neutral → COCO
+    neutral_from_labelme: NeutralFormat = LabelMeConverter.toNeutral(labelme_original)
+    coco_converted: CocoFormat = CocoConverter.fromNeutral(neutral_from_labelme)
+    
+    # Check COCO structure
+    assert isinstance(coco_converted, CocoFormat)
+    assert len(coco_converted.files) == 1
+    
+    # Calculate total annotations
+    total_annotations = sum(len(file.annotations) for file in labelme_original.files)
+    assert len(coco_converted.files[0].annotations) == total_annotations
+    
+    for coco_file in coco_converted.files:
+        # Check image metadata
+        for labelme_file, coco_image in zip(labelme_original.files, coco_file.images):
+            assert coco_image.file_name == labelme_file.filename
+            assert coco_image.height == labelme_file.imageHeight
+            assert coco_image.width == labelme_file.imageWidth
+
+        # Check annotations
+        for coco_annotation in coco_file.annotations:
+            # Check annotation values
+            assert coco_annotation.area == (coco_annotation.geometry.width * coco_annotation.geometry.height)
+            coco_category_name = next((c.name for c in coco_file.categories if c.id == coco_annotation.category_id), None)
+            
+            # Find corresponding LabelMe annotation by bbox matching
+            labelme_class_name = None
+            found = False
+
+            for labelme_file in labelme_original.files:
+                if found:
+                    break
+                for labelme_annotation in labelme_file.annotations:
+                    # Convert LabelMe bounding box to COCO format for comparison
+                    labelme_bbox = labelme_annotation.geometry.getBoundingBox()
+                    assert isinstance(labelme_bbox, PascalVocBoundingBox)
+                    expected_coco_bbox = PascalVocBBox_to_CocoBBox(labelme_bbox)
+                    bbox1 = expected_coco_bbox.getBoundingBox()
+                    bbox2 = coco_annotation.geometry.getBoundingBox()
+                    if bbox_almost_equal(bbox1, bbox2, 2):
+                        labelme_class_name = labelme_annotation.label
+                        found = True
+                        break
+            
+            # Check category name matches
+            assert coco_category_name == labelme_class_name
+
+
+def test_pascalvoc_to_labelme():
+    """Test conversion from Pascal VOC to LabelMe format."""
+    base_dir = os.path.dirname(__file__)
+    pascal_path = os.path.join(base_dir, "test_resources/PASCAL_VOC_TEST")
+
+    # 1. Load Pascal VOC Dataset
+    pascal_original: PascalVocFormat = PascalVocFormat.read_from_folder(pascal_path)
+    
+    # 2. Pascal VOC → Neutral → LabelMe
+    neutral_from_pascal: NeutralFormat = PascalVocConverter.toNeutral(pascal_original)
+    labelme_converted: LabelMeFormat = LabelMeConverter.fromNeutral(neutral_from_pascal)
+
+    # Check LabelMe structure
+    assert isinstance(labelme_converted, LabelMeFormat)
+    assert len(labelme_converted.files) == len(pascal_original.files)
+
+    # Check file values
+    for labelme_file, pascal_file in zip(labelme_converted.files, pascal_original.files):
+        assert len(labelme_file.annotations) == len(pascal_file.annotations)
+        assert labelme_file.filename == pascal_file.filename
+        assert labelme_file.imageHeight == pascal_file.height
+        assert labelme_file.imageWidth == pascal_file.width
+        
+        # Check annotation values
+        for labelme_annotation, pascal_annotation in zip(labelme_file.annotations, pascal_file.annotations):
+            assert labelme_annotation.label == pascal_annotation.name
+            
+            # Check that shapes are rectangles (converted from Pascal VOC bounding boxes)
+            assert labelme_annotation.geometry.shape_type == "rectangle"
+            
+            # Check bounding box coordinates match
+            labelme_bbox = labelme_annotation.geometry.getBoundingBox()
+            pascal_bbox = pascal_annotation.geometry
+            assert isinstance(labelme_bbox, PascalVocBoundingBox)
+            assert labelme_bbox.x_min == pytest.approx(pascal_bbox.x_min, rel=1e-6, abs=1e-6)
+            assert labelme_bbox.y_min == pytest.approx(pascal_bbox.y_min, rel=1e-6, abs=1e-6)
+            assert labelme_bbox.x_max == pytest.approx(pascal_bbox.x_max, rel=1e-6, abs=1e-6)
+            assert labelme_bbox.y_max == pytest.approx(pascal_bbox.y_max, rel=1e-6, abs=1e-6)
+
+
+def test_yolo_to_labelme():
+    """Test conversion from YOLO to LabelMe format."""
+    base_dir = os.path.dirname(__file__)
+    yolo_path = os.path.join(base_dir, "test_resources/YOLO_TEST")
+
+    # 1. Load YOLO Dataset
+    yolo_original: YoloFormat = YoloFormat.read_from_folder(yolo_path)
+    
+    # 2. YOLO → Neutral → LabelMe
+    neutral_from_yolo: NeutralFormat = YoloConverter.toNeutral(yolo_original)
+    labelme_converted: LabelMeFormat = LabelMeConverter.fromNeutral(neutral_from_yolo)
+    
+    # Check LabelMe structure
+    assert isinstance(labelme_converted, LabelMeFormat)
+    assert len(labelme_converted.files) == len(yolo_original.files)
+
+    # Check file values
+    for labelme_file, yolo_file in zip(labelme_converted.files, yolo_original.files):
+        assert len(labelme_file.annotations) == len(yolo_file.annotations)
+        assert labelme_file.filename == yolo_file.filename
+        
+        # Check annotation values
+        for labelme_annotation, yolo_annotation in zip(labelme_file.annotations, yolo_file.annotations):
+            # Get class name from YOLO class_labels mapping
+            yolo_class_name = yolo_original.class_labels[yolo_annotation.id_class]
+            assert labelme_annotation.label == yolo_class_name
+            
+            # Check that shapes are rectangles (converted from YOLO bounding boxes)
+            assert labelme_annotation.geometry.shape_type == "rectangle"
+
+
+def test_coco_to_labelme():
+    """Test conversion from COCO to LabelMe format."""
+    base_dir = os.path.dirname(__file__)
+    coco_path = os.path.join(base_dir, "test_resources/COCO_TEST")
+
+    # 1. Load COCO Dataset
+    coco_original: CocoFormat = CocoFormat.read_from_folder(coco_path)
+    
+    # 2. COCO → Neutral → LabelMe
+    neutral_from_coco: NeutralFormat = CocoConverter.toNeutral(coco_original)
+    labelme_converted: LabelMeFormat = LabelMeConverter.fromNeutral(neutral_from_coco)
+    
+    # Check LabelMe structure
+    assert isinstance(labelme_converted, LabelMeFormat)
+    assert len(labelme_converted.files) == len(coco_original.files[0].images)
+    
+    # Calculate total annotations
+    total_annotations = sum(len(file.annotations) for file in labelme_converted.files)
+    assert total_annotations == len(coco_original.files[0].annotations)
+    
+    # Check that every LabelMe class is in COCO categories
+    all_labelme_labels = set()
+    for file in labelme_converted.files:
+        for ann in file.annotations:
+            all_labelme_labels.add(ann.label)
+    
+    coco_category_names = {c.name for c in coco_original.files[0].categories}
+    assert all_labelme_labels.issubset(coco_category_names)
+    
+    # Check file correspondence
+    for i, labelme_file in enumerate(labelme_converted.files):
+        corresponding_coco_image = coco_original.files[0].images[i]
+        assert labelme_file.filename == corresponding_coco_image.file_name
+        assert labelme_file.imageWidth == corresponding_coco_image.width
+        assert labelme_file.imageHeight == corresponding_coco_image.height
+
+
+def test_labelme_shape_preservation():
+    """Test that LabelMe shape information is preserved through neutral conversion."""
+    base_dir = os.path.dirname(__file__)
+    labelme_path = os.path.join(base_dir, "test_resources/LABELME_TEST")
+
+    # 1. Load LabelMe Dataset
+    labelme_original: LabelMeFormat = LabelMeFormat.read_from_folder(labelme_path)
+    
+    # 2. LabelMe → Neutral → LabelMe
+    neutral_from_labelme: NeutralFormat = LabelMeConverter.toNeutral(labelme_original)
+    labelme_reconverted: LabelMeFormat = LabelMeConverter.fromNeutral(neutral_from_labelme)
+    
+    # Check that shape-specific attributes are preserved
+    for orig_file, reconv_file in zip(labelme_original.files, labelme_reconverted.files):
+        for orig_ann, reconv_ann in zip(orig_file.annotations, reconv_file.annotations):
+            # Check shape type preservation
+            assert orig_ann.geometry.shape_type == reconv_ann.geometry.shape_type
+            
+            # Check coordinates preservation for different shape types
+            if orig_ann.geometry.shape_type == "circle":
+                # Check radius preservation
+                assert isinstance(orig_ann.geometry, LabelMeCircle)
+                orig_radius = orig_ann.geometry.radius
+                assert isinstance(reconv_ann.geometry, LabelMeCircle)
+                reconv_radius = reconv_ann.geometry.radius
+                assert orig_radius == pytest.approx(reconv_radius, rel=1e-3, abs=1e-3)
+            
+            # Check that complex shapes maintain their coordinate structure
+            orig_coords = orig_ann.geometry.getCoordinates()
+            reconv_coords = reconv_ann.geometry.getCoordinates()
+            assert len(orig_coords) == len(reconv_coords)
+
+
+def test_labelme_metadata_preservation():
+    """Test that LabelMe metadata is preserved through neutral conversion."""
+    base_dir = os.path.dirname(__file__)
+    labelme_path = os.path.join(base_dir, "test_resources/LABELME_TEST")
+
+    # 1. Load LabelMe Dataset
+    labelme_original: LabelMeFormat = LabelMeFormat.read_from_folder(labelme_path)
+    
+    # 2. LabelMe → Neutral → LabelMe
+    neutral_from_labelme: NeutralFormat = LabelMeConverter.toNeutral(labelme_original)
+    labelme_reconverted: LabelMeFormat = LabelMeConverter.fromNeutral(neutral_from_labelme)
+    
+    # Check that LabelMe-specific metadata is preserved
+    for orig_file, reconv_file in zip(labelme_original.files, labelme_reconverted.files):
+        # Check version preservation
+        assert orig_file.version == reconv_file.version
+        
+        # Check flags preservation
+        assert orig_file.flags == reconv_file.flags
+        
+        for orig_ann, reconv_ann in zip(orig_file.annotations, reconv_file.annotations):
+            # Check annotation-level metadata
+            assert orig_ann.group_id == reconv_ann.group_id
+            assert orig_ann.description == reconv_ann.description
+            assert orig_ann.flags == reconv_ann.flags
