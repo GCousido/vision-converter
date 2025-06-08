@@ -73,7 +73,7 @@ def YoloFile_to_NeutralFile(file: YoloFile, class_labels: dict[int, str], folder
     Args:
         file (YoloFile): YOLO file object to convert
         class_labels (dict[int, str]): Mapping from class IDs to class names
-        folder_path (Optional[str]): Optional path to image folder for dimension validation
+        folder_path (Optional[str]): Optional path to folder for dimension validation
         
     Returns:
         NeutralFile: Converted file representation
