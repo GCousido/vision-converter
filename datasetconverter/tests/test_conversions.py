@@ -2,13 +2,15 @@ import pytest
 import os
 
 from datasetconverter.converters.coco_converter import CocoConverter
+from datasetconverter.converters.createml_converter import CreateMLConverter
 from datasetconverter.converters.pascal_voc_converter import PascalVocConverter
 from datasetconverter.converters.yolo_converter import YoloConverter
 from datasetconverter.formats.coco import CocoFile, CocoFormat, CocoImage
+from datasetconverter.formats.createml import CreateMLFormat
 from datasetconverter.formats.neutral_format import NeutralFormat
 from datasetconverter.formats.pascal_voc import PascalVocFormat
 from datasetconverter.formats.yolo import YoloFormat
-from datasetconverter.utils.bbox_utils import PascalVocBBox_to_CocoBBox, PascalVocBBox_to_YoloBBox, YoloBBox_to_PascalVocBBox
+from datasetconverter.utils.bbox_utils import CreateMLBBox_to_PascalVocBBox, PascalVocBBox_to_CocoBBox, PascalVocBBox_to_CreateMLBBox, PascalVocBBox_to_YoloBBox, YoloBBox_to_PascalVocBBox
 from datasetconverter.utils.file_utils import get_image_info_from_file, get_image_path
 
 
@@ -391,3 +393,189 @@ def test_coco_to_pascalvoc():
         for file in pascal_converted.files
         for ann in file.annotations
     )
+
+def test_createml_original_and_createml_reconverted():
+    """Test CreateML format idempotence through neutral conversion."""
+    base_dir = os.path.dirname(__file__)
+    createml_path = os.path.join(base_dir, "test_resources/CREATEML_TEST")
+
+    # 1. Load CreateML Dataset
+    createml_original: CreateMLFormat = CreateMLFormat.read_from_folder(createml_path)
+    
+    # 2. CreateML → Neutral → CreateML
+    neutral_from_createml: NeutralFormat = CreateMLConverter.toNeutral(createml_original)
+    createml_reconverted: CreateMLFormat = CreateMLConverter.fromNeutral(neutral_from_createml)
+    
+    # Check idempotence
+    assert createml_original.name == createml_reconverted.name
+    assert len(createml_original.files) == len(createml_reconverted.files)
+
+    for orig_file, reconv_file in zip(createml_original.files, createml_reconverted.files):
+        assert orig_file.filename == reconv_file.filename
+        assert len(orig_file.annotations) == len(reconv_file.annotations)
+
+        for i, (orig_ann, reconv_ann) in enumerate(zip(orig_file.annotations, reconv_file.annotations)):
+            # Check bbox coordinates (CreateML uses center + dimensions)
+            orig_bbox = orig_ann.bbox.getBoundingBox()
+            reconv_bbox = reconv_ann.bbox.getBoundingBox()
+            assert orig_bbox == pytest.approx(reconv_bbox, rel=1e-3, abs=1e-3)
+
+            # Check label matches
+            assert orig_ann.label == reconv_ann.label, f"Annotation {i}: label '{orig_ann.label}' != '{reconv_ann.label}'"
+
+
+def test_createml_to_pascalvoc():
+    """Test conversion from CreateML to Pascal VOC format."""
+    base_dir = os.path.dirname(__file__)
+    createml_path = os.path.join(base_dir, "test_resources/CREATEML_TEST")
+
+    # 1. Load CreateML Dataset
+    createml_original: CreateMLFormat = CreateMLFormat.read_from_folder(createml_path)
+    
+    # 2. CreateML → Neutral → Pascal VOC
+    neutral_from_createml: NeutralFormat = CreateMLConverter.toNeutral(createml_original)
+    pascal_converted: PascalVocFormat = PascalVocConverter.fromNeutral(neutral_from_createml)
+    
+    # Check Pascal VOC structure
+    assert isinstance(pascal_converted, PascalVocFormat)
+    assert len(pascal_converted.files) == len(createml_original.files)
+
+    # Check file values
+    for pascal_file, createml_file in zip(pascal_converted.files, createml_original.files):
+        assert len(pascal_file.annotations) == len(createml_file.annotations)
+        assert pascal_file.width > 0
+        assert pascal_file.height > 0
+        assert not pascal_file.segmented
+        assert pascal_file.filename == createml_file.filename
+        assert pascal_file.source.database == createml_original.name
+        assert pascal_file.source.annotation == "Pascal Voc"
+        assert pascal_file.source.image == ""
+
+        # Check annotation values
+        for pascal_annotation, createml_annotation in zip(pascal_file.annotations, createml_file.annotations):
+            assert pascal_annotation.name == createml_annotation.label
+            
+            # Convert Pascal VOC back to CreateML format and compare
+            converted_bbox = PascalVocBBox_to_CreateMLBBox(pascal_annotation.bbox)
+            assert pytest.approx(converted_bbox.getBoundingBox(), rel=1e-3, abs=1e-3) == createml_annotation.bbox.getBoundingBox()
+
+
+def test_pascalvoc_to_createml():
+    """Test conversion from Pascal VOC to CreateML format."""
+    base_dir = os.path.dirname(__file__)
+    pascal_path = os.path.join(base_dir, "test_resources/PASCAL_VOC_TEST")
+
+    # 1. Load Pascal VOC Dataset
+    pascal_original: PascalVocFormat = PascalVocFormat.read_from_folder(pascal_path)
+    
+    # 2. Pascal VOC → Neutral → CreateML
+    neutral_from_pascal: NeutralFormat = PascalVocConverter.toNeutral(pascal_original)
+    createml_converted: CreateMLFormat = CreateMLConverter.fromNeutral(neutral_from_pascal)
+
+    # Check CreateML structure
+    assert isinstance(createml_converted, CreateMLFormat)
+    assert len(createml_converted.files) == len(pascal_original.files)
+
+    # Check file values
+    for createml_file, pascal_file in zip(createml_converted.files, pascal_original.files):
+        assert len(createml_file.annotations) == len(pascal_file.annotations)
+        assert createml_file.filename == pascal_file.filename
+        assert createml_file.height == pascal_file.height
+        assert createml_file.width == pascal_file.width
+        assert createml_file.depth == pascal_file.depth
+        
+        # Check annotation values
+        for createml_annotation, pascal_annotation in zip(createml_file.annotations, pascal_file.annotations):
+            assert createml_annotation.label == pascal_annotation.name
+            
+            # Convert Pascal VOC to CreateML and compare
+            expected_createml_bbox = PascalVocBBox_to_CreateMLBBox(pascal_annotation.bbox)
+            assert createml_annotation.bbox.getBoundingBox() == pytest.approx(expected_createml_bbox.getBoundingBox(), rel=1e-9, abs=1e-9)
+
+
+def test_createml_to_coco():
+    """Test conversion from CreateML to COCO format."""
+    base_dir = os.path.dirname(__file__)
+    createml_path = os.path.join(base_dir, "test_resources/CREATEML_TEST")
+
+    # 1. Load CreateML Dataset
+    createml_original: CreateMLFormat = CreateMLFormat.read_from_folder(createml_path)
+    
+    # 2. CreateML → Neutral → COCO
+    neutral_from_createml: NeutralFormat = CreateMLConverter.toNeutral(createml_original)
+    coco_converted: CocoFormat = CocoConverter.fromNeutral(neutral_from_createml)
+    
+    # Check COCO structure
+    assert isinstance(coco_converted, CocoFormat)
+    assert len(coco_converted.files) == 1
+    
+    total_annotations = sum(len(file.annotations) for file in createml_original.files)
+    assert len(coco_converted.files[0].annotations) == total_annotations
+    
+    for coco_file in coco_converted.files:
+        # Check image metadata
+        for createml_file, coco_image in zip(createml_original.files, coco_file.images):
+            assert coco_image.file_name == createml_file.filename
+            assert coco_image.height > 0
+            assert coco_image.width > 0
+
+        # Check annotations
+        for coco_annotation in coco_file.annotations:
+            # Check annotation values
+            assert coco_annotation.area == (coco_annotation.bbox.width * coco_annotation.bbox.height)
+            coco_category_name = next((c.name for c in coco_file.categories if c.id == coco_annotation.category_id), None)
+            
+            # Find corresponding CreateML annotation
+            createml_class_name = None
+            found = False
+
+            for createml_file in createml_original.files:
+                if found:
+                    break
+                if createml_original.folder_path:
+                    image_path = get_image_path(createml_original.folder_path, "images", createml_file.filename)
+                    if image_path:
+                        width, height, depth = get_image_info_from_file(image_path)
+                        for createml_annotation in createml_file.annotations:
+                            # Convert CreateML to Pascal VOC, then to COCO
+                            pascal_bbox = CreateMLBBox_to_PascalVocBBox(createml_annotation.bbox)
+                            expected_coco_bbox = PascalVocBBox_to_CocoBBox(pascal_bbox)
+                            
+                            bbox1 = expected_coco_bbox.getBoundingBox()
+                            bbox2 = coco_annotation.bbox.getBoundingBox()
+                            if bbox_almost_equal(bbox1, bbox2, 2):
+                                createml_class_name = createml_annotation.label
+                                found = True
+                                break
+            
+            # Check category name matches
+            assert coco_category_name == createml_class_name
+
+
+def test_coco_to_createml():
+    """Test conversion from COCO to CreateML format."""
+    base_dir = os.path.dirname(__file__)
+    coco_path = os.path.join(base_dir, "test_resources/COCO_TEST")
+
+    # 1. Load COCO Dataset
+    coco_original: CocoFormat = CocoFormat.read_from_folder(coco_path)
+    
+    # 2. COCO → Neutral → CreateML
+    neutral_from_coco: NeutralFormat = CocoConverter.toNeutral(coco_original)
+    createml_converted: CreateMLFormat = CreateMLConverter.fromNeutral(neutral_from_coco)
+    
+    # Check CreateML structure
+    assert isinstance(createml_converted, CreateMLFormat)
+    assert len(createml_converted.files) == len(coco_original.files[0].images)
+    
+    total_annotations = sum(len(file.annotations) for file in createml_converted.files)
+    assert total_annotations == len(coco_original.files[0].annotations)
+    
+    # Check that every CreateML class is in COCO categories
+    all_createml_labels = set()
+    for file in createml_converted.files:
+        for ann in file.annotations:
+            all_createml_labels.add(ann.label)
+    
+    coco_category_names = {c.name for c in coco_original.files[0].categories}
+    assert all_createml_labels.issubset(coco_category_names)

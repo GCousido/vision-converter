@@ -1,0 +1,98 @@
+[
+    {
+        "image": "image1.jpg",
+        "annotations": [
+            {
+                "label": "person",
+                "coordinates": {
+                    "x": 320,
+                    "y": 240,
+                    "width": 120,
+                    "height": 180
+                }
+            },
+            {
+                "label": "car",
+                "coordinates": {
+                    "x": 150,
+                    "y": 350,
+                    "width": 200,
+                    "height": 100
+                }
+            }
+        ]
+    },
+    {
+        "image": "image2.png",
+        "annotations": [
+            {
+                "label": "bicycle",
+                "coordinates": {
+                    "x": 400,
+                    "y": 300,
+                    "width": 80,
+                    "height": 120
+                }
+            },
+            {
+                "label": "person",
+                "coordinates": {
+                    "x": 200,
+                    "y": 150,
+                    "width": 60,
+                    "height": 160
+                }
+            },
+            {
+                "label": "dog",
+                "coordinates": {
+                    "x": 500,
+                    "y": 400,
+                    "width": 90,
+                    "height": 70
+                }
+            }
+        ]
+    },
+    {
+        "image": "image3.jpg",
+        "annotations": [
+            {
+                "label": "truck",
+                "coordinates": {
+                    "x": 400,
+                    "y": 200,
+                    "width": 300,
+                    "height": 150
+                }
+            },
+            {
+                "label": "person",
+                "coordinates": {
+                    "x": 100,
+                    "y": 180,
+                    "width": 50,
+                    "height": 140
+                }
+            },
+            {
+                "label": "traffic_light",
+                "coordinates": {
+                    "x": 600,
+                    "y": 80,
+                    "width": 30,
+                    "height": 80
+                }
+            },
+            {
+                "label": "stop_sign",
+                "coordinates": {
+                    "x": 700,
+                    "y": 120,
+                    "width": 60,
+                    "height": 60
+                }
+            }
+        ]
+    }
+]
