@@ -274,10 +274,10 @@ class PascalVocFormat(DatasetFormat[PascalVocFile]):
                 ET.SubElement(obj_elem, "difficult").text = str(int(obj.difficult))
                 
                 bndbox = ET.SubElement(obj_elem, "bndbox")
-                ET.SubElement(bndbox, "xmin").text = str(obj.bbox.x_min)
-                ET.SubElement(bndbox, "ymin").text = str(obj.bbox.y_min)
-                ET.SubElement(bndbox, "xmax").text = str(obj.bbox.x_max)
-                ET.SubElement(bndbox, "ymax").text = str(obj.bbox.y_max)
+                ET.SubElement(bndbox, "xmin").text = str(obj.geometry.x_min)
+                ET.SubElement(bndbox, "ymin").text = str(obj.geometry.y_min)
+                ET.SubElement(bndbox, "xmax").text = str(obj.geometry.x_max)
+                ET.SubElement(bndbox, "ymax").text = str(obj.geometry.y_max)
             
             filename = Path(file.filename).stem + ".xml"
             xml_path = annotations_dir / filename

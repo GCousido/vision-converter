@@ -174,8 +174,8 @@ class TensorflowCsvFormat(DatasetFormat[TensorflowCsvFile]):
                         'width': file.width,
                         'height': file.height,
                         'class': ann.class_name,
-                        'xmin': ann.bbox.x_min,
-                        'ymin': ann.bbox.y_min,
-                        'xmax': ann.bbox.x_max,
-                        'ymax': ann.bbox.y_max
+                        'xmin': ann.geometry.x_min,
+                        'ymin': ann.geometry.y_min,
+                        'xmax': ann.geometry.x_max,
+                        'ymax': ann.geometry.y_max
                     })

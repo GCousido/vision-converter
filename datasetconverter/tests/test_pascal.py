@@ -108,16 +108,16 @@ def test_pascalvoc_format_construction(sample_pascalvoc_dataset):
     assert ann1.pose == "Left"
     assert ann1.truncated is False
     assert ann1.difficult is False
-    assert ann1.bbox.x_min == 10
-    assert ann1.bbox.y_max == 220
+    assert ann1.geometry.x_min == 10
+    assert ann1.geometry.y_max == 220
 
     ann2 = file1.annotations[1]
     assert ann2.name == "car"
     assert ann2.pose == "Right"
     assert ann2.truncated is True
     assert ann2.difficult is True
-    assert ann2.bbox.x_max == 130
-    assert ann2.bbox.y_min == 40
+    assert ann2.geometry.x_max == 130
+    assert ann2.geometry.y_min == 40
 
     # Checking second file
     file2 = next(f for f in pascalvoc_format.files if f.filename == "image2.xml")
@@ -137,8 +137,8 @@ def test_pascalvoc_format_construction(sample_pascalvoc_dataset):
     assert ann3.pose == "Unspecified"
     assert ann3.truncated is False
     assert ann3.difficult is False
-    assert ann3.bbox.x_min == 50
-    assert ann3.bbox.x_max == 150
+    assert ann3.geometry.x_min == 50
+    assert ann3.geometry.x_max == 150
 
 def test_invalid_pascalvoc_structure(tmp_path):
     # Case with a path that doesnt exist

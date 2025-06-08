@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Generic, Optional, TypeVar
+from typing import Generic, Optional, TypeVar, Union
 
 class BoundingBox(ABC):
     """Abstract base class representing a bounding box structure.
@@ -12,22 +12,33 @@ class BoundingBox(ABC):
     def getBoundingBox(self) -> list:
         pass
 
+class Shape(ABC):
+    """Abstract base class representing a Shape"""
+    shape_type: str
 
-T = TypeVar("T", bound=BoundingBox)
+    def __init__(self, type: str) -> None:
+        self.shape_type = type
+
+    @abstractmethod
+    def getCoordinates(self) -> list:
+        pass
+
+T = TypeVar("T", bound=Union[BoundingBox, Shape])
 
 class Annotation(ABC, Generic[T]):
-    """Abstract base class for object annotations with generic bounding box type.
+    """Abstract base class for object annotations with generic geometry type.
     
     Type Parameters:
-        T (BoundingBox): Type of bounding box implementation to use
+        T (Union[BoundingBox, Shape]): Type of geometry implementation to use
 
     Attributes:
-        bbox (T): Concrete bounding box instance
+        geometry (T): Concrete geometry instance (BoundingBox or Shape)
     """
-    bbox: T
+    geometry: T
 
-    def __init__(self, bbox: T) -> None:
-        self.bbox = bbox
+    def __init__(self, geometry: T) -> None:
+        self.geometry = geometry
+
 
 K = TypeVar("K", bound=Annotation)
 

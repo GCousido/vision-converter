@@ -138,7 +138,7 @@ def YoloAnnotation_to_NeutralAnnotation(annotation: YoloAnnotation, class_labels
         KeyError: If class ID doesn't exist in class_labels
     """
     
-    bbox: PascalVocBoundingBox = YoloBBox_to_PascalVocBBox(annotation.bbox, image_width, image_height)
+    bbox: PascalVocBoundingBox = YoloBBox_to_PascalVocBBox(annotation.geometry, image_width, image_height)
 
     class_name: str = class_labels[annotation.id_class]
 
@@ -187,7 +187,7 @@ def NeutralAnnotation_to_YoloAnnotation(annotation: NeutralAnnotation, inverse_c
         ValueError: If class name doesn't exist in inverse_class_map
     """
 
-    bbox: YoloBoundingBox = PascalVocBBox_to_YoloBBox(annotation.bbox, image_width, image_height)
+    bbox: YoloBoundingBox = PascalVocBBox_to_YoloBBox(annotation.geometry, image_width, image_height)
 
     try:
         id_class = inverse_class_list[annotation.class_name]

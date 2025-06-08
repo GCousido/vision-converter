@@ -67,18 +67,18 @@ def test_yolo_format_construction(sample_yolo_dataset):
     # First annotation
     ann1 = file1.annotations[0]
     assert ann1.id_class == 0
-    assert ann1.bbox.x_center == 0.5
-    assert ann1.bbox.y_center == 0.5
-    assert ann1.bbox.width == 0.3
-    assert ann1.bbox.height == 0.3
+    assert ann1.geometry.x_center == 0.5
+    assert ann1.geometry.y_center == 0.5
+    assert ann1.geometry.width == 0.3
+    assert ann1.geometry.height == 0.3
     
     # Second annotation
     ann2 = file1.annotations[1]
     assert ann2.id_class == 1
-    assert ann2.bbox.x_center == 0.2
-    assert ann2.bbox.y_center == 0.2
-    assert ann2.bbox.width == 0.1
-    assert ann2.bbox.height == 0.1
+    assert ann2.geometry.x_center == 0.2
+    assert ann2.geometry.y_center == 0.2
+    assert ann2.geometry.width == 0.1
+    assert ann2.geometry.height == 0.1
 
 
 def test_invalid_dataset_structure(tmp_path):

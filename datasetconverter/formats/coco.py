@@ -382,7 +382,7 @@ class CocoFormat(DatasetFormat[CocoFile]):
                 "id": ann.id,
                 "image_id": ann.image_id,
                 "category_id": ann.category_id,
-                "bbox": ann.bbox.getBoundingBox(),
+                "bbox": ann.geometry.getBoundingBox(),
                 "area": ann.area if ann.area is not None else 0.0,
                 "iscrowd": int(ann.iscrowd) if ann.iscrowd is not None else 0,
             }

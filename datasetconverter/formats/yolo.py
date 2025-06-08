@@ -194,6 +194,6 @@ class YoloFormat(DatasetFormat[YoloFile]):
             file_path = labels_dir / filename
             with open(file_path, "w") as f:
                 for ann in yolo_file.annotations:
-                    bbox = ann.bbox
+                    bbox = ann.geometry
                     line = f"{ann.id_class} {bbox.x_center} {bbox.y_center} {bbox.width} {bbox.height}\n"
                     f.write(line)

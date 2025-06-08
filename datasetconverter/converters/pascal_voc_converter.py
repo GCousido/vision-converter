@@ -98,7 +98,7 @@ def PascalAnnotation_to_NeutralAnnotation(annotation: PascalVocObject) -> Neutra
         NeutralAnnotation: object with the converted annotation
     """
     return NeutralAnnotation(
-        bbox = annotation.bbox,
+        bbox = annotation.geometry,
         class_name = annotation.name,
         attributes = {
             "pose": annotation.pose,
@@ -158,7 +158,7 @@ def NeutralAnnotation_to_PascalAnnotation(annotation: NeutralAnnotation) -> Pasc
     difficult = annotation.attributes.get("difficult", False)
 
     return PascalVocObject(
-        bbox = annotation.bbox,
+        bbox = annotation.geometry,
         name = annotation.class_name,
         pose = pose,  
         truncated = truncated,  

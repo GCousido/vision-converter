@@ -43,8 +43,8 @@ def test_yolo_original_and_yolo_reconverted():
         for i, (orig_ann, reconv_ann) in enumerate(zip(orig_file.annotations, reconv_file.annotations)):
 
             # Check bbox
-            orig_bbox = orig_ann.bbox.getBoundingBox()
-            reconv_bbox = reconv_ann.bbox.getBoundingBox()
+            orig_bbox = orig_ann.geometry.getBoundingBox()
+            reconv_bbox = reconv_ann.geometry.getBoundingBox()
             assert orig_bbox == pytest.approx(reconv_bbox, rel=1e-3, abs=1e-3)
 
             # Get name from the map
@@ -84,7 +84,7 @@ def test_yolo_to_pascalvoc():
         # Check annotation values
         for pascal_annotation, yolo_annotation in zip(pascal_file.annotations, yolo_file.annotations):
             assert pascal_annotation.name == yolo_original.class_labels[yolo_annotation.id_class]
-            assert pytest.approx(PascalVocBBox_to_YoloBBox(pascal_annotation.bbox, pascal_file.width, pascal_file.height).getBoundingBox(), rel=1e-3, abs=1e-3) == yolo_annotation.bbox.getBoundingBox() 
+            assert pytest.approx(PascalVocBBox_to_YoloBBox(pascal_annotation.geometry, pascal_file.width, pascal_file.height).getBoundingBox(), rel=1e-3, abs=1e-3) == yolo_annotation.geometry.getBoundingBox() 
 
 
 def test_yolo_to_coco():
@@ -113,7 +113,7 @@ def test_yolo_to_coco():
 
         for coco_annotation in file.annotations:
             # Check annotation values
-            assert coco_annotation.area == (coco_annotation.bbox.width * coco_annotation.bbox.height)
+            assert coco_annotation.area == (coco_annotation.geometry.width * coco_annotation.geometry.height)
             coco_category_name = next((c.name for c in file.categories if c.id == coco_annotation.category_id), None)
             
             yolo_class_name = None
@@ -127,8 +127,8 @@ def test_yolo_to_coco():
                     if image_path:
                         width, height, depth = get_image_info_from_file(image_path)
                         for yolo_annotation in yolo_file.annotations:
-                            bbox1 = PascalVocBBox_to_CocoBBox(YoloBBox_to_PascalVocBBox(yolo_annotation.bbox, width, height)).getBoundingBox()
-                            bbox2 = coco_annotation.bbox.getBoundingBox()
+                            bbox1 = PascalVocBBox_to_CocoBBox(YoloBBox_to_PascalVocBBox(yolo_annotation.geometry, width, height)).getBoundingBox()
+                            bbox2 = coco_annotation.geometry.getBoundingBox()
                             if bbox_almost_equal(bbox1, bbox2, 2):
                                 yolo_class_name = yolo_original.class_labels[yolo_annotation.id_class]
                                 found = True
@@ -167,8 +167,8 @@ def test_pascalvoc_original_and_pascalvoc_reconverted():
             assert orig_ann.name == reconv_ann.name, f"Annotation {i}: class '{orig_ann.name}' != '{reconv_ann.name}'"
 
             # Check bbox
-            orig_bbox = orig_file.annotations[0].bbox.getBoundingBox()
-            reconv_bbox = reconv_file.annotations[0].bbox.getBoundingBox()
+            orig_bbox = orig_file.annotations[0].geometry.getBoundingBox()
+            reconv_bbox = reconv_file.annotations[0].geometry.getBoundingBox()
             assert orig_bbox == pytest.approx(reconv_bbox, rel=1e-6, abs=1e-6)
 
 
@@ -198,7 +198,7 @@ def test_pascalvoc_to_yolo():
         # Check annotation values
         for yolo_annotation, pascal_annotation in zip(yolo_file.annotations, pascal_file.annotations):
             assert yolo_converted.class_labels[yolo_annotation.id_class] == pascal_annotation.name
-            assert yolo_annotation.bbox.getBoundingBox() == pytest.approx(PascalVocBBox_to_YoloBBox(pascal_annotation.bbox, pascal_file.width, pascal_file.height).getBoundingBox(), rel=1e-9, abs=1e-9)
+            assert yolo_annotation.geometry.getBoundingBox() == pytest.approx(PascalVocBBox_to_YoloBBox(pascal_annotation.geometry, pascal_file.width, pascal_file.height).getBoundingBox(), rel=1e-9, abs=1e-9)
 
 
 def test_pascalvoc_to_coco():
@@ -237,8 +237,8 @@ def test_pascalvoc_to_coco():
                 if found:
                     break
                 for pascal_annotation in pascal_file.annotations:
-                    bbox1 = PascalVocBBox_to_CocoBBox(pascal_annotation.bbox).getBoundingBox()
-                    bbox2 = coco_annotation.bbox.getBoundingBox()
+                    bbox1 = PascalVocBBox_to_CocoBBox(pascal_annotation.geometry).getBoundingBox()
+                    bbox2 = coco_annotation.geometry.getBoundingBox()
                     if bbox_almost_equal(bbox1, bbox2, 2):
                         pascal_class_name = pascal_annotation.name
                         found = True
@@ -322,8 +322,8 @@ def test_coco_original_and_coco_reconverted():
             reconv_anns = reconv_anns_by_image.get(reconv_image.id, [])
             
             # Sort annotations by bbox
-            orig_anns_sorted = sorted(orig_anns, key=lambda a: (a.bbox.x_min, a.bbox.y_min))
-            reconv_anns_sorted = sorted(reconv_anns, key=lambda a: (a.bbox.x_min, a.bbox.y_min))
+            orig_anns_sorted = sorted(orig_anns, key=lambda a: (a.geometry.x_min, a.geometry.y_min))
+            reconv_anns_sorted = sorted(reconv_anns, key=lambda a: (a.geometry.x_min, a.geometry.y_min))
             
             # Check annotations per image
             for i, (orig_ann, reconv_ann) in enumerate(zip(orig_anns_sorted, reconv_anns_sorted)):
@@ -332,8 +332,8 @@ def test_coco_original_and_coco_reconverted():
                 assert name_orig == name_reconv, f"Image {image_name}, annotation {i}: class '{name_orig}' != '{name_reconv}'"
                 
                 # Check bbox aprox values
-                orig_bbox = orig_ann.bbox.getBoundingBox()
-                reconv_bbox = reconv_ann.bbox.getBoundingBox()
+                orig_bbox = orig_ann.geometry.getBoundingBox()
+                reconv_bbox = reconv_ann.geometry.getBoundingBox()
                 assert orig_bbox == pytest.approx(reconv_bbox, rel=0.5, abs=0.5), f"Image {image_name}, annotation {i}: bbox do not match"
 
 
@@ -418,8 +418,8 @@ def test_createml_original_and_createml_reconverted():
 
         for i, (orig_ann, reconv_ann) in enumerate(zip(orig_file.annotations, reconv_file.annotations)):
             # Check bbox coordinates (CreateML uses center + dimensions)
-            orig_bbox = orig_ann.bbox.getBoundingBox()
-            reconv_bbox = reconv_ann.bbox.getBoundingBox()
+            orig_bbox = orig_ann.geometry.getBoundingBox()
+            reconv_bbox = reconv_ann.geometry.getBoundingBox()
             assert orig_bbox == pytest.approx(reconv_bbox, rel=1e-3, abs=1e-3)
 
             # Check label matches
@@ -458,8 +458,8 @@ def test_createml_to_pascalvoc():
             assert pascal_annotation.name == createml_annotation.label
             
             # Convert Pascal VOC back to CreateML format and compare
-            converted_bbox = PascalVocBBox_to_CreateMLBBox(pascal_annotation.bbox)
-            assert pytest.approx(converted_bbox.getBoundingBox(), rel=1e-3, abs=1e-3) == createml_annotation.bbox.getBoundingBox()
+            converted_bbox = PascalVocBBox_to_CreateMLBBox(pascal_annotation.geometry)
+            assert pytest.approx(converted_bbox.getBoundingBox(), rel=1e-3, abs=1e-3) == createml_annotation.geometry.getBoundingBox()
 
 
 def test_pascalvoc_to_createml():
@@ -491,8 +491,8 @@ def test_pascalvoc_to_createml():
             assert createml_annotation.label == pascal_annotation.name
             
             # Convert Pascal VOC to CreateML and compare
-            expected_createml_bbox = PascalVocBBox_to_CreateMLBBox(pascal_annotation.bbox)
-            assert createml_annotation.bbox.getBoundingBox() == pytest.approx(expected_createml_bbox.getBoundingBox(), rel=1e-9, abs=1e-9)
+            expected_createml_bbox = PascalVocBBox_to_CreateMLBBox(pascal_annotation.geometry)
+            assert createml_annotation.geometry.getBoundingBox() == pytest.approx(expected_createml_bbox.getBoundingBox(), rel=1e-9, abs=1e-9)
 
 
 def test_createml_to_coco():
@@ -524,7 +524,7 @@ def test_createml_to_coco():
         # Check annotations
         for coco_annotation in coco_file.annotations:
             # Check annotation values
-            assert coco_annotation.area == (coco_annotation.bbox.width * coco_annotation.bbox.height)
+            assert coco_annotation.area == (coco_annotation.geometry.width * coco_annotation.geometry.height)
             coco_category_name = next((c.name for c in coco_file.categories if c.id == coco_annotation.category_id), None)
             
             # Find corresponding CreateML annotation
@@ -540,11 +540,11 @@ def test_createml_to_coco():
                         width, height, depth = get_image_info_from_file(image_path)
                         for createml_annotation in createml_file.annotations:
                             # Convert CreateML to Pascal VOC, then to COCO
-                            pascal_bbox = CreateMLBBox_to_PascalVocBBox(createml_annotation.bbox)
+                            pascal_bbox = CreateMLBBox_to_PascalVocBBox(createml_annotation.geometry)
                             expected_coco_bbox = PascalVocBBox_to_CocoBBox(pascal_bbox)
                             
                             bbox1 = expected_coco_bbox.getBoundingBox()
-                            bbox2 = coco_annotation.bbox.getBoundingBox()
+                            bbox2 = coco_annotation.geometry.getBoundingBox()
                             if bbox_almost_equal(bbox1, bbox2, 2):
                                 createml_class_name = createml_annotation.label
                                 found = True
@@ -607,8 +607,8 @@ def test_tensorflow_csv_original_and_tensorflow_csv_reconverted():
 
         for i, (orig_ann, reconv_ann) in enumerate(zip(orig_file.annotations, reconv_file.annotations)):
             # Check bbox coordinates
-            orig_bbox = orig_ann.bbox.getBoundingBox()
-            reconv_bbox = reconv_ann.bbox.getBoundingBox()
+            orig_bbox = orig_ann.geometry.getBoundingBox()
+            reconv_bbox = reconv_ann.geometry.getBoundingBox()
             assert orig_bbox == pytest.approx(reconv_bbox, rel=1e-6, abs=1e-6)
 
             # Check class name matches
@@ -645,8 +645,8 @@ def test_tensorflow_csv_to_yolo():
             assert yolo_class_name == tf_csv_annotation.class_name
             
             # Check bbox conversion (Pascal VOC to YOLO coordinates)
-            expected_yolo_bbox = PascalVocBBox_to_YoloBBox(tf_csv_annotation.bbox, tf_csv_file.width, tf_csv_file.height)
-            assert yolo_annotation.bbox.getBoundingBox() == pytest.approx(expected_yolo_bbox.getBoundingBox(), rel=1e-9, abs=1e-9)
+            expected_yolo_bbox = PascalVocBBox_to_YoloBBox(tf_csv_annotation.geometry, tf_csv_file.width, tf_csv_file.height)
+            assert yolo_annotation.geometry.getBoundingBox() == pytest.approx(expected_yolo_bbox.getBoundingBox(), rel=1e-9, abs=1e-9)
 
 
 def test_tensorflow_csv_to_pascalvoc():
@@ -681,8 +681,8 @@ def test_tensorflow_csv_to_pascalvoc():
             assert pascal_annotation.name == tf_csv_annotation.class_name
             
             # Both use PascalVocBoundingBox, so coordinates should be identical
-            orig_bbox = tf_csv_annotation.bbox.getBoundingBox()
-            pascal_bbox = pascal_annotation.bbox.getBoundingBox()
+            orig_bbox = tf_csv_annotation.geometry.getBoundingBox()
+            pascal_bbox = pascal_annotation.geometry.getBoundingBox()
             assert orig_bbox == pytest.approx(pascal_bbox, rel=1e-6, abs=1e-6)
 
 
@@ -716,7 +716,7 @@ def test_tensorflow_csv_to_coco():
         # Check annotations
         for coco_annotation in coco_file.annotations:
             # Check annotation values
-            assert coco_annotation.area == (coco_annotation.bbox.width * coco_annotation.bbox.height)
+            assert coco_annotation.area == (coco_annotation.geometry.width * coco_annotation.geometry.height)
             coco_category_name = next((c.name for c in coco_file.categories if c.id == coco_annotation.category_id), None)
             
             # Find corresponding TensorFlow CSV annotation by bbox matching
@@ -728,9 +728,9 @@ def test_tensorflow_csv_to_coco():
                     break
                 for tf_csv_annotation in tf_csv_file.annotations:
                     # Convert Pascal VOC to COCO format for comparison
-                    expected_coco_bbox = PascalVocBBox_to_CocoBBox(tf_csv_annotation.bbox)
+                    expected_coco_bbox = PascalVocBBox_to_CocoBBox(tf_csv_annotation.geometry)
                     bbox1 = expected_coco_bbox.getBoundingBox()
-                    bbox2 = coco_annotation.bbox.getBoundingBox()
+                    bbox2 = coco_annotation.geometry.getBoundingBox()
                     if bbox_almost_equal(bbox1, bbox2, 2):
                         tf_csv_class_name = tf_csv_annotation.class_name
                         found = True
@@ -796,8 +796,8 @@ def test_pascalvoc_to_tensorflow_csv():
             assert tf_csv_annotation.class_name == pascal_annotation.name
             
             # Both use PascalVocBoundingBox, so coordinates should be identical
-            tf_csv_bbox = tf_csv_annotation.bbox.getBoundingBox()
-            pascal_bbox = pascal_annotation.bbox.getBoundingBox()
+            tf_csv_bbox = tf_csv_annotation.geometry.getBoundingBox()
+            pascal_bbox = pascal_annotation.geometry.getBoundingBox()
             assert tf_csv_bbox == pytest.approx(pascal_bbox, rel=1e-6, abs=1e-6)
 
 

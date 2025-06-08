@@ -134,7 +134,7 @@ def CreateMLAnnotation_to_NeutralAnnotation(annotation: CreateMLAnnotation) -> N
         NeutralAnnotation: Converted annotation
     """
     
-    bbox: PascalVocBoundingBox = CreateMLBBox_to_PascalVocBBox(annotation.bbox)
+    bbox: PascalVocBoundingBox = CreateMLBBox_to_PascalVocBBox(annotation.geometry)
 
     return NeutralAnnotation(
         bbox = bbox, 
@@ -176,7 +176,7 @@ def NeutralAnnotation_to_CreateMLAnnotation(annotation: NeutralAnnotation) -> Cr
         CreateMLAnnotation: Converted CreateML annotation
     """
 
-    bbox: CreateMLBoundingBox = PascalVocBBox_to_CreateMLBBox(annotation.bbox)
+    bbox: CreateMLBoundingBox = PascalVocBBox_to_CreateMLBBox(annotation.geometry)
 
     return CreateMLAnnotation(
         bbox = bbox,

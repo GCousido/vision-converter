@@ -63,28 +63,28 @@ def test_tensorflow_csv_format_construction(sample_tensorflow_csv_dataset):
     # First annotation
     ann1 = file1.annotations[0]
     assert ann1.class_name == "person"
-    assert ann1.bbox.x_min == 100
-    assert ann1.bbox.y_min == 150
-    assert ann1.bbox.x_max == 200
-    assert ann1.bbox.y_max == 300
+    assert ann1.geometry.x_min == 100
+    assert ann1.geometry.y_min == 150
+    assert ann1.geometry.x_max == 200
+    assert ann1.geometry.y_max == 300
     
     # Second annotation
     ann2 = file1.annotations[1]
     assert ann2.class_name == "car"
-    assert ann2.bbox.x_min == 300
-    assert ann2.bbox.y_min == 200
-    assert ann2.bbox.x_max == 450
-    assert ann2.bbox.y_max == 350
+    assert ann2.geometry.x_min == 300
+    assert ann2.geometry.y_min == 200
+    assert ann2.geometry.x_max == 450
+    assert ann2.geometry.y_max == 350
     
     # 5. Checking annotations for image2
     assert len(file2.annotations) == 1
     
     ann3 = file2.annotations[0]
     assert ann3.class_name == "truck"
-    assert ann3.bbox.x_min == 400
-    assert ann3.bbox.y_min == 300
-    assert ann3.bbox.x_max == 600
-    assert ann3.bbox.y_max == 500
+    assert ann3.geometry.x_min == 400
+    assert ann3.geometry.y_min == 300
+    assert ann3.geometry.x_max == 600
+    assert ann3.geometry.y_max == 500
 
 def test_invalid_csv_file(tmp_path):
     # Case 1: CSV file does not exist

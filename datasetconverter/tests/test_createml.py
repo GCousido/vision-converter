@@ -91,18 +91,18 @@ def test_createml_format_construction(sample_createml_dataset):
     # First annotation - person
     ann1 = file1.annotations[0]
     assert ann1.label == "person"
-    assert ann1.bbox.x_center == 320
-    assert ann1.bbox.y_center == 240
-    assert ann1.bbox.width == 100
-    assert ann1.bbox.height == 150
+    assert ann1.geometry.x_center == 320
+    assert ann1.geometry.y_center == 240
+    assert ann1.geometry.width == 100
+    assert ann1.geometry.height == 150
     
     # Second annotation - car
     ann2 = file1.annotations[1]
     assert ann2.label == "car"
-    assert ann2.bbox.x_center == 500
-    assert ann2.bbox.y_center == 300
-    assert ann2.bbox.width == 80
-    assert ann2.bbox.height == 60
+    assert ann2.geometry.x_center == 500
+    assert ann2.geometry.y_center == 300
+    assert ann2.geometry.width == 80
+    assert ann2.geometry.height == 60
     
     # 4. Check annotations for second image
     file2 = next(f for f in createml_format.files if f.filename == "image2.png")
@@ -110,10 +110,10 @@ def test_createml_format_construction(sample_createml_dataset):
     
     ann3 = file2.annotations[0]
     assert ann3.label == "truck"
-    assert ann3.bbox.x_center == 400
-    assert ann3.bbox.y_center == 300
-    assert ann3.bbox.width == 120
-    assert ann3.bbox.height == 180
+    assert ann3.geometry.x_center == 400
+    assert ann3.geometry.y_center == 300
+    assert ann3.geometry.width == 120
+    assert ann3.geometry.height == 180
 
 
 def test_createml_bounding_box():
@@ -138,10 +138,10 @@ def test_createml_annotation():
     annotation = CreateMLAnnotation(bbox=bbox, label="bicycle")
     
     assert annotation.label == "bicycle"
-    assert annotation.bbox.x_center == 200
-    assert annotation.bbox.y_center == 250
-    assert annotation.bbox.width == 60
-    assert annotation.bbox.height == 80
+    assert annotation.geometry.x_center == 200
+    assert annotation.geometry.y_center == 250
+    assert annotation.geometry.width == 60
+    assert annotation.geometry.height == 80
 
 
 def test_invalid_dataset_structure(tmp_path):

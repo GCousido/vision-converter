@@ -104,7 +104,7 @@ def TensorflowCsvAnnotation_to_NeutralAnnotation(annotation: TensorflowCsvAnnota
     """
 
     # No conversion needed - both use PascalVocBoundingBox and class_name
-    return NeutralAnnotation(annotation.bbox, annotation.class_name)
+    return NeutralAnnotation(annotation.geometry, annotation.class_name)
 
 
 def NeutralFile_to_TensorflowCsvFile(file: NeutralFile) -> TensorflowCsvFile:
@@ -138,4 +138,4 @@ def NeutralAnnotation_to_TensorflowCsvAnnotation(annotation: NeutralAnnotation) 
     """
 
     # No conversion needed - both use PascalVocBoundingBox and class_name
-    return TensorflowCsvAnnotation(bbox = annotation.bbox, class_name = annotation.class_name)
+    return TensorflowCsvAnnotation(bbox = annotation.geometry, class_name = annotation.class_name)

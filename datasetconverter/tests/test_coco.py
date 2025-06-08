@@ -42,8 +42,8 @@ def test_coco_format_creation(sample_coco_dataset):
     # Checking bounding boxes
     person_ann = [a for a in coco_file.annotations if a.category_id == 1]
     assert len(person_ann) == 1
-    assert person_ann[0].bbox.x_min == 100
-    assert person_ann[0].bbox.width == 50
+    assert person_ann[0].geometry.x_min == 100
+    assert person_ann[0].geometry.width == 50
     
     # Checking polygon segmentation
     polygon_seg1 = next(a for a in coco_file.annotations if a.id == 1).segmentation

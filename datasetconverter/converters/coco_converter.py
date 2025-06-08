@@ -200,7 +200,7 @@ class CocoConverter(DatasetConverter[CocoFormat]):
                     next_cat_id += 1
                 
                 # Convert bbox
-                coco_bbox: CocoBoundingBox = PascalVocBBox_to_CocoBBox(ann.bbox)
+                coco_bbox: CocoBoundingBox = PascalVocBBox_to_CocoBBox(ann.geometry)
                 
                 # Create CocoLabel
                 coco_ann = CocoLabel(
@@ -242,7 +242,7 @@ def COCOLabel_to_NeutralAnnotation(annotation: CocoLabel, category_map: dict[int
     Returns:
         NeutralAnnotation: Converted annotation in Neutral format
     """
-    bbox: PascalVocBoundingBox = CocoBBox_to_PascalVocBBox(annotation.bbox)
+    bbox: PascalVocBoundingBox = CocoBBox_to_PascalVocBBox(annotation.geometry)
 
     return NeutralAnnotation(
         bbox = bbox,

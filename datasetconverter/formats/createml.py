@@ -203,7 +203,7 @@ class CreateMLFormat(DatasetFormat[CreateMLFile]):
         for file in self.files:
             annotations_list = []
             for ann in file.annotations:
-                bbox: CreateMLBoundingBox = ann.bbox
+                bbox: CreateMLBoundingBox = ann.geometry
                 annotations_list.append({
                     "label": ann.label,
                     "coordinates": {
