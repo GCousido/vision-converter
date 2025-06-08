@@ -1,8 +1,8 @@
 # Formats
-from .formats import CocoFormat, PascalVocFormat, YoloFormat, NeutralFormat
+from .formats import CocoFormat, PascalVocFormat, YoloFormat, CreateMLFormat, NeutralFormat
 
 # Converters
-from .converters import CocoConverter, PascalVocConverter, YoloConverter
+from .converters import CocoConverter, PascalVocConverter, YoloConverter, CreateMLConverter
 
 __all__ = [
     # Formats
@@ -10,8 +10,10 @@ __all__ = [
     'PascalVocFormat',
     'YoloFormat',
     'NeutralFormat',
+    'CreateMLFormat',
     # Converters
     'CocoConverter',
     'PascalVocConverter',
-    'YoloConverter'
+    'YoloConverter',
+    'CreateMLConverter'
 ]
