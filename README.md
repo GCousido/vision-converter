@@ -122,6 +122,7 @@ dconverter --input-format coco --input-path ./datasets/coco --output-format pasc
 | **Pascal VOC** | ✅ | ✅ | pascal_voc | Pascal Visual Object Classes format (.xml files with absolute coordinates) |
 | **CreateML**  | ✅ | ✅ | createml | Apple CreateML format (.json with centered bounding boxes and absolute coordinates)|
 | **TensorFlow CSV** | ✅ | ✅ | tensorflow_csv | TensorFlow Object Detection CSV format (.csv with absolute coordinates) |
+| **LabelMe** | ✅ | ✅ | labelme | LabelMe JSON format (.json files with shape annotations and optional embedded image data)|
 
 ### Format Specifications
 
@@ -159,6 +160,14 @@ dconverter --input-format coco --input-path ./datasets/coco --output-format pasc
 * **Coordinates**: Absolute pixel values `<xmin>, <ymin>, <xmax>, <ymax>`
 * **Required Columns**: `filename`, `width`, `height`, `class`, `xmin`, `ymin`, `xmax`, `ymax`
 * **Features**: Human-readable format, direct compatibility with TensorFlow Object Detection API, supports multiple objects per image
+
+#### LabelMe JSON Format
+
+* **File Structure**: One `.json` file per image containing annotations and image metadata
+* **Annotation Format**: JSON with shapes array, each shape having `label`, `points`, `shape_type`, `group_id`, `flags`, and optional `description`
+* **Coordinates**: Absolute pixel values for `points` defining `shapes` (e.g., polygons, rectangles)
+* **Image Data**: Optional `base64` encoded image data embedded in `imageData` field
+* **Metadata**: Includes dataset `version`, `flags`, `imagePath`, `imageHeight`, `imageWidth`
 
 ---
 

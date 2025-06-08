@@ -7,7 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from ..formats.neutral_format import NeutralFormat
 
-FORMATS = ['coco', 'pascal_voc', 'yolo', 'createml', 'tensorflow_csv']
+FORMATS = ['coco', 'pascal_voc', 'yolo', 'createml', 'tensorflow_csv', 'labelme']
 
 @click.command()
 @click.option('--input-format', '-if', 
@@ -44,6 +44,7 @@ def dconverter(input_format, input_path, output_format, output_path):
         • Pascal VOC (XML files with Pascal VOC metadata)
         • CreateML (JSON file with list of annotations per image)
         • Tensorflow Object Detection CSV (csv file with annotations)
+        • LabelMe JSON (JSON file for each image)
     """
 
     # Check if it has permissions to write
@@ -98,7 +99,8 @@ def dconverter(input_format, input_path, output_format, output_path):
 def to_camel_case(input: str) -> str:
     # Map special cases
     specific_formats = {
-        'createml': 'CreateML'
+        'createml': 'CreateML',
+        'labelme': 'LabelMe'
     }
     
     # For special cases
