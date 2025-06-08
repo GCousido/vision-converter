@@ -4,11 +4,13 @@ import os
 from datasetconverter.converters.coco_converter import CocoConverter
 from datasetconverter.converters.createml_converter import CreateMLConverter
 from datasetconverter.converters.pascal_voc_converter import PascalVocConverter
+from datasetconverter.converters.tensorflow_csv_converter import TensorflowCsvConverter
 from datasetconverter.converters.yolo_converter import YoloConverter
 from datasetconverter.formats.coco import CocoFile, CocoFormat, CocoImage
 from datasetconverter.formats.createml import CreateMLFormat
 from datasetconverter.formats.neutral_format import NeutralFormat
 from datasetconverter.formats.pascal_voc import PascalVocFormat
+from datasetconverter.formats.tensorflow_csv import TensorflowCsvFormat
 from datasetconverter.formats.yolo import YoloFormat
 from datasetconverter.utils.bbox_utils import CreateMLBBox_to_PascalVocBBox, PascalVocBBox_to_CocoBBox, PascalVocBBox_to_CreateMLBBox, PascalVocBBox_to_YoloBBox, YoloBBox_to_PascalVocBBox
 from datasetconverter.utils.file_utils import get_image_info_from_file, get_image_path
@@ -579,3 +581,254 @@ def test_coco_to_createml():
     
     coco_category_names = {c.name for c in coco_original.files[0].categories}
     assert all_createml_labels.issubset(coco_category_names)
+
+
+def test_tensorflow_csv_original_and_tensorflow_csv_reconverted():
+    """Test TensorFlow CSV format idempotence through neutral conversion."""
+    base_dir = os.path.dirname(__file__)
+    tf_csv_path = os.path.join(base_dir, "test_resources/TENSORFLOW_CSV_TEST/annotations.csv")
+
+    # 1. Load TensorFlow CSV Dataset
+    tf_csv_original: TensorflowCsvFormat = TensorflowCsvFormat.read_from_folder(tf_csv_path)
+    
+    # 2. TensorFlow CSV → Neutral → TensorFlow CSV
+    neutral_from_tf_csv: NeutralFormat = TensorflowCsvConverter.toNeutral(tf_csv_original)
+    tf_csv_reconverted: TensorflowCsvFormat = TensorflowCsvConverter.fromNeutral(neutral_from_tf_csv)
+    
+    # Check idempotence
+    assert tf_csv_original.name == tf_csv_reconverted.name
+    assert len(tf_csv_original.files) == len(tf_csv_reconverted.files)
+
+    for orig_file, reconv_file in zip(tf_csv_original.files, tf_csv_reconverted.files):
+        assert orig_file.filename == reconv_file.filename
+        assert orig_file.width == reconv_file.width
+        assert orig_file.height == reconv_file.height
+        assert len(orig_file.annotations) == len(reconv_file.annotations)
+
+        for i, (orig_ann, reconv_ann) in enumerate(zip(orig_file.annotations, reconv_file.annotations)):
+            # Check bbox coordinates
+            orig_bbox = orig_ann.bbox.getBoundingBox()
+            reconv_bbox = reconv_ann.bbox.getBoundingBox()
+            assert orig_bbox == pytest.approx(reconv_bbox, rel=1e-6, abs=1e-6)
+
+            # Check class name matches
+            assert orig_ann.class_name == reconv_ann.class_name, f"Annotation {i}: class '{orig_ann.class_name}' != '{reconv_ann.class_name}'"
+
+
+def test_tensorflow_csv_to_yolo():
+    """Test conversion from TensorFlow CSV to YOLO format."""
+    base_dir = os.path.dirname(__file__)
+    tf_csv_path = os.path.join(base_dir, "test_resources/TENSORFLOW_CSV_TEST/annotations.csv")
+
+    # 1. Load TensorFlow CSV Dataset
+    tf_csv_original: TensorflowCsvFormat = TensorflowCsvFormat.read_from_folder(tf_csv_path)
+    
+    # 2. TensorFlow CSV → Neutral → YOLO
+    neutral_from_tf_csv: NeutralFormat = TensorflowCsvConverter.toNeutral(tf_csv_original)
+    yolo_converted: YoloFormat = YoloConverter.fromNeutral(neutral_from_tf_csv)
+    
+    # Check YOLO structure
+    assert isinstance(yolo_converted, YoloFormat)
+    assert len(yolo_converted.files) == len(tf_csv_original.files)
+
+    # Check file values
+    for yolo_file, tf_csv_file in zip(yolo_converted.files, tf_csv_original.files):
+        assert len(yolo_file.annotations) == len(tf_csv_file.annotations)
+        assert yolo_file.filename == tf_csv_file.filename
+        assert yolo_file.width == tf_csv_file.width
+        assert yolo_file.height == tf_csv_file.height
+        
+        # Check annotation values
+        for yolo_annotation, tf_csv_annotation in zip(yolo_file.annotations, tf_csv_file.annotations):
+            # Get class name from YOLO class_labels mapping
+            yolo_class_name = yolo_converted.class_labels[yolo_annotation.id_class]
+            assert yolo_class_name == tf_csv_annotation.class_name
+            
+            # Check bbox conversion (Pascal VOC to YOLO coordinates)
+            expected_yolo_bbox = PascalVocBBox_to_YoloBBox(tf_csv_annotation.bbox, tf_csv_file.width, tf_csv_file.height)
+            assert yolo_annotation.bbox.getBoundingBox() == pytest.approx(expected_yolo_bbox.getBoundingBox(), rel=1e-9, abs=1e-9)
+
+
+def test_tensorflow_csv_to_pascalvoc():
+    """Test conversion from TensorFlow CSV to Pascal VOC format."""
+    base_dir = os.path.dirname(__file__)
+    tf_csv_path = os.path.join(base_dir, "test_resources/TENSORFLOW_CSV_TEST/annotations.csv")
+
+    # 1. Load TensorFlow CSV Dataset
+    tf_csv_original: TensorflowCsvFormat = TensorflowCsvFormat.read_from_folder(tf_csv_path)
+    
+    # 2. TensorFlow CSV → Neutral → Pascal VOC
+    neutral_from_tf_csv: NeutralFormat = TensorflowCsvConverter.toNeutral(tf_csv_original)
+    pascal_converted: PascalVocFormat = PascalVocConverter.fromNeutral(neutral_from_tf_csv)
+    
+    # Check Pascal VOC structure
+    assert isinstance(pascal_converted, PascalVocFormat)
+    assert len(pascal_converted.files) == len(tf_csv_original.files)
+
+    # Check file values
+    for pascal_file, tf_csv_file in zip(pascal_converted.files, tf_csv_original.files):
+        assert len(pascal_file.annotations) == len(tf_csv_file.annotations)
+        assert pascal_file.width == tf_csv_file.width
+        assert pascal_file.height == tf_csv_file.height
+        assert not pascal_file.segmented
+        assert pascal_file.filename == tf_csv_file.filename
+        assert pascal_file.source.database == tf_csv_original.name
+        assert pascal_file.source.annotation == "Pascal Voc"
+        assert pascal_file.source.image == ""
+
+        # Check annotation values
+        for pascal_annotation, tf_csv_annotation in zip(pascal_file.annotations, tf_csv_file.annotations):
+            assert pascal_annotation.name == tf_csv_annotation.class_name
+            
+            # Both use PascalVocBoundingBox, so coordinates should be identical
+            orig_bbox = tf_csv_annotation.bbox.getBoundingBox()
+            pascal_bbox = pascal_annotation.bbox.getBoundingBox()
+            assert orig_bbox == pytest.approx(pascal_bbox, rel=1e-6, abs=1e-6)
+
+
+def test_tensorflow_csv_to_coco():
+    """Test conversion from TensorFlow CSV to COCO format."""
+    base_dir = os.path.dirname(__file__)
+    tf_csv_path = os.path.join(base_dir, "test_resources/TENSORFLOW_CSV_TEST/annotations.csv")
+
+    # 1. Load TensorFlow CSV Dataset
+    tf_csv_original: TensorflowCsvFormat = TensorflowCsvFormat.read_from_folder(tf_csv_path)
+    
+    # 2. TensorFlow CSV → Neutral → COCO
+    neutral_from_tf_csv: NeutralFormat = TensorflowCsvConverter.toNeutral(tf_csv_original)
+    coco_converted: CocoFormat = CocoConverter.fromNeutral(neutral_from_tf_csv)
+    
+    # Check COCO structure
+    assert isinstance(coco_converted, CocoFormat)
+    assert len(coco_converted.files) == 1
+    
+    # Calculate total annotations
+    total_annotations = sum(len(file.annotations) for file in tf_csv_original.files)
+    assert len(coco_converted.files[0].annotations) == total_annotations
+    
+    for coco_file in coco_converted.files:
+        # Check image metadata
+        for tf_csv_file, coco_image in zip(tf_csv_original.files, coco_file.images):
+            assert coco_image.file_name == tf_csv_file.filename
+            assert coco_image.height == tf_csv_file.height
+            assert coco_image.width == tf_csv_file.width
+
+        # Check annotations
+        for coco_annotation in coco_file.annotations:
+            # Check annotation values
+            assert coco_annotation.area == (coco_annotation.bbox.width * coco_annotation.bbox.height)
+            coco_category_name = next((c.name for c in coco_file.categories if c.id == coco_annotation.category_id), None)
+            
+            # Find corresponding TensorFlow CSV annotation by bbox matching
+            tf_csv_class_name = None
+            found = False
+
+            for tf_csv_file in tf_csv_original.files:
+                if found:
+                    break
+                for tf_csv_annotation in tf_csv_file.annotations:
+                    # Convert Pascal VOC to COCO format for comparison
+                    expected_coco_bbox = PascalVocBBox_to_CocoBBox(tf_csv_annotation.bbox)
+                    bbox1 = expected_coco_bbox.getBoundingBox()
+                    bbox2 = coco_annotation.bbox.getBoundingBox()
+                    if bbox_almost_equal(bbox1, bbox2, 2):
+                        tf_csv_class_name = tf_csv_annotation.class_name
+                        found = True
+                        break
+            
+            # Check category name matches
+            assert coco_category_name == tf_csv_class_name
+
+
+def test_yolo_to_tensorflow_csv():
+    """Test conversion from YOLO to TensorFlow CSV format."""
+    base_dir = os.path.dirname(__file__)
+    yolo_path = os.path.join(base_dir, "test_resources/YOLO_TEST")
+
+    # 1. Load YOLO Dataset
+    yolo_original: YoloFormat = YoloFormat.read_from_folder(yolo_path)
+    
+    # 2. YOLO → Neutral → TensorFlow CSV
+    neutral_from_yolo: NeutralFormat = YoloConverter.toNeutral(yolo_original)
+    tf_csv_converted: TensorflowCsvFormat = TensorflowCsvConverter.fromNeutral(neutral_from_yolo)
+    
+    # Check TensorFlow CSV structure
+    assert isinstance(tf_csv_converted, TensorflowCsvFormat)
+    assert len(tf_csv_converted.files) == len(yolo_original.files)
+
+    # Check file values
+    for tf_csv_file, yolo_file in zip(tf_csv_converted.files, yolo_original.files):
+        assert len(tf_csv_file.annotations) == len(yolo_file.annotations)
+        assert tf_csv_file.filename == yolo_file.filename
+        
+        # Check annotation values
+        for tf_csv_annotation, yolo_annotation in zip(tf_csv_file.annotations, yolo_file.annotations):
+            # Get class name from YOLO class_labels mapping
+            yolo_class_name = yolo_original.class_labels[yolo_annotation.id_class]
+            assert tf_csv_annotation.class_name == yolo_class_name
+
+
+def test_pascalvoc_to_tensorflow_csv():
+    """Test conversion from Pascal VOC to TensorFlow CSV format."""
+    base_dir = os.path.dirname(__file__)
+    pascal_path = os.path.join(base_dir, "test_resources/PASCAL_VOC_TEST")
+
+    # 1. Load Pascal VOC Dataset
+    pascal_original: PascalVocFormat = PascalVocFormat.read_from_folder(pascal_path)
+    
+    # 2. Pascal VOC → Neutral → TensorFlow CSV
+    neutral_from_pascal: NeutralFormat = PascalVocConverter.toNeutral(pascal_original)
+    tf_csv_converted: TensorflowCsvFormat = TensorflowCsvConverter.fromNeutral(neutral_from_pascal)
+
+    # Check TensorFlow CSV structure
+    assert isinstance(tf_csv_converted, TensorflowCsvFormat)
+    assert len(tf_csv_converted.files) == len(pascal_original.files)
+
+    # Check file values
+    for tf_csv_file, pascal_file in zip(tf_csv_converted.files, pascal_original.files):
+        assert len(tf_csv_file.annotations) == len(pascal_file.annotations)
+        assert tf_csv_file.filename == pascal_file.filename
+        assert tf_csv_file.width == pascal_file.width
+        assert tf_csv_file.height == pascal_file.height
+        
+        # Check annotation values
+        for tf_csv_annotation, pascal_annotation in zip(tf_csv_file.annotations, pascal_file.annotations):
+            assert tf_csv_annotation.class_name == pascal_annotation.name
+            
+            # Both use PascalVocBoundingBox, so coordinates should be identical
+            tf_csv_bbox = tf_csv_annotation.bbox.getBoundingBox()
+            pascal_bbox = pascal_annotation.bbox.getBoundingBox()
+            assert tf_csv_bbox == pytest.approx(pascal_bbox, rel=1e-6, abs=1e-6)
+
+
+def test_coco_to_tensorflow_csv():
+    """Test conversion from COCO to TensorFlow CSV format."""
+    base_dir = os.path.dirname(__file__)
+    coco_path = os.path.join(base_dir, "test_resources/COCO_TEST")
+
+    # 1. Load COCO Dataset
+    coco_original: CocoFormat = CocoFormat.read_from_folder(coco_path)
+    
+    # 2. COCO → Neutral → TensorFlow CSV
+    neutral_from_coco: NeutralFormat = CocoConverter.toNeutral(coco_original)
+    tf_csv_converted: TensorflowCsvFormat = TensorflowCsvConverter.fromNeutral(neutral_from_coco)
+    
+    # Check TensorFlow CSV structure
+    assert isinstance(tf_csv_converted, TensorflowCsvFormat)
+    assert len(tf_csv_converted.files) == len(coco_original.files[0].images)
+    
+    # Calculate total annotations
+    total_annotations = sum(len(file.annotations) for file in tf_csv_converted.files)
+    assert total_annotations == len(coco_original.files[0].annotations)
+    
+    # Check that every TensorFlow CSV class is in COCO categories
+    unique_tf_csv_classes = tf_csv_converted.get_unique_classes()
+    coco_category_names = {c.name for c in coco_original.files[0].categories}
+    assert unique_tf_csv_classes.issubset(coco_category_names)
+    
+    # Check file correspondence
+    for i, tf_csv_file in enumerate(tf_csv_converted.files):
+        corresponding_coco_image = coco_original.files[0].images[i]
+        assert tf_csv_file.filename == corresponding_coco_image.file_name
+        assert tf_csv_file.width == corresponding_coco_image.width
+        assert tf_csv_file.height == corresponding_coco_image.height

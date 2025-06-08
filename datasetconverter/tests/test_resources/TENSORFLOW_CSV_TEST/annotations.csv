@@ -1,0 +1,10 @@
+filename,width,height,class,xmin,ymin,xmax,ymax
+image1.jpg,800,600,person,260,150,380,330
+image1.jpg,800,600,car,50,300,250,400
+image2.jpg,1024,768,bicycle,360,240,440,360
+image2.jpg,1024,768,person,170,70,230,230
+image2.jpg,1024,768,dog,455,365,545,435
+image3.jpg,800,600,truck,250,125,550,275
+image3.jpg,800,600,person,75,110,125,250
+image3.jpg,800,600,traffic_light,585,40,615,120
+image3.jpg,800,600,stop_sign,670,90,730,150
