@@ -7,7 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from ..formats.neutral_format import NeutralFormat
 
-FORMATS = ['coco', 'pascal_voc', 'yolo', 'createml']
+FORMATS = ['coco', 'pascal_voc', 'yolo', 'createml', 'tensorflow_csv']
 
 @click.command()
 @click.option('--input-format', '-if', 
@@ -43,6 +43,7 @@ def dconverter(input_format, input_path, output_format, output_path):
         • YOLO (TXT files with normalized coordinates)
         • Pascal VOC (XML files with Pascal VOC metadata)
         • CreateML (JSON file with list of annotations per image)
+        • Tensorflow Object Detection CSV (csv file with annotations)
     """
 
     # Check if it has permissions to write
@@ -70,7 +71,7 @@ def dconverter(input_format, input_path, output_format, output_path):
         
         # Load input dataset
         click.echo(f"Loading dataset {input_format} from {input_path}")
-        input_dataset = input_format_class.read_from_folder(folder_path = input_path)
+        input_dataset = input_format_class.read_from_folder(input_path)
         
         # Convert to NeutralFormat
         click.echo(f"Converting from {input_format} to neutral format...")
@@ -100,7 +101,7 @@ def to_camel_case(input: str) -> str:
         'createml': 'CreateML'
     }
     
-    # Si hay un caso especial definido, úsalo
+    # For special cases
     if input.lower() in specific_formats:
         return specific_formats[input.lower()]
     
