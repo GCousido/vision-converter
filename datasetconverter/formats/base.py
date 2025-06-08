@@ -23,6 +23,10 @@ class Shape(ABC):
     def getCoordinates(self) -> list:
         pass
 
+    @abstractmethod
+    def getBoundingBox(self) -> BoundingBox:
+        pass
+
 T = TypeVar("T", bound=Union[BoundingBox, Shape])
 
 class Annotation(ABC, Generic[T]):

@@ -155,7 +155,7 @@ def test_bounding_box_calculations():
     
     # Test Polygon bounding box
     polygon = LabelMePolygon([[10, 20], [50, 10], [60, 40], [20, 50]])
-    bbox = polygon.get_bounding_box()
+    bbox = polygon.getBoundingBox()
     assert bbox.x_min == 10
     assert bbox.y_min == 10
     assert bbox.x_max == 60
@@ -163,7 +163,7 @@ def test_bounding_box_calculations():
     
     # Test Circle bounding box
     circle = LabelMeCircle(100, 100, 110, 100)  # radius = 10
-    bbox = circle.get_bounding_box()
+    bbox = circle.getBoundingBox()
     assert bbox.x_min == 90
     assert bbox.y_min == 90
     assert bbox.x_max == 110
@@ -171,7 +171,7 @@ def test_bounding_box_calculations():
     
     # Test Point bounding box (zero area)
     point = LabelMePoint(25, 35)
-    bbox = point.get_bounding_box()
+    bbox = point.getBoundingBox()
     assert bbox.x_min == 25
     assert bbox.y_min == 35
     assert bbox.x_max == 25
