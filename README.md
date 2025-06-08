@@ -120,6 +120,7 @@ dconverter --input-format coco --input-path ./datasets/coco --output-format pasc
 | **YOLO** | ✅ | ✅ | YOLO format (.txt files with normalized coordinates and classes.txt for class names) |
 | **COCO** | ✅ | ✅ | Microsoft COCO format (.json with absolute coordinates) |
 | **Pascal VOC** | ✅ | ✅ | Pascal Visual Object Classes format (.xml files with absolute coordinates) |
+| **CreateML**  | ✅ | ✅ | Apple CreateML format (.json with centered bounding boxes and absolute coordinates)|
 
 ### Format Specifications
 
@@ -143,6 +144,12 @@ dconverter --input-format coco --input-path ./datasets/coco --output-format pasc
 * **Annotation Format**: XML structure with bounding box coordinates and class names
 * **Coordinates**: Absolute pixel values `<xmin>, <ymin>, <xmax>, <ymax>`
 * **Metadata**: Rich annotation metadata, including image `size`, object attributes (`difficult`, `truncated`, `occluded`), and `source` info
+
+#### CreateML Format
+
+* **File Structure**: Single `.json` file containing all annotations and an images/ folder with image files
+* **Annotation Format**: JSON array with entries for each image, each containing image filename and annotations array
+* **Coordinates**: Absolute pixel values with bounding boxes defined by center coordinates and dimensions `{x_center, y_center, width, height}`
 
 ---
 
