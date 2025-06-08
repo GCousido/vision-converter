@@ -7,7 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from ..formats.neutral_format import NeutralFormat
 
-FORMATS = ['coco', 'pascal_voc', 'yolo']
+FORMATS = ['coco', 'pascal_voc', 'yolo', 'createml']
 
 @click.command()
 @click.option('--input-format', '-if', 
@@ -29,8 +29,7 @@ FORMATS = ['coco', 'pascal_voc', 'yolo']
 def dconverter(input_format, input_path, output_format, output_path):
     """Convert object detection datasets between popular annotation formats.
 
-    This CLI tool provides conversion between COCO, YOLO, and Pascal VOC
-    annotation formats through a neutral intermediate representation.
+    This CLI tool provides conversion between annotation formats through a neutral intermediate representation.
 
     \b
     Conversion Process:
@@ -43,6 +42,7 @@ def dconverter(input_format, input_path, output_format, output_path):
         • COCO (JSON format with COCO dataset structure)
         • YOLO (TXT files with normalized coordinates)
         • Pascal VOC (XML files with Pascal VOC metadata)
+        • CreateML (JSON file with list of annotations per image)
     """
 
     # Check if it has permissions to write
@@ -95,6 +95,16 @@ def dconverter(input_format, input_path, output_format, output_path):
         sys.exit(1)
 
 def to_camel_case(input: str) -> str:
+    # Map special cases
+    specific_formats = {
+        'createml': 'CreateML'
+    }
+    
+    # Si hay un caso especial definido, úsalo
+    if input.lower() in specific_formats:
+        return specific_formats[input.lower()]
+    
+    # default
     return "".join(word.capitalize() for word in input.split("_"))
 
 
