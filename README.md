@@ -115,12 +115,13 @@ dconverter --input-format coco --input-path ./datasets/coco --output-format pasc
 
 ## Supported Formats
 
-| Format | Input | Output | Description |
-|--------|-------|--------|-------------|
-| **YOLO** | ✅ | ✅ | YOLO format (.txt files with normalized coordinates and classes.txt for class names) |
-| **COCO** | ✅ | ✅ | Microsoft COCO format (.json with absolute coordinates) |
-| **Pascal VOC** | ✅ | ✅ | Pascal Visual Object Classes format (.xml files with absolute coordinates) |
-| **CreateML**  | ✅ | ✅ | Apple CreateML format (.json with centered bounding boxes and absolute coordinates)|
+| Format | Input | Output | Parameter Value | Description |
+|--------|-------|--------|-----------------|-------------|
+| **YOLO** | ✅ | ✅ | yolo | YOLO format (.txt files with normalized coordinates and classes.txt for class names) |
+| **COCO** | ✅ | ✅ | coco | Microsoft COCO format (.json with absolute coordinates) |
+| **Pascal VOC** | ✅ | ✅ | pascal_voc | Pascal Visual Object Classes format (.xml files with absolute coordinates) |
+| **CreateML**  | ✅ | ✅ | createml | Apple CreateML format (.json with centered bounding boxes and absolute coordinates)|
+| **TensorFlow CSV** | ✅ | ✅ | tensorflow_csv | TensorFlow Object Detection CSV format (.csv with absolute coordinates) |
 
 ### Format Specifications
 
@@ -150,6 +151,14 @@ dconverter --input-format coco --input-path ./datasets/coco --output-format pasc
 * **File Structure**: Single `.json` file containing all annotations and an images/ folder with image files
 * **Annotation Format**: JSON array with entries for each image, each containing image filename and annotations array
 * **Coordinates**: Absolute pixel values with bounding boxes defined by center coordinates and dimensions `{x_center, y_center, width, height}`
+
+#### TensorFlow Object Detection CSV Format
+
+* **File Structure**: Single `.csv` file containing all annotations
+* **Annotation Format**: CSV structure with specific columns for image metadata and bounding box coordinates
+* **Coordinates**: Absolute pixel values `<xmin>, <ymin>, <xmax>, <ymax>`
+* **Required Columns**: `filename`, `width`, `height`, `class`, `xmin`, `ymin`, `xmax`, `ymax`
+* **Features**: Human-readable format, direct compatibility with TensorFlow Object Detection API, supports multiple objects per image
 
 ---
 
