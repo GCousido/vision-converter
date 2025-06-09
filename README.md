@@ -14,7 +14,7 @@
 
 ## Description
 
-DatasetConverter is a **library** that also includes a **CLI tool** for converting object detection annotation datasets between popular formats. It simplifies dataset interoperability for machine learning and computer vision projects.
+DatasetConverter is a **library** for converting object detection annotation datasets between popular formats. It simplifies dataset interoperability for machine learning and computer vision projects.
 
 Key Features:
 
@@ -81,7 +81,7 @@ The CLI provides a simple interface for converting datasets:
 #### Basic Usage
 
 ```bash
-dconverter --input-format <INPUT_FORMAT> --input-path <INPUT_PATH> --output-format <OUTPUT_FORMAT> --output-path <OUTPUT_PATH> [OPTIONS]
+dconverter --input-format <INPUT_FORMAT> --input-path <INPUT_PATH> --output-format <OUTPUT_FORMAT> --output-path <OUTPUT_PATH>
 ```
 
 #### Required Arguments
@@ -123,6 +123,7 @@ dconverter --input-format coco --input-path ./datasets/coco --output-format pasc
 | **CreateML**  | ✅ | ✅ | createml | Apple CreateML format (.json with centered bounding boxes and absolute coordinates)|
 | **TensorFlow CSV** | ✅ | ✅ | tensorflow_csv | TensorFlow Object Detection CSV format (.csv with absolute coordinates) |
 | **LabelMe** | ✅ | ✅ | labelme | LabelMe JSON format (.json files with shape annotations and optional embedded image data)|
+| **VGG** | ✅ | ✅ | vgg | VGG Image Annotator format (.json with multiple shape types and region attributes) |
 
 ### Format Specifications
 
@@ -168,6 +169,20 @@ dconverter --input-format coco --input-path ./datasets/coco --output-format pasc
 * **Coordinates**: Absolute pixel values for `points` defining `shapes` (e.g., polygons, rectangles)
 * **Image Data**: Optional `base64` encoded image data embedded in `imageData` field
 * **Metadata**: Includes dataset `version`, `flags`, `imagePath`, `imageHeight`, `imageWidth`
+
+#### VGG Image Annotator Format
+
+* **File Structure**: Single `.json` file containing all annotations with VIA metadata structure
+* **Annotation Format**: JSON with `_via_img_metadata` containing image entries, each with `regions` array for shape annotations
+* **Coordinates**: Absolute pixel values with support for 6 shape types: `rect`, `circle`, `ellipse`, `polygon`, `polyline`, `point`
+* **Shape Types**:
+  * **Rectangle**: `{x, y, width, height}` - top-left corner and dimensions
+  * **Circle**: `{cx, cy, r}` - center coordinates and radius
+  * **Ellipse**: `{cx, cy, rx, ry, theta}` - center, radii, and rotation angle
+  * **Polygon**: `{all_points_x[], all_points_y[]}` - arrays of vertex coordinates
+  * **Polyline**: `{all_points_x[], all_points_y[]}` - arrays of line point coordinates
+  * **Point**: `{cx, cy}` - single point coordinates
+* **Metadata**: Includes `file_attributes` for image-level data, `region_attributes` for annotation-level data, and optional VIA project settings
 
 ---
 

@@ -273,7 +273,7 @@ def test_vgg_format_construction(sample_vgg_dataset):
     """Test VGG format construction from JSON file"""
     
     # Test reading first annotation file
-    vgg_format = VGGFormat.read_from_file(str(sample_vgg_dataset / "annotations1.json"))
+    vgg_format = VGGFormat.read_from_folder(str(sample_vgg_dataset / "annotations1.json"))
     
     # Check basic structure
     assert vgg_format.folder_path == str(sample_vgg_dataset)
@@ -317,7 +317,7 @@ def test_vgg_format_all_shapes(sample_vgg_dataset):
     """Test VGG format with all shape types"""
     
     # Test reading second annotation file with all remaining shapes
-    vgg_format = VGGFormat.read_from_file(str(sample_vgg_dataset / "annotations2.json"))
+    vgg_format = VGGFormat.read_from_folder(str(sample_vgg_dataset / "annotations2.json"))
     
     assert len(vgg_format.files) == 1
     file2 = vgg_format.files[0]
@@ -352,7 +352,7 @@ def test_invalid_dataset_structure(tmp_path):
     
     # Case: file doesn't exist
     with pytest.raises(FileNotFoundError):
-        VGGFormat.read_from_file(str(tmp_path / "nonexistent.json"))
+        VGGFormat.read_from_folder(str(tmp_path / "nonexistent.json"))
     
     # Case: invalid JSON
     invalid_json = tmp_path / "invalid.json"
@@ -360,7 +360,7 @@ def test_invalid_dataset_structure(tmp_path):
         f.write("invalid json content")
     
     with pytest.raises(json.JSONDecodeError):
-        VGGFormat.read_from_file(str(invalid_json))
+        VGGFormat.read_from_folder(str(invalid_json))
 
 
 def test_vgg_format_save_full(tmp_path):
@@ -468,7 +468,7 @@ def test_vgg_format_real_data_compatibility(tmp_path):
         json.dump(real_data, f)
     
     # Load and verify
-    vgg_format = VGGFormat.read_from_file(str(json_file))
+    vgg_format = VGGFormat.read_from_folder(str(json_file))
     
     assert len(vgg_format.files) == 1
     file = vgg_format.files[0]
@@ -529,7 +529,7 @@ def test_vgg_format_via_metadata_structure(tmp_path):
         json.dump(via_data, f)
     
     # Load and verify it works with full VIA structure
-    vgg_format = VGGFormat.read_from_file(str(json_file))
+    vgg_format = VGGFormat.read_from_folder(str(json_file))
     
     assert len(vgg_format.files) == 1
     file = vgg_format.files[0]

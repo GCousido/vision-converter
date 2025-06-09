@@ -7,7 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from ..formats.neutral_format import NeutralFormat
 
-FORMATS = ['coco', 'pascal_voc', 'yolo', 'createml', 'tensorflow_csv', 'labelme']
+FORMATS = ['coco', 'pascal_voc', 'yolo', 'createml', 'tensorflow_csv', 'labelme', 'vgg']
 
 @click.command()
 @click.option('--input-format', '-if', 
@@ -100,7 +100,8 @@ def to_camel_case(input: str) -> str:
     # Map special cases
     specific_formats = {
         'createml': 'CreateML',
-        'labelme': 'LabelMe'
+        'labelme': 'LabelMe',
+        'vgg': 'VGG'
     }
     
     # For special cases
