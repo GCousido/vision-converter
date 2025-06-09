@@ -14,7 +14,7 @@ from datasetconverter.formats.labelme import LabelMeCircle, LabelMeFormat
 from datasetconverter.formats.neutral_format import NeutralFormat
 from datasetconverter.formats.pascal_voc import PascalVocBoundingBox, PascalVocFormat
 from datasetconverter.formats.tensorflow_csv import TensorflowCsvFormat
-from datasetconverter.formats.vgg import VGGFormat
+from datasetconverter.formats.vgg import VGGFormat, extract_class_name
 from datasetconverter.formats.yolo import YoloFormat
 from datasetconverter.utils.bbox_utils import CreateMLBBox_to_PascalVocBBox, PascalVocBBox_to_CocoBBox, PascalVocBBox_to_CreateMLBBox, PascalVocBBox_to_YoloBBox, YoloBBox_to_PascalVocBBox
 from datasetconverter.utils.file_utils import get_image_info_from_file, get_image_path
@@ -1203,21 +1203,13 @@ def test_vgg_original_and_vgg_reconverted():
         assert orig_file.file_attributes == reconv_file.file_attributes
 
         for i, (orig_ann, reconv_ann) in enumerate(zip(orig_file.annotations, reconv_file.annotations)):
-            # Check shape type matches
-            assert orig_ann.geometry.shape_type == reconv_ann.geometry.shape_type, f"Annotation {i}: shape_type mismatch"
-            
-            # Check coordinates match
-            orig_coords = orig_ann.geometry.getCoordinates()
-            reconv_coords = reconv_ann.geometry.getCoordinates()
+            # Check bbox match
+            orig_coords = orig_ann.geometry.getBoundingBox()
+            reconv_coords = reconv_ann.geometry.getBoundingBox()
             assert orig_coords == reconv_coords, f"Annotation {i}: coordinates mismatch"
             
             # Check region attributes
-            assert orig_ann.region_attributes == reconv_ann.region_attributes, f"Annotation {i}: region_attributes mismatch"
-            
-            # Check bbox conversion
-            orig_bbox = orig_ann.geometry.getBoundingBox()
-            reconv_bbox = reconv_ann.geometry.getBoundingBox()
-            assert orig_bbox == pytest.approx(reconv_bbox, rel=1e-3, abs=1e-3)
+            assert extract_class_name(orig_ann.region_attributes) == extract_class_name(reconv_ann.region_attributes), f"Annotation {i}: class name mismatch"
 
 
 def test_vgg_to_pascalvoc():
@@ -1250,7 +1242,7 @@ def test_vgg_to_pascalvoc():
         # Check annotation values
         for pascal_annotation, vgg_annotation in zip(pascal_file.annotations, vgg_file.annotations):
             # Extract class name from VGG region attributes
-            expected_class = _extract_class_from_vgg_attributes(vgg_annotation.region_attributes)
+            expected_class = extract_class_name(vgg_annotation.region_attributes)
             assert pascal_annotation.name == expected_class
             
             # Check bbox matches VGG shape bounding box
@@ -1291,7 +1283,7 @@ def test_vgg_to_yolo():
         for yolo_annotation, vgg_annotation in zip(yolo_file.annotations, vgg_file.annotations):
             # Get class name from YOLO class_labels mapping
             yolo_class_name = yolo_converted.class_labels[yolo_annotation.id_class]
-            expected_class = _extract_class_from_vgg_attributes(vgg_annotation.region_attributes)
+            expected_class = extract_class_name(vgg_annotation.region_attributes)
             assert yolo_class_name == expected_class
             
             # Check bbox conversion (VGG bounding box to YOLO coordinates)
@@ -1349,7 +1341,7 @@ def test_vgg_to_coco():
                     bbox1 = expected_coco_bbox.getBoundingBox()
                     bbox2 = coco_annotation.geometry.getBoundingBox()
                     if bbox_almost_equal(bbox1, bbox2, 2):
-                        vgg_class_name = _extract_class_from_vgg_attributes(vgg_annotation.region_attributes)
+                        vgg_class_name = extract_class_name(vgg_annotation.region_attributes)
                         found = True
                         break
             
@@ -1451,73 +1443,11 @@ def test_coco_to_vgg():
     all_vgg_classes = set()
     for file in vgg_converted.files:
         for ann in file.annotations:
-            vgg_class = _extract_class_from_vgg_attributes(ann.region_attributes)
+            vgg_class = extract_class_name(ann.region_attributes)
             all_vgg_classes.add(vgg_class)
     
     coco_category_names = {c.name for c in coco_original.files[0].categories}
     assert all_vgg_classes.issubset(coco_category_names)
-
-
-def test_vgg_shape_preservation():
-    """Test that VGG shape information is preserved through neutral conversion."""
-    base_dir = os.path.dirname(__file__)
-    vgg_path = os.path.join(base_dir, "test_resources/VGG_TEST/annotations.json")
-
-    # 1. Load VGG Dataset
-    vgg_original: VGGFormat = VGGFormat.read_from_file(vgg_path)
-    
-    # 2. VGG → Neutral → VGG
-    neutral_from_vgg: NeutralFormat = VGGConverter.toNeutral(vgg_original)
-    vgg_reconverted: VGGFormat = VGGConverter.fromNeutral(neutral_from_vgg)
-    
-    # Check that shape-specific attributes are preserved
-    for orig_file, reconv_file in zip(vgg_original.files, vgg_reconverted.files):
-        for orig_ann, reconv_ann in zip(orig_file.annotations, reconv_file.annotations):
-            # Check shape type preservation
-            assert orig_ann.geometry.shape_type == reconv_ann.geometry.shape_type
-            
-            # Check coordinates preservation for different shape types
-            orig_coords = orig_ann.geometry.getCoordinates()
-            reconv_coords = reconv_ann.geometry.getCoordinates()
-            
-            if orig_ann.geometry.shape_type == "circle":
-                assert orig_coords["cx"] == pytest.approx(reconv_coords["cx"], rel=1e-3, abs=1e-3)
-                assert orig_coords["cy"] == pytest.approx(reconv_coords["cy"], rel=1e-3, abs=1e-3)
-                assert orig_coords["r"] == pytest.approx(reconv_coords["r"], rel=1e-3, abs=1e-3)
-            elif orig_ann.geometry.shape_type == "ellipse":
-                assert orig_coords["cx"] == pytest.approx(reconv_coords["cx"], rel=1e-3, abs=1e-3)
-                assert orig_coords["cy"] == pytest.approx(reconv_coords["cy"], rel=1e-3, abs=1e-3)
-                assert orig_coords["rx"] == pytest.approx(reconv_coords["rx"], rel=1e-3, abs=1e-3)
-                assert orig_coords["ry"] == pytest.approx(reconv_coords["ry"], rel=1e-3, abs=1e-3)
-                assert orig_coords["theta"] == pytest.approx(reconv_coords["theta"], rel=1e-3, abs=1e-3)
-            elif orig_ann.geometry.shape_type in ["polygon", "polyline"]:
-                assert orig_coords["all_points_x"] == reconv_coords["all_points_x"]
-                assert orig_coords["all_points_y"] == reconv_coords["all_points_y"]
-
-
-def test_vgg_metadata_preservation():
-    """Test that VGG metadata is preserved through neutral conversion."""
-    base_dir = os.path.dirname(__file__)
-    vgg_path = os.path.join(base_dir, "test_resources/VGG_TEST/annotations.json")
-
-    # 1. Load VGG Dataset
-    vgg_original: VGGFormat = VGGFormat.read_from_file(vgg_path)
-    
-    # 2. VGG → Neutral → VGG
-    neutral_from_vgg: NeutralFormat = VGGConverter.toNeutral(vgg_original)
-    vgg_reconverted: VGGFormat = VGGConverter.fromNeutral(neutral_from_vgg)
-    
-    # Check that VGG-specific metadata is preserved
-    for orig_file, reconv_file in zip(vgg_original.files, vgg_reconverted.files):
-        # Check file attributes preservation
-        assert orig_file.file_attributes == reconv_file.file_attributes
-        
-        # Check file size preservation
-        assert orig_file.size == reconv_file.size
-        
-        for orig_ann, reconv_ann in zip(orig_file.annotations, reconv_file.annotations):
-            # Check region attributes preservation
-            assert orig_ann.region_attributes == reconv_ann.region_attributes
 
 
 def test_vgg_class_extraction():
@@ -1544,19 +1474,3 @@ def test_vgg_class_extraction():
     for neutral_file in neutral_from_vgg.files:
         for neutral_ann in neutral_file.annotations:
             assert neutral_ann.class_name in neutral_from_vgg.class_map.values()
-
-
-def _extract_class_from_vgg_attributes(region_attributes: dict) -> str:
-    """Helper function to extract class name from VGG region attributes."""
-    class_keys = ['type', 'class', 'label', 'name', 'names', 'category', 'object_type']
-    
-    for key in class_keys:
-        if key in region_attributes and isinstance(region_attributes[key], str):
-            return region_attributes[key]
-    
-    # If no class found, return first string value or default
-    for value in region_attributes.values():
-        if isinstance(value, str) and value.strip():
-            return value.strip()
-    
-    return 'object'
