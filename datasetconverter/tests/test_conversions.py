@@ -6,6 +6,7 @@ from datasetconverter.converters.createml_converter import CreateMLConverter
 from datasetconverter.converters.labelme_converter import LabelMeConverter
 from datasetconverter.converters.pascal_voc_converter import PascalVocConverter
 from datasetconverter.converters.tensorflow_csv_converter import TensorflowCsvConverter
+from datasetconverter.converters.vgg_converter import VGGConverter
 from datasetconverter.converters.yolo_converter import YoloConverter
 from datasetconverter.formats.coco import CocoFile, CocoFormat, CocoImage
 from datasetconverter.formats.createml import CreateMLFormat
@@ -13,6 +14,7 @@ from datasetconverter.formats.labelme import LabelMeCircle, LabelMeFormat
 from datasetconverter.formats.neutral_format import NeutralFormat
 from datasetconverter.formats.pascal_voc import PascalVocBoundingBox, PascalVocFormat
 from datasetconverter.formats.tensorflow_csv import TensorflowCsvFormat
+from datasetconverter.formats.vgg import VGGFormat
 from datasetconverter.formats.yolo import YoloFormat
 from datasetconverter.utils.bbox_utils import CreateMLBBox_to_PascalVocBBox, PascalVocBBox_to_CocoBBox, PascalVocBBox_to_CreateMLBBox, PascalVocBBox_to_YoloBBox, YoloBBox_to_PascalVocBBox
 from datasetconverter.utils.file_utils import get_image_info_from_file, get_image_path
@@ -1176,3 +1178,385 @@ def test_labelme_metadata_preservation():
             assert orig_ann.group_id == reconv_ann.group_id
             assert orig_ann.description == reconv_ann.description
             assert orig_ann.flags == reconv_ann.flags
+
+
+def test_vgg_original_and_vgg_reconverted():
+    """Test VGG format idempotence through neutral conversion."""
+    base_dir = os.path.dirname(__file__)
+    vgg_path = os.path.join(base_dir, "test_resources/VGG_TEST/annotations.json")
+
+    # 1. Load VGG Dataset
+    vgg_original: VGGFormat = VGGFormat.read_from_file(vgg_path)
+    
+    # 2. VGG → Neutral → VGG
+    neutral_from_vgg: NeutralFormat = VGGConverter.toNeutral(vgg_original)
+    vgg_reconverted: VGGFormat = VGGConverter.fromNeutral(neutral_from_vgg)
+    
+    # Check idempotence
+    assert vgg_original.name == vgg_reconverted.name
+    assert len(vgg_original.files) == len(vgg_reconverted.files)
+
+    for orig_file, reconv_file in zip(vgg_original.files, vgg_reconverted.files):
+        assert orig_file.filename == reconv_file.filename
+        assert orig_file.size == reconv_file.size
+        assert len(orig_file.annotations) == len(reconv_file.annotations)
+        assert orig_file.file_attributes == reconv_file.file_attributes
+
+        for i, (orig_ann, reconv_ann) in enumerate(zip(orig_file.annotations, reconv_file.annotations)):
+            # Check shape type matches
+            assert orig_ann.geometry.shape_type == reconv_ann.geometry.shape_type, f"Annotation {i}: shape_type mismatch"
+            
+            # Check coordinates match
+            orig_coords = orig_ann.geometry.getCoordinates()
+            reconv_coords = reconv_ann.geometry.getCoordinates()
+            assert orig_coords == reconv_coords, f"Annotation {i}: coordinates mismatch"
+            
+            # Check region attributes
+            assert orig_ann.region_attributes == reconv_ann.region_attributes, f"Annotation {i}: region_attributes mismatch"
+            
+            # Check bbox conversion
+            orig_bbox = orig_ann.geometry.getBoundingBox()
+            reconv_bbox = reconv_ann.geometry.getBoundingBox()
+            assert orig_bbox == pytest.approx(reconv_bbox, rel=1e-3, abs=1e-3)
+
+
+def test_vgg_to_pascalvoc():
+    """Test conversion from VGG to Pascal VOC format."""
+    base_dir = os.path.dirname(__file__)
+    vgg_path = os.path.join(base_dir, "test_resources/VGG_TEST/annotations.json")
+
+    # 1. Load VGG Dataset
+    vgg_original: VGGFormat = VGGFormat.read_from_file(vgg_path)
+    
+    # 2. VGG → Neutral → Pascal VOC
+    neutral_from_vgg: NeutralFormat = VGGConverter.toNeutral(vgg_original)
+    pascal_converted: PascalVocFormat = PascalVocConverter.fromNeutral(neutral_from_vgg)
+    
+    # Check Pascal VOC structure
+    assert isinstance(pascal_converted, PascalVocFormat)
+    assert len(pascal_converted.files) == len(vgg_original.files)
+
+    # Check file values
+    for pascal_file, vgg_file in zip(pascal_converted.files, vgg_original.files):
+        assert len(pascal_file.annotations) == len(vgg_file.annotations)
+        assert pascal_file.width > 0
+        assert pascal_file.height > 0
+        assert not pascal_file.segmented
+        assert pascal_file.filename == vgg_file.filename
+        assert pascal_file.source.database == vgg_original.name
+        assert pascal_file.source.annotation == "Pascal Voc"
+        assert pascal_file.source.image == ""
+
+        # Check annotation values
+        for pascal_annotation, vgg_annotation in zip(pascal_file.annotations, vgg_file.annotations):
+            # Extract class name from VGG region attributes
+            expected_class = _extract_class_from_vgg_attributes(vgg_annotation.region_attributes)
+            assert pascal_annotation.name == expected_class
+            
+            # Check bbox matches VGG shape bounding box
+            vgg_bbox = vgg_annotation.geometry.getBoundingBox()
+            pascal_bbox = pascal_annotation.geometry
+            assert isinstance(vgg_bbox, PascalVocBoundingBox)
+            assert vgg_bbox.x_min == pytest.approx(pascal_bbox.x_min, rel=1e-3, abs=1e-3)
+            assert vgg_bbox.y_min == pytest.approx(pascal_bbox.y_min, rel=1e-3, abs=1e-3)
+            assert vgg_bbox.x_max == pytest.approx(pascal_bbox.x_max, rel=1e-3, abs=1e-3)
+            assert vgg_bbox.y_max == pytest.approx(pascal_bbox.y_max, rel=1e-3, abs=1e-3)
+
+
+def test_vgg_to_yolo():
+    """Test conversion from VGG to YOLO format."""
+    base_dir = os.path.dirname(__file__)
+    vgg_path = os.path.join(base_dir, "test_resources/VGG_TEST/annotations.json")
+
+    # 1. Load VGG Dataset
+    vgg_original: VGGFormat = VGGFormat.read_from_file(vgg_path)
+    
+    # 2. VGG → Neutral → YOLO
+    neutral_from_vgg: NeutralFormat = VGGConverter.toNeutral(vgg_original)
+    yolo_converted: YoloFormat = YoloConverter.fromNeutral(neutral_from_vgg)
+    
+    # Check YOLO structure
+    assert isinstance(yolo_converted, YoloFormat)
+    assert len(yolo_converted.files) == len(vgg_original.files)
+
+    # Check file values
+    for yolo_file, vgg_file in zip(yolo_converted.files, vgg_original.files):
+        assert len(yolo_file.annotations) == len(vgg_file.annotations)
+        assert yolo_file.filename == vgg_file.filename
+        assert yolo_file.width and yolo_file.height
+        assert yolo_file.width > 0
+        assert yolo_file.height > 0
+        
+        # Check annotation values
+        for yolo_annotation, vgg_annotation in zip(yolo_file.annotations, vgg_file.annotations):
+            # Get class name from YOLO class_labels mapping
+            yolo_class_name = yolo_converted.class_labels[yolo_annotation.id_class]
+            expected_class = _extract_class_from_vgg_attributes(vgg_annotation.region_attributes)
+            assert yolo_class_name == expected_class
+            
+            # Check bbox conversion (VGG bounding box to YOLO coordinates)
+            vgg_bbox = vgg_annotation.geometry.getBoundingBox()
+            assert isinstance(vgg_bbox, PascalVocBoundingBox)
+            expected_yolo_bbox = PascalVocBBox_to_YoloBBox(vgg_bbox, yolo_file.width, yolo_file.height)
+            assert yolo_annotation.geometry.getBoundingBox() == pytest.approx(expected_yolo_bbox.getBoundingBox(), rel=1e-3, abs=1e-3)
+
+
+def test_vgg_to_coco():
+    """Test conversion from VGG to COCO format."""
+    base_dir = os.path.dirname(__file__)
+    vgg_path = os.path.join(base_dir, "test_resources/VGG_TEST/annotations.json")
+
+    # 1. Load VGG Dataset
+    vgg_original: VGGFormat = VGGFormat.read_from_file(vgg_path)
+    
+    # 2. VGG → Neutral → COCO
+    neutral_from_vgg: NeutralFormat = VGGConverter.toNeutral(vgg_original)
+    coco_converted: CocoFormat = CocoConverter.fromNeutral(neutral_from_vgg)
+    
+    # Check COCO structure
+    assert isinstance(coco_converted, CocoFormat)
+    assert len(coco_converted.files) == 1
+    
+    # Calculate total annotations
+    total_annotations = sum(len(file.annotations) for file in vgg_original.files)
+    assert len(coco_converted.files[0].annotations) == total_annotations
+    
+    for coco_file in coco_converted.files:
+        # Check image metadata
+        for vgg_file, coco_image in zip(vgg_original.files, coco_file.images):
+            assert coco_image.file_name == vgg_file.filename
+            assert coco_image.height > 0
+            assert coco_image.width > 0
+
+        # Check annotations
+        for coco_annotation in coco_file.annotations:
+            # Check annotation values
+            assert coco_annotation.area == (coco_annotation.geometry.width * coco_annotation.geometry.height)
+            coco_category_name = next((c.name for c in coco_file.categories if c.id == coco_annotation.category_id), None)
+            
+            # Find corresponding VGG annotation by bbox matching
+            vgg_class_name = None
+            found = False
+
+            for vgg_file in vgg_original.files:
+                if found:
+                    break
+                for vgg_annotation in vgg_file.annotations:
+                    # Convert VGG bounding box to COCO format for comparison
+                    vgg_bbox = vgg_annotation.geometry.getBoundingBox()
+                    assert isinstance(vgg_bbox, PascalVocBoundingBox)
+                    expected_coco_bbox = PascalVocBBox_to_CocoBBox(vgg_bbox)
+                    bbox1 = expected_coco_bbox.getBoundingBox()
+                    bbox2 = coco_annotation.geometry.getBoundingBox()
+                    if bbox_almost_equal(bbox1, bbox2, 2):
+                        vgg_class_name = _extract_class_from_vgg_attributes(vgg_annotation.region_attributes)
+                        found = True
+                        break
+            
+            # Check category name matches
+            assert coco_category_name == vgg_class_name
+
+
+def test_pascalvoc_to_vgg():
+    """Test conversion from Pascal VOC to VGG format."""
+    base_dir = os.path.dirname(__file__)
+    pascal_path = os.path.join(base_dir, "test_resources/PASCAL_VOC_TEST")
+
+    # 1. Load Pascal VOC Dataset
+    pascal_original: PascalVocFormat = PascalVocFormat.read_from_folder(pascal_path)
+    
+    # 2. Pascal VOC → Neutral → VGG
+    neutral_from_pascal: NeutralFormat = PascalVocConverter.toNeutral(pascal_original)
+    vgg_converted: VGGFormat = VGGConverter.fromNeutral(neutral_from_pascal)
+
+    # Check VGG structure
+    assert isinstance(vgg_converted, VGGFormat)
+    assert len(vgg_converted.files) == len(pascal_original.files)
+
+    # Check file values
+    for vgg_file, pascal_file in zip(vgg_converted.files, pascal_original.files):
+        assert len(vgg_file.annotations) == len(pascal_file.annotations)
+        assert vgg_file.filename == pascal_file.filename
+        
+        # Check annotation values
+        for vgg_annotation, pascal_annotation in zip(vgg_file.annotations, pascal_file.annotations):
+            # Check that VGG shapes are rectangles (converted from Pascal VOC bounding boxes)
+            assert vgg_annotation.geometry.shape_type == "rect"
+            
+            # Check region attributes contain class name
+            assert pascal_annotation.name in vgg_annotation.region_attributes.values()
+            
+            # Check bounding box coordinates match
+            vgg_bbox = vgg_annotation.geometry.getBoundingBox()
+            pascal_bbox = pascal_annotation.geometry
+            assert isinstance(vgg_bbox, PascalVocBoundingBox)
+            assert vgg_bbox.x_min == pytest.approx(pascal_bbox.x_min, rel=1e-6, abs=1e-6)
+            assert vgg_bbox.y_min == pytest.approx(pascal_bbox.y_min, rel=1e-6, abs=1e-6)
+            assert vgg_bbox.x_max == pytest.approx(pascal_bbox.x_max, rel=1e-6, abs=1e-6)
+            assert vgg_bbox.y_max == pytest.approx(pascal_bbox.y_max, rel=1e-6, abs=1e-6)
+
+
+def test_yolo_to_vgg():
+    """Test conversion from YOLO to VGG format."""
+    base_dir = os.path.dirname(__file__)
+    yolo_path = os.path.join(base_dir, "test_resources/YOLO_TEST")
+
+    # 1. Load YOLO Dataset
+    yolo_original: YoloFormat = YoloFormat.read_from_folder(yolo_path)
+    
+    # 2. YOLO → Neutral → VGG
+    neutral_from_yolo: NeutralFormat = YoloConverter.toNeutral(yolo_original)
+    vgg_converted: VGGFormat = VGGConverter.fromNeutral(neutral_from_yolo)
+    
+    # Check VGG structure
+    assert isinstance(vgg_converted, VGGFormat)
+    assert len(vgg_converted.files) == len(yolo_original.files)
+
+    # Check file values
+    for vgg_file, yolo_file in zip(vgg_converted.files, yolo_original.files):
+        assert len(vgg_file.annotations) == len(yolo_file.annotations)
+        assert vgg_file.filename == yolo_file.filename
+        
+        # Check annotation values
+        for vgg_annotation, yolo_annotation in zip(vgg_file.annotations, yolo_file.annotations):
+            # Check that VGG shapes are rectangles (converted from YOLO bounding boxes)
+            assert vgg_annotation.geometry.shape_type == "rect"
+            
+            # Get class name from YOLO class_labels mapping
+            yolo_class_name = yolo_original.class_labels[yolo_annotation.id_class]
+            assert yolo_class_name in vgg_annotation.region_attributes.values()
+
+
+def test_coco_to_vgg():
+    """Test conversion from COCO to VGG format."""
+    base_dir = os.path.dirname(__file__)
+    coco_path = os.path.join(base_dir, "test_resources/COCO_TEST")
+
+    # 1. Load COCO Dataset
+    coco_original: CocoFormat = CocoFormat.read_from_folder(coco_path)
+    
+    # 2. COCO → Neutral → VGG
+    neutral_from_coco: NeutralFormat = CocoConverter.toNeutral(coco_original)
+    vgg_converted: VGGFormat = VGGConverter.fromNeutral(neutral_from_coco)
+    
+    # Check VGG structure
+    assert isinstance(vgg_converted, VGGFormat)
+    assert len(vgg_converted.files) == len(coco_original.files[0].images)
+    
+    # Calculate total annotations
+    total_annotations = sum(len(file.annotations) for file in vgg_converted.files)
+    assert total_annotations == len(coco_original.files[0].annotations)
+    
+    # Check that every VGG class is in COCO categories
+    all_vgg_classes = set()
+    for file in vgg_converted.files:
+        for ann in file.annotations:
+            vgg_class = _extract_class_from_vgg_attributes(ann.region_attributes)
+            all_vgg_classes.add(vgg_class)
+    
+    coco_category_names = {c.name for c in coco_original.files[0].categories}
+    assert all_vgg_classes.issubset(coco_category_names)
+
+
+def test_vgg_shape_preservation():
+    """Test that VGG shape information is preserved through neutral conversion."""
+    base_dir = os.path.dirname(__file__)
+    vgg_path = os.path.join(base_dir, "test_resources/VGG_TEST/annotations.json")
+
+    # 1. Load VGG Dataset
+    vgg_original: VGGFormat = VGGFormat.read_from_file(vgg_path)
+    
+    # 2. VGG → Neutral → VGG
+    neutral_from_vgg: NeutralFormat = VGGConverter.toNeutral(vgg_original)
+    vgg_reconverted: VGGFormat = VGGConverter.fromNeutral(neutral_from_vgg)
+    
+    # Check that shape-specific attributes are preserved
+    for orig_file, reconv_file in zip(vgg_original.files, vgg_reconverted.files):
+        for orig_ann, reconv_ann in zip(orig_file.annotations, reconv_file.annotations):
+            # Check shape type preservation
+            assert orig_ann.geometry.shape_type == reconv_ann.geometry.shape_type
+            
+            # Check coordinates preservation for different shape types
+            orig_coords = orig_ann.geometry.getCoordinates()
+            reconv_coords = reconv_ann.geometry.getCoordinates()
+            
+            if orig_ann.geometry.shape_type == "circle":
+                assert orig_coords["cx"] == pytest.approx(reconv_coords["cx"], rel=1e-3, abs=1e-3)
+                assert orig_coords["cy"] == pytest.approx(reconv_coords["cy"], rel=1e-3, abs=1e-3)
+                assert orig_coords["r"] == pytest.approx(reconv_coords["r"], rel=1e-3, abs=1e-3)
+            elif orig_ann.geometry.shape_type == "ellipse":
+                assert orig_coords["cx"] == pytest.approx(reconv_coords["cx"], rel=1e-3, abs=1e-3)
+                assert orig_coords["cy"] == pytest.approx(reconv_coords["cy"], rel=1e-3, abs=1e-3)
+                assert orig_coords["rx"] == pytest.approx(reconv_coords["rx"], rel=1e-3, abs=1e-3)
+                assert orig_coords["ry"] == pytest.approx(reconv_coords["ry"], rel=1e-3, abs=1e-3)
+                assert orig_coords["theta"] == pytest.approx(reconv_coords["theta"], rel=1e-3, abs=1e-3)
+            elif orig_ann.geometry.shape_type in ["polygon", "polyline"]:
+                assert orig_coords["all_points_x"] == reconv_coords["all_points_x"]
+                assert orig_coords["all_points_y"] == reconv_coords["all_points_y"]
+
+
+def test_vgg_metadata_preservation():
+    """Test that VGG metadata is preserved through neutral conversion."""
+    base_dir = os.path.dirname(__file__)
+    vgg_path = os.path.join(base_dir, "test_resources/VGG_TEST/annotations.json")
+
+    # 1. Load VGG Dataset
+    vgg_original: VGGFormat = VGGFormat.read_from_file(vgg_path)
+    
+    # 2. VGG → Neutral → VGG
+    neutral_from_vgg: NeutralFormat = VGGConverter.toNeutral(vgg_original)
+    vgg_reconverted: VGGFormat = VGGConverter.fromNeutral(neutral_from_vgg)
+    
+    # Check that VGG-specific metadata is preserved
+    for orig_file, reconv_file in zip(vgg_original.files, vgg_reconverted.files):
+        # Check file attributes preservation
+        assert orig_file.file_attributes == reconv_file.file_attributes
+        
+        # Check file size preservation
+        assert orig_file.size == reconv_file.size
+        
+        for orig_ann, reconv_ann in zip(orig_file.annotations, reconv_file.annotations):
+            # Check region attributes preservation
+            assert orig_ann.region_attributes == reconv_ann.region_attributes
+
+
+def test_vgg_class_extraction():
+    """Test that class names are correctly extracted from VGG region attributes."""
+    base_dir = os.path.dirname(__file__)
+    vgg_path = os.path.join(base_dir, "test_resources/VGG_TEST/annotations.json")
+
+    # 1. Load VGG Dataset
+    vgg_original: VGGFormat = VGGFormat.read_from_file(vgg_path)
+    
+    # 2. VGG → Neutral
+    neutral_from_vgg: NeutralFormat = VGGConverter.toNeutral(vgg_original)
+    
+    # Check that class map is correctly built
+    assert len(neutral_from_vgg.class_map) > 0
+    
+    # Check that all classes are strings
+    for class_id, class_name in neutral_from_vgg.class_map.items():
+        assert isinstance(class_id, int)
+        assert isinstance(class_name, str)
+        assert len(class_name) > 0
+    
+    # Check that neutral annotations have correct class names
+    for neutral_file in neutral_from_vgg.files:
+        for neutral_ann in neutral_file.annotations:
+            assert neutral_ann.class_name in neutral_from_vgg.class_map.values()
+
+
+def _extract_class_from_vgg_attributes(region_attributes: dict) -> str:
+    """Helper function to extract class name from VGG region attributes."""
+    class_keys = ['type', 'class', 'label', 'name', 'names', 'category', 'object_type']
+    
+    for key in class_keys:
+        if key in region_attributes and isinstance(region_attributes[key], str):
+            return region_attributes[key]
+    
+    # If no class found, return first string value or default
+    for value in region_attributes.values():
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    
+    return 'object'
