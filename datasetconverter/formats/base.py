@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Generic, Optional, TypeVar, Union
+from typing import Any, Generic, Optional, TypeVar, Union
 
 class BoundingBox(ABC):
     """Abstract base class representing a bounding box structure.
@@ -20,7 +20,7 @@ class Shape(ABC):
         self.shape_type = type
 
     @abstractmethod
-    def getCoordinates(self) -> list:
+    def getCoordinates(self) -> Any:
         pass
 
     @abstractmethod

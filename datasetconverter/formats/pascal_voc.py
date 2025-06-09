@@ -24,6 +24,15 @@ class PascalVocBoundingBox(BoundingBox):
         self.x_max = x_max
         self.y_max = y_max
 
+    def __eq__(self, other):
+        """Compare two PascalVocBoundingBox objects for equality."""
+        if not isinstance(other, PascalVocBoundingBox):
+            return NotImplemented
+        return (self.x_min == other.x_min and 
+                self.y_min == other.y_min and 
+                self.x_max == other.x_max and 
+                self.y_max == other.y_max)
+
     def getBoundingBox(self):
         """Returns Pascal Voc coordinates as [x_min, y_min, x_max, y_max]."""
         return [self.x_min, self.y_min, self.x_max,  self.y_max]
