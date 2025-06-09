@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 from .dataset_converter import DatasetConverter
 from ..formats.neutral_format import ImageOrigin, NeutralAnnotation, NeutralFile, NeutralFormat
 from ..formats.vgg import (
@@ -7,7 +7,7 @@ from ..formats.vgg import (
     VGGRect, VGGCircle, VGGEllipse, VGGPolygon, VGGPolyline, VGGPoint, extract_class_name
 )
 from ..formats.pascal_voc import PascalVocBoundingBox
-from ..utils.file_utils import get_image_path, get_image_info_from_file
+from ..utils.file_utils import estimate_file_size, get_image_path, get_image_info_from_file
 
 
 class VGGConverter(DatasetConverter[VGGFormat]):
@@ -152,22 +152,6 @@ def VGGAnnotation_to_NeutralAnnotation(annotation: VGGAnnotation) -> NeutralAnno
         "coordinates": annotation.geometry.getCoordinates(),
         "original_region_attributes": annotation.region_attributes
     }
-    
-    # Add shape-specific attributes
-    if isinstance(annotation.geometry, VGGCircle):
-        attributes["radius"] = annotation.geometry.r
-        attributes["center"] = (annotation.geometry.cx, annotation.geometry.cy)
-    elif isinstance(annotation.geometry, VGGEllipse):
-        attributes["radii"] = (annotation.geometry.rx, annotation.geometry.ry)
-        attributes["rotation"] = annotation.geometry.theta
-        attributes["center"] = (annotation.geometry.cx, annotation.geometry.cy)
-    elif isinstance(annotation.geometry, (VGGPolygon, VGGPolyline)):
-        attributes["point_count"] = len(annotation.geometry.all_points_x)
-        attributes["is_closed"] = isinstance(annotation.geometry, VGGPolygon)
-    elif isinstance(annotation.geometry, VGGPoint):
-        attributes["point"] = (annotation.geometry.cx, annotation.geometry.cy)
-    elif isinstance(annotation.geometry, VGGRect):
-        attributes["dimensions"] = (annotation.geometry.width, annotation.geometry.height)
 
     if isinstance(bbox, PascalVocBoundingBox):
         return NeutralAnnotation(
@@ -198,7 +182,7 @@ def NeutralFile_to_VGGFile(file: NeutralFile) -> VGGFile:
     
     # If it was not found then estimate
     if file_size == -1:
-        file_size = _estimate_file_size(file.width, file.height, file.depth, file.image_origin.extension)
+        file_size = estimate_file_size(file.width, file.height, file.depth, file.image_origin.extension)
 
     file_attributes = file.params.get("vgg_file_attributes", {})
     
@@ -251,42 +235,3 @@ def _count_shapes_by_type(annotations: list[VGGAnnotation]) -> dict[str, int]:
         shape_type = annotation.geometry.shape_type
         shape_counts[shape_type] = shape_counts.get(shape_type, 0) + 1
     return shape_counts
-
-
-def _estimate_file_size(width: int, height: int, depth: int, extension: str) -> int:
-    """Estimate file size based on image dimensions and format.
-    
-    Calculates an approximate file size by applying typical compression factors
-    for different image formats to the uncompressed pixel data size.
-    
-    Args:
-        width (int): Image width in pixels
-        height (int): Image height in pixels  
-        depth (int): Color depth (typically 3 for RGB, 1 for grayscale)
-        extension (str): File extension including dot (e.g., '.jpg', '.png')
-        
-    Returns:
-        int: Estimated file size in bytes
-        
-    Note:
-        Compression factors are approximations based on typical usage:
-        - JPEG: High compression (10% of uncompressed)
-        - PNG: Lossless compression (30% of uncompressed)
-        - BMP: No compression (100% of uncompressed)
-        - TIFF: Moderate compression (50% of uncompressed)
-        - WebP: Very high compression (8% of uncompressed)
-    """
-    uncompressed_size = width * height * depth
-    
-    # Typical compression factors by image format
-    compression_factors = {
-        '.jpg': 0.1,   # JPEG high compression
-        '.jpeg': 0.1,
-        '.png': 0.3,   # PNG lossless compression
-        '.bmp': 1.0,   # No compression
-        '.tiff': 0.5,  # TIFF moderate compression
-        '.webp': 0.08  # WebP very high compression
-    }
-    
-    factor = compression_factors.get(extension.lower(), 0.2)  # Default 20% for unknown formats
-    return int(uncompressed_size * factor)
