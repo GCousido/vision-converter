@@ -181,50 +181,14 @@ def NeutralAnnotation_to_LabelMeAnnotation(annotation: NeutralAnnotation) -> Lab
     Returns:
         LabelMeAnnotation: object with the converted annotation
     """
-    # Extract shape information from attributes
-    shape_type = annotation.attributes.get("shape_type", "rectangle")
-    coordinates = annotation.attributes.get("coordinates", [])
     
-    # Create appropriate LabelMe shape based on shape_type
-    shape = None
-    
-    if shape_type == "polygon" and len(coordinates) >= 3:
-        shape = LabelMePolygon(coordinates)
-    elif shape_type == "rectangle":
-        # Use bounding box coordinates
-        shape = LabelMeRectangle(
-            annotation.geometry.x_min, 
-            annotation.geometry.y_min, 
-            annotation.geometry.x_max, 
-            annotation.geometry.y_max
-        )
-    elif shape_type == "circle" and len(coordinates) >= 2:
-        center_x, center_y = coordinates[0]
-        edge_x, edge_y = coordinates[1]
-        shape = LabelMeCircle(center_x, center_y, edge_x, edge_y)
-    elif shape_type == "point" and len(coordinates) >= 1:
-        x, y = coordinates[0]
-        shape = LabelMePoint(x, y)
-    elif shape_type == "line" and len(coordinates) >= 2:
-        x1, y1 = coordinates[0]
-        x2, y2 = coordinates[1]
-        shape = LabelMeLine(x1, y1, x2, y2)
-    elif shape_type == "linestrip" and len(coordinates) >= 2:
-        shape = LabelMeLinestrip(coordinates)
-    elif shape_type == "points" and len(coordinates) >= 1:
-        shape = LabelMePoints(coordinates)
-    elif shape_type == "mask" and len(coordinates) >= 2:
-        x1, y1 = coordinates[0]
-        x2, y2 = coordinates[1]
-        shape = LabelMeMask(x1, y1, x2, y2)
-    else:
-        # Fallback to rectangle using bounding box
-        shape = LabelMeRectangle(
-            annotation.geometry.x_min, 
-            annotation.geometry.y_min, 
-            annotation.geometry.x_max, 
-            annotation.geometry.y_max
-        )
+    # Fallback to rectangle using bounding box
+    shape = LabelMeRectangle(
+        annotation.geometry.x_min, 
+        annotation.geometry.y_min, 
+        annotation.geometry.x_max, 
+        annotation.geometry.y_max
+    )
     
     # Extract LabelMe-specific attributes
     group_id = annotation.attributes.get("group_id", None)

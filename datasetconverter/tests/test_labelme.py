@@ -302,7 +302,7 @@ def test_labelme_format_save_full(tmp_path):
     labelme_format.save(str(tmp_path))
     
     # Check saved file
-    json_file = tmp_path / "test_image.json"
+    json_file = tmp_path / "annotations/test_image.json"
     assert json_file.exists()
     
     # Load and verify content

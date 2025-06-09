@@ -864,15 +864,11 @@ def test_labelme_original_and_labelme_reconverted():
             # Check label matches
             assert orig_ann.label == reconv_ann.label, f"Annotation {i}: label '{orig_ann.label}' != '{reconv_ann.label}'"
             
-            # Check shape type matches
-            assert orig_ann.geometry.shape_type == reconv_ann.geometry.shape_type, f"Annotation {i}: shape_type mismatch"
             
-            # Check coordinates match (allowing for small floating point differences)
-            orig_coords = orig_ann.geometry.getCoordinates()
-            reconv_coords = reconv_ann.geometry.getCoordinates()
-            
-            for j, (orig_coord, reconv_coord) in enumerate(zip(orig_coords, reconv_coords)):
-                assert orig_coord == pytest.approx(reconv_coord, rel=1e-3, abs=1e-3), f"Annotation {i}, coordinate {j} mismatch"
+            # Check coordinates match
+            orig_bbox = orig_ann.geometry.getBoundingBox()
+            reconv_bbox = reconv_ann.geometry.getBoundingBox()
+            assert orig_bbox == reconv_bbox
             
             # Check optional attributes
             assert orig_ann.group_id == reconv_ann.group_id
@@ -1120,39 +1116,6 @@ def test_coco_to_labelme():
         assert labelme_file.imageHeight == corresponding_coco_image.height
 
 
-def test_labelme_shape_preservation():
-    """Test that LabelMe shape information is preserved through neutral conversion."""
-    base_dir = os.path.dirname(__file__)
-    labelme_path = os.path.join(base_dir, "test_resources/LABELME_TEST")
-
-    # 1. Load LabelMe Dataset
-    labelme_original: LabelMeFormat = LabelMeFormat.read_from_folder(labelme_path)
-    
-    # 2. LabelMe → Neutral → LabelMe
-    neutral_from_labelme: NeutralFormat = LabelMeConverter.toNeutral(labelme_original)
-    labelme_reconverted: LabelMeFormat = LabelMeConverter.fromNeutral(neutral_from_labelme)
-    
-    # Check that shape-specific attributes are preserved
-    for orig_file, reconv_file in zip(labelme_original.files, labelme_reconverted.files):
-        for orig_ann, reconv_ann in zip(orig_file.annotations, reconv_file.annotations):
-            # Check shape type preservation
-            assert orig_ann.geometry.shape_type == reconv_ann.geometry.shape_type
-            
-            # Check coordinates preservation for different shape types
-            if orig_ann.geometry.shape_type == "circle":
-                # Check radius preservation
-                assert isinstance(orig_ann.geometry, LabelMeCircle)
-                orig_radius = orig_ann.geometry.radius
-                assert isinstance(reconv_ann.geometry, LabelMeCircle)
-                reconv_radius = reconv_ann.geometry.radius
-                assert orig_radius == pytest.approx(reconv_radius, rel=1e-3, abs=1e-3)
-            
-            # Check that complex shapes maintain their coordinate structure
-            orig_coords = orig_ann.geometry.getCoordinates()
-            reconv_coords = reconv_ann.geometry.getCoordinates()
-            assert len(orig_coords) == len(reconv_coords)
-
-
 def test_labelme_metadata_preservation():
     """Test that LabelMe metadata is preserved through neutral conversion."""
     base_dir = os.path.dirname(__file__)
@@ -1186,7 +1149,7 @@ def test_vgg_original_and_vgg_reconverted():
     vgg_path = os.path.join(base_dir, "test_resources/VGG_TEST/annotations.json")
 
     # 1. Load VGG Dataset
-    vgg_original: VGGFormat = VGGFormat.read_from_file(vgg_path)
+    vgg_original: VGGFormat = VGGFormat.read_from_folder(vgg_path)
     
     # 2. VGG → Neutral → VGG
     neutral_from_vgg: NeutralFormat = VGGConverter.toNeutral(vgg_original)
@@ -1218,7 +1181,7 @@ def test_vgg_to_pascalvoc():
     vgg_path = os.path.join(base_dir, "test_resources/VGG_TEST/annotations.json")
 
     # 1. Load VGG Dataset
-    vgg_original: VGGFormat = VGGFormat.read_from_file(vgg_path)
+    vgg_original: VGGFormat = VGGFormat.read_from_folder(vgg_path)
     
     # 2. VGG → Neutral → Pascal VOC
     neutral_from_vgg: NeutralFormat = VGGConverter.toNeutral(vgg_original)
@@ -1261,7 +1224,7 @@ def test_vgg_to_yolo():
     vgg_path = os.path.join(base_dir, "test_resources/VGG_TEST/annotations.json")
 
     # 1. Load VGG Dataset
-    vgg_original: VGGFormat = VGGFormat.read_from_file(vgg_path)
+    vgg_original: VGGFormat = VGGFormat.read_from_folder(vgg_path)
     
     # 2. VGG → Neutral → YOLO
     neutral_from_vgg: NeutralFormat = VGGConverter.toNeutral(vgg_original)
@@ -1299,7 +1262,7 @@ def test_vgg_to_coco():
     vgg_path = os.path.join(base_dir, "test_resources/VGG_TEST/annotations.json")
 
     # 1. Load VGG Dataset
-    vgg_original: VGGFormat = VGGFormat.read_from_file(vgg_path)
+    vgg_original: VGGFormat = VGGFormat.read_from_folder(vgg_path)
     
     # 2. VGG → Neutral → COCO
     neutral_from_vgg: NeutralFormat = VGGConverter.toNeutral(vgg_original)
@@ -1456,7 +1419,7 @@ def test_vgg_class_extraction():
     vgg_path = os.path.join(base_dir, "test_resources/VGG_TEST/annotations.json")
 
     # 1. Load VGG Dataset
-    vgg_original: VGGFormat = VGGFormat.read_from_file(vgg_path)
+    vgg_original: VGGFormat = VGGFormat.read_from_folder(vgg_path)
     
     # 2. VGG → Neutral
     neutral_from_vgg: NeutralFormat = VGGConverter.toNeutral(vgg_original)

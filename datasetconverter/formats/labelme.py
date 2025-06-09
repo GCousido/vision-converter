@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from genericpath import exists
 import math
 from typing import Any, Optional
 import json
@@ -512,6 +513,9 @@ class LabelMeFormat(DatasetFormat[LabelMeFile]):
         
         # Create output folder if necessary
         folder_path.mkdir(parents=True, exist_ok=True)
+        annotations_path = Path(folder + "/annotations")
+        annotations_path.mkdir(exist_ok=True)
+        Path(folder + "/images").mkdir(exist_ok=True)
         
         # Save all JSON annotation files
         for file in self.files:
@@ -569,7 +573,7 @@ class LabelMeFormat(DatasetFormat[LabelMeFile]):
             
             # Save JSON file
             filename = Path(file.filename).stem + ".json"
-            json_path = folder_path / filename
+            json_path = annotations_path / filename
             
             with open(json_path, 'w', encoding='utf-8') as f:
                 json.dump(json_data, f, indent=2, ensure_ascii=False)
