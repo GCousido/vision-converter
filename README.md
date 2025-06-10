@@ -32,6 +32,12 @@ Conversion Process:
 
 ## Installation
 
+### Requirements
+
+* Python >= 3.12
+* [Click](https://pypi.org/project/click/) >= 8.1.8
+* [Pillow](https://pypi.org/project/Pillow/) >= 11.2.1
+
 ### Install from Source
 
 Clone the repository and install the package:
