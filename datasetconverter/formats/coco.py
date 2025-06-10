@@ -287,17 +287,11 @@ class CocoFormat(DatasetFormat[CocoFile]):
             )
 
     @staticmethod
-    def read_from_folder(folder_path: str) -> 'CocoFormat':
+    def read_from_folder(json_file_path: str) -> 'CocoFormat':
         """Loads a COCO dataset from a folder.
 
-        The following folder structure is expected:
-
-            {folder_path}/
-                ├── images/        # Image files
-                └── *.json         # Annotation files in COCO format
-
         Args:
-            folder_path (str): Path to the dataset folder.
+            json_file_path (str): Path to the dataset file.
 
         Returns:
             CocoFormat: Loaded COCO dataset.
@@ -306,27 +300,18 @@ class CocoFormat(DatasetFormat[CocoFile]):
             FileNotFoundError: If the folder or JSON files are missing.
         """
 
-        folder = Path(folder_path)
+        file = Path(json_file_path)
 
-        if not folder.exists():
-            raise FileNotFoundError(f"Folder {folder_path} was not found")
+        if not file.exists():
+            raise FileNotFoundError(f"File {file} was not found")
 
-        json_files = list(folder.glob("*.json"))
-        if not json_files:
-            raise FileNotFoundError(f"JSON files were not found in {folder}")
-
-        coco_files = []
-
-        for json_file in json_files:
-            with open(json_file, 'r') as f:
-                coco_data = json.load(f)
-
-            coco_files.append(CocoFormat.create_coco_file_from_json(coco_data, json_file.name))
+        with open(file, 'r') as f:
+            coco_data = json.load(f)
 
         return CocoFormat.build(
-            name=folder.name,
-            files=coco_files,
-            folder_path=folder_path
+            name = "CocoDataset",
+            files=[CocoFormat.create_coco_file_from_json(coco_data, file.name)],
+            folder_path=str(file.parent)
         )
     
     @staticmethod
@@ -347,6 +332,12 @@ class CocoFormat(DatasetFormat[CocoFile]):
 
     def save(self, output_folder: str) -> None:
         """Saves the COCO dataset to the specified output folder.
+
+        ```
+        {folder}/  
+            ├── images/      # (Note: copies images if path exists)  
+            └── annotations.json
+        ```
 
         Args:
             output_folder (str): Path to the output directory.

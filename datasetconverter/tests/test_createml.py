@@ -66,7 +66,7 @@ def sample_createml_dataset(tmp_path):
     with open(annotations_file, 'w', encoding='utf-8') as f:
         json.dump(annotations_data, f, indent=4)
     
-    return tmp_path
+    return annotations_file
 
 
 def test_createml_format_construction(sample_createml_dataset):
@@ -74,8 +74,8 @@ def test_createml_format_construction(sample_createml_dataset):
     createml_format = CreateMLFormat.read_from_folder(sample_createml_dataset)
     
     # 1. Check basic structure
-    assert createml_format.folder_path == sample_createml_dataset
-    assert createml_format.name == sample_createml_dataset.name
+    assert createml_format.folder_path == str(sample_createml_dataset.parent)
+    assert createml_format.name == "CreateMLDataset"
     assert isinstance(createml_format.files, list)
     
     # 2. Check files count
@@ -147,25 +147,19 @@ def test_createml_annotation():
 def test_invalid_dataset_structure(tmp_path):
     """Test error handling for invalid dataset structures."""
     
+    path = tmp_path.parent
     # Case: folder doesn't exist
-    with pytest.raises(FileNotFoundError, match="Folder .* was not found"):
+    with pytest.raises(FileNotFoundError, match="File .* was not found"):
         CreateMLFormat.read_from_folder(str(tmp_path / "nonexistent"))
     
     # Case: missing images directory
     with pytest.raises(FileNotFoundError, match="Folder .* was not found"):
         CreateMLFormat.read_from_folder(str(tmp_path))
-    
-    # Create images directory
-    (tmp_path / "images").mkdir()
-    
-    # Case: missing annotations.json
-    with pytest.raises(FileNotFoundError, match="File 'annotations.json' was not found"):
-        CreateMLFormat.read_from_folder(str(tmp_path))
 
 
 def test_invalid_json_format(tmp_path):
     """Test error handling for invalid JSON format."""
-    
+
     # Create directory structure
     (tmp_path / "images").mkdir()
     
@@ -174,14 +168,15 @@ def test_invalid_json_format(tmp_path):
     annotations_file.write_text("invalid json content")
     
     with pytest.raises(ValueError, match="Invalid JSON format"):
-        CreateMLFormat.read_from_folder(str(tmp_path))
+        CreateMLFormat.read_from_folder(str(annotations_file))
 
 
 def test_missing_image_files(tmp_path):
     """Test error handling when image files are missing."""
-    
+
+    path = tmp_path.parent
     # Create directory structure
-    images_dir = tmp_path / "images"
+    images_dir = path / "images"
     images_dir.mkdir()
     
     # Create annotations.json with reference to non-existent image
@@ -192,12 +187,12 @@ def test_missing_image_files(tmp_path):
         }
     ]
     
-    annotations_file = tmp_path / "annotations.json"
+    annotations_file = path / "annotations.json"
     with open(annotations_file, 'w') as f:
         json.dump(annotations_data, f)
     
     with pytest.raises(Exception, match="Dataset structure error: Image file .* not found"):
-        CreateMLFormat.read_from_folder(str(tmp_path))
+        CreateMLFormat.read_from_folder(str(annotations_file))
 
 
 def test_createml_format_save_full(tmp_path: Path):
@@ -293,7 +288,7 @@ def test_empty_annotations(tmp_path):
         json.dump(annotations_data, f)
     
     # Should work without errors
-    createml_format = CreateMLFormat.read_from_folder(str(tmp_path))
+    createml_format = CreateMLFormat.read_from_folder(str(annotations_file))
     assert len(createml_format.files) == 1
     assert len(createml_format.files[0].annotations) == 0
 

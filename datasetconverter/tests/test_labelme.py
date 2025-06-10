@@ -224,38 +224,6 @@ def test_labelme_format_construction(sample_labelme_dataset):
     assert circle_ann.geometry.center_x == 350
     assert circle_ann.geometry.center_y == 350
 
-
-def test_labelme_annotations_subfolder(tmp_path):
-    """Test reading from annotations subfolder structure"""
-    
-    # Create annotations subfolder
-    annotations_dir = tmp_path / "annotations"
-    annotations_dir.mkdir()
-    
-    json_data = {
-        "version": "5.0.1",
-        "flags": {},
-        "shapes": [
-            {
-                "label": "test",
-                "points": [[10, 10]],
-                "shape_type": "point",
-                "flags": {}
-            }
-        ],
-        "imagePath": "test.jpg",
-        "imageHeight": 100,
-        "imageWidth": 100
-    }
-    
-    with open(annotations_dir / "test.json", 'w') as f:
-        json.dump(json_data, f)
-    
-    labelme_format = LabelMeFormat.read_from_folder(str(tmp_path))
-    assert len(labelme_format.files) == 1
-    assert labelme_format.files[0].filename == "test.jpg"
-
-
 def test_invalid_dataset_structure(tmp_path):
     """Test error handling for invalid dataset structures"""
     
@@ -302,7 +270,7 @@ def test_labelme_format_save_full(tmp_path):
     labelme_format.save(str(tmp_path))
     
     # Check saved file
-    json_file = tmp_path / "annotations/test_image.json"
+    json_file = tmp_path / "test_image.json"
     assert json_file.exists()
     
     # Load and verify content

@@ -403,6 +403,13 @@ class VGGFormat(DatasetFormat[VGGFile]):
     def save(self, output_path: str) -> None:
         """Save VGG dataset to JSON file.
         
+        ```text
+            dataset/
+                |-- images/
+                |     img1.jpg
+                |     img2.jpg 
+                ├── annotations.json
+        '''
         Args:
             output_path (str): Output folder path for the VIA JSON.
         """

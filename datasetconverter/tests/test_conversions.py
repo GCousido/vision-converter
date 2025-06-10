@@ -196,7 +196,7 @@ def test_neutral_to_pascalvoc():
 def test_coco_to_neutral():
     """Test conversion from COCO format to NeutralFormat."""
     base_dir = os.path.dirname(__file__)
-    coco_path = os.path.join(base_dir, "test_resources/COCO_TEST")
+    coco_path = os.path.join(base_dir, "test_resources/COCO_TEST/annotations.json")
     
     # Load COCO dataset
     coco_original: CocoFormat = CocoFormat.read_from_folder(coco_path)
@@ -237,7 +237,7 @@ def test_coco_to_neutral():
 def test_neutral_to_coco():
     """Test conversion from NeutralFormat to COCO format."""
     base_dir = os.path.dirname(__file__)
-    coco_path = os.path.join(base_dir, "test_resources/COCO_TEST")
+    coco_path = os.path.join(base_dir, "test_resources/COCO_TEST/annotations.json")
     
     # Load and convert through neutral
     neutral = CocoConverter.toNeutral(CocoFormat.read_from_folder(coco_path))
@@ -274,7 +274,7 @@ def test_neutral_to_coco():
 def test_createml_to_neutral():
     """Test conversion from CreateML format to NeutralFormat."""
     base_dir = os.path.dirname(__file__)
-    createml_path = os.path.join(base_dir, "test_resources/CREATEML_TEST")
+    createml_path = os.path.join(base_dir, "test_resources/CREATEML_TEST/annotations.json")
     
     # Load CreateML dataset
     createml_original: CreateMLFormat = CreateMLFormat.read_from_folder(createml_path)
@@ -317,7 +317,7 @@ def test_createml_to_neutral():
 def test_neutral_to_createml():
     """Test conversion from NeutralFormat to CreateML format."""
     base_dir = os.path.dirname(__file__)
-    createml_path = os.path.join(base_dir, "test_resources/CREATEML_TEST")
+    createml_path = os.path.join(base_dir, "test_resources/CREATEML_TEST/annotations.json")
     
     # Load and convert through neutral
     neutral = CreateMLConverter.toNeutral(CreateMLFormat.read_from_folder(createml_path))

@@ -457,8 +457,8 @@ class LabelMeFormat(DatasetFormat[LabelMeFile]):
         Expecting JSON annotation files in the root folder or annotations subfolder.
         ```
         folder_path/
-                ├── annotations/    # JSON annotation files
-                └── images/         # Image files
+                *.json        # JSON annotation files
+                *.jpg         # Image files
         ```
         Args:
             folder_path (str): Path to the LabelMe dataset root folder.
@@ -474,14 +474,8 @@ class LabelMeFormat(DatasetFormat[LabelMeFile]):
         if not path.exists():
             raise FileNotFoundError(f"Folder {folder_path} was not found")
         
-        # Look for JSON files in annotations subfolder first, then in root folder
-        json_files = None
-        annotations_folder = path / "annotations"
-        if annotations_folder.exists():
-            json_files = list(annotations_folder.glob("*.json"))
-        
-        if not json_files:
-            json_files = list(path.glob("*.json"))
+        # Look for JSON files
+        json_files = list(path.glob("*.json"))
         
         if not json_files:
             raise FileNotFoundError(f"No JSON annotation files found in {folder_path}")
@@ -513,9 +507,6 @@ class LabelMeFormat(DatasetFormat[LabelMeFile]):
         
         # Create output folder if necessary
         folder_path.mkdir(parents=True, exist_ok=True)
-        annotations_path = Path(folder + "/annotations")
-        annotations_path.mkdir(exist_ok=True)
-        Path(folder + "/images").mkdir(exist_ok=True)
         
         # Save all JSON annotation files
         for file in self.files:
@@ -573,7 +564,7 @@ class LabelMeFormat(DatasetFormat[LabelMeFile]):
             
             # Save JSON file
             filename = Path(file.filename).stem + ".json"
-            json_path = annotations_path / filename
+            json_path = folder_path / filename
             
             with open(json_path, 'w', encoding='utf-8') as f:
                 json.dump(json_data, f, indent=2, ensure_ascii=False)

@@ -109,17 +109,18 @@ class CreateMLFormat(DatasetFormat[CreateMLFile]):
         return files
     
     @staticmethod
-    def read_from_folder(folder_path: str) -> 'CreateMLFormat':
+    def read_from_folder(json_file_path: str) -> 'CreateMLFormat':
         """Constructs CreateML dataset from standard folder structure.
 
         Expected structure:
         ``` 
-        - {folder_path}/ 
-            ├── images/             # Contains image files  
-            └── annotations.json    # File with all the annotations
+        - dataset/ 
+            ├── images/            # Contains image files  
+            └── {json_file_path}   # File with all the annotations
         ```
+
         Args:
-            folder_path (str): Root directory of CreateML dataset
+            json_file_path (str): Path to the CreateML dataset
             
         Returns:
             CreateMLFormat: Dataset object
@@ -130,21 +131,18 @@ class CreateMLFormat(DatasetFormat[CreateMLFile]):
         """
         files: list[CreateMLFile] = []
 
-        if not Path(folder_path).exists():
-            raise FileNotFoundError(f"Folder {folder_path} was not found")
+        path = Path(json_file_path)
 
+        if not path.exists():
+            raise FileNotFoundError(f"File {path} was not found")
 
-        images_path = Path(folder_path) / "images"
+        images_path = path.parent / "images"
         if not Path(images_path).exists():
             raise FileNotFoundError(f"Folder {images_path} was not found")
 
         # 1. Read annotations
-        annotations_path = Path(folder_path) / "annotations.json"
-        if not annotations_path.exists():
-            raise FileNotFoundError(f"File 'annotations.json' was not found in {folder_path}")
-        
         try:
-            with open(annotations_path, 'r', encoding='utf-8') as f:
+            with open(path, 'r', encoding='utf-8') as f:
                 json_data = json.load(f)
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON format in annotations.json: {e}")
@@ -173,9 +171,9 @@ class CreateMLFormat(DatasetFormat[CreateMLFile]):
                 raise Exception(f'Dataset structure error: Image file {filename} not found in images folder')
 
         return CreateMLFormat.build(
-            name=Path(folder_path).name,
+            name= "CreateMLDataset",
             files=files,
-            folder_path=folder_path
+            folder_path= str(path.parent)
         )
     
     def save(self, folder: str) -> None:

@@ -9,8 +9,8 @@ def test_coco_format_creation(sample_coco_dataset):
     coco_format = CocoFormat.read_from_folder(sample_coco_dataset)
     
     # 1. Checking basic structure
-    assert coco_format.folder_path == sample_coco_dataset
-    assert coco_format.name == "test_coco"
+    assert coco_format.folder_path == str(Path(sample_coco_dataset).parent)
+    assert coco_format.name == "CocoDataset"
     assert len(coco_format.files) == 1
     
     # 2. Checking metadata
@@ -65,11 +65,11 @@ def test_coco_format_creation(sample_coco_dataset):
 def test_invalid_coco_structure(tmp_path):
     # Case without JSON archive
     with pytest.raises(FileNotFoundError):
-        CocoFormat.read_from_folder(tmp_path)
+        CocoFormat.read_from_folder(tmp_path / "invalid.json")
     
     (tmp_path / "invalid.json").write_text("{invalid_json}")
     with pytest.raises(json.JSONDecodeError):
-        CocoFormat.read_from_folder(tmp_path)
+        CocoFormat.read_from_folder(tmp_path / "invalid.json")
 
 def test_rle_segmentation_handling():
     rle_data = {
@@ -109,6 +109,7 @@ def sample_coco_dataset(tmp_path):
     # Create file structure
     dataset_dir = tmp_path / "test_coco"
     dataset_dir.mkdir()
+    dataset_file = dataset_dir / "annotations.json"
 
     # Create COCO file
     coco_data = {
@@ -185,8 +186,8 @@ def sample_coco_dataset(tmp_path):
         ]
     }
 
-    (dataset_dir / "instances_train.json").write_text(json.dumps(coco_data))
-    return dataset_dir
+    (dataset_file).write_text(json.dumps(coco_data))
+    return dataset_file
 
 def test_coco_format_save(tmp_path):
     # Prepare test data
