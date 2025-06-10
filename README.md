@@ -65,13 +65,13 @@ You can use DatasetConverter as a Python library to convert datasets programmati
 ```python
 from datasetconverter import YoloFormat, YoloConverter, CocoFormat, CocoConverter, NeutralFormat
 
-yolo_dataset: YoloFormat = YoloFormat.read_from_folder(input_path)
+yolo_dataset: YoloFormat = YoloFormat.read_from_folder("./dataset/yolo")
 
 internal_dataset: NeutralFormat = YoloConverter.toNeutral(yolo_dataset)
 
 coco_dataset: CocoFormat = CocoConverter.fromNeutral(internal_dataset)
 
-coco_dataset.save(output_path)
+coco_dataset.save("./dataset/coco")
 ```
 
 ### Command Line Interface
@@ -134,12 +134,33 @@ dconverter --input-format coco --input-path ./datasets/coco --output-format pasc
 * **Coordinates**: Normalized values between 0 and 1 (relatives to the image size)
 * **Additional Files**: `classes.txt` containing class names, one per line
 
+```text
+EXPECTED INPUT FILE STRUCTURE                      GENERATED OUTPUT FILE STRUCTURE
+      dataset/                                           dataset/
+        ├── images/                                        ├── images/
+        │     img1.jpg                                     │
+        │     img2.jpg                                     │
+        ├── labels/                                        ├── labels/
+        │     img1.txt                                     │     img1.txt
+        │     img2.txt                                     │     img2.txt
+        │     classes.txt                                  │     classes.txt
+```
+
 #### COCO Format
 
 * **File Structure**: Single `.json` file containing all annotations
 * **Annotation Format**: JSON with images, annotations and categories arrays
 * **Coordinates**: Absolute pixel values `[x, y, width, height]`
 * **Metadata**: Includes dataset `info`, `licenses`, and `category` definitions
+
+```text
+EXPECTED INPUT FILE STRUCTURE                      GENERATED OUTPUT FILE STRUCTURE
+      dataset/                                           dataset/
+        ├── images/                                        ├── images/
+        │     img1.jpg                                     |
+        │     img2.jpg                                     |   
+        ├── annotations.json                               ├── annotations.json   
+```
 
 #### Pascal VOC Format
 
@@ -148,11 +169,32 @@ dconverter --input-format coco --input-path ./datasets/coco --output-format pasc
 * **Coordinates**: Absolute pixel values `<xmin>, <ymin>, <xmax>, <ymax>`
 * **Metadata**: Rich annotation metadata, including image `size`, object attributes (`difficult`, `truncated`, `occluded`), and `source` info
 
+```text
+EXPECTED INPUT FILE STRUCTURE                      GENERATED OUTPUT FILE STRUCTURE
+      dataset/                                           dataset/
+        ├── JPEGImages/                                    ├── JPEGImages/
+        │     img1.jpg                                     │     
+        │     img2.jpg                                     │     
+        ├── Annotations/                                   ├── Annotations/
+        │     img1.xml                                     │     img1.xml
+        │     img2.xml                                     │     img2.xml
+        |-- ImageSets/                                     |-- ImageSets/
+```
+
 #### CreateML Format
 
 * **File Structure**: Single `.json` file containing all annotations and an images/ folder with image files
 * **Annotation Format**: JSON array with entries for each image, each containing image filename and annotations array
 * **Coordinates**: Absolute pixel values with bounding boxes defined by center coordinates and dimensions `{x_center, y_center, width, height}`
+
+```text
+EXPECTED INPUT FILE STRUCTURE                      GENERATED OUTPUT FILE STRUCTURE
+      dataset/                                           dataset/
+        ├── images/                                        ├── images/
+        │     img1.jpg                                     │     
+        │     img2.jpg                                     │     
+        ├── annotations.json                               ├── annotations.json
+```
 
 #### TensorFlow Object Detection CSV Format
 
@@ -162,6 +204,15 @@ dconverter --input-format coco --input-path ./datasets/coco --output-format pasc
 * **Required Columns**: `filename`, `width`, `height`, `class`, `xmin`, `ymin`, `xmax`, `ymax`
 * **Features**: Human-readable format, direct compatibility with TensorFlow Object Detection API, supports multiple objects per image
 
+```text
+EXPECTED INPUT FILE STRUCTURE                      GENERATED OUTPUT FILE STRUCTURE
+      dataset/                                           dataset/
+        ├── images/                                        ├── images/
+        │     img1.jpg                                     │     
+        │     img2.jpg                                     │     
+        ├── annotations.csv                                ├── annotations.csv
+```
+
 #### LabelMe JSON Format
 
 * **File Structure**: One `.json` file per image containing annotations and image metadata
@@ -169,6 +220,15 @@ dconverter --input-format coco --input-path ./datasets/coco --output-format pasc
 * **Coordinates**: Absolute pixel values for `points` defining `shapes` (e.g., polygons, rectangles)
 * **Image Data**: Optional `base64` encoded image data embedded in `imageData` field
 * **Metadata**: Includes dataset `version`, `flags`, `imagePath`, `imageHeight`, `imageWidth`
+
+```text
+EXPECTED INPUT FILE STRUCTURE                      GENERATED OUTPUT FILE STRUCTURE
+      dataset/                                           dataset/
+        ├── img1.jpg                                       ├── img1.jpg
+        ├── img1.json                                      ├── img1.json
+        ├── img2.jpg                                       ├── img2.jpg
+        ├── img2.json                                      ├── img2.json
+```
 
 #### VGG Image Annotator Format
 
@@ -183,6 +243,15 @@ dconverter --input-format coco --input-path ./datasets/coco --output-format pasc
   * **Polyline**: `{all_points_x[], all_points_y[]}` - arrays of line point coordinates
   * **Point**: `{cx, cy}` - single point coordinates
 * **Metadata**: Includes `file_attributes` for image-level data, `region_attributes` for annotation-level data, and optional VIA project settings
+
+```text
+EXPECTED INPUT FILE STRUCTURE                      GENERATED OUTPUT FILE STRUCTURE
+      dataset/                                           dataset/
+        |-- images/                                        ├── images/
+        |     img1.jpg                                     |
+        |     img2.jpg                                     | 
+        ├── annotations.json                               ├── annotations.json 
+```
 
 ---
 
