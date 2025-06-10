@@ -12,7 +12,8 @@ FORMATS = ['coco', 'pascal_voc', 'yolo', 'createml', 'tensorflow_csv', 'labelme'
 @click.command()
 @click.option('--input-format', '-if', 
                 required=True, 
-                type=click.Choice(FORMATS), 
+                type=click.Choice(FORMATS, case_sensitive=False),
+                callback=lambda ctx, param, value: value.lower(),
                 help='Input dataset format')
 @click.option('--input-path', '-ip', 
                 required=True, 
@@ -20,7 +21,8 @@ FORMATS = ['coco', 'pascal_voc', 'yolo', 'createml', 'tensorflow_csv', 'labelme'
                 help='Path to the Input dataset')
 @click.option('--output-format', '-of', 
                 required=True, 
-                type=click.Choice(FORMATS), 
+                type=click.Choice(FORMATS, case_sensitive=False),
+                callback=lambda ctx, param, value: value.lower(),
                 help='Output dataset format')
 @click.option('--output-path', '-op', 
                 required=True, 
@@ -43,8 +45,9 @@ def dconverter(input_format, input_path, output_format, output_path):
         • YOLO (TXT files with normalized coordinates)
         • Pascal VOC (XML files with Pascal VOC metadata)
         • CreateML (JSON file with list of annotations per image)
-        • Tensorflow Object Detection CSV (csv file with annotations)
+        • Tensorflow Object Detection CSV (single CSV file with annotations)
         • LabelMe JSON (JSON file for each image)
+        • VGG Image Annotator JSON (single JSON file with annotation)
     """
 
     # Check if it has permissions to write
