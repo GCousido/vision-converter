@@ -147,10 +147,11 @@ def test_createml_annotation():
 def test_invalid_dataset_structure(tmp_path):
     """Test error handling for invalid dataset structures."""
     
-    path = tmp_path.parent
     # Case: folder doesn't exist
-    with pytest.raises(FileNotFoundError, match="File .* was not found"):
+    with pytest.raises(FileNotFoundError, match="Invalid path:"):
         CreateMLFormat.read_from_folder(str(tmp_path / "nonexistent"))
+    
+    ( tmp_path / "annotations.json" ).touch()
     
     # Case: missing images directory
     with pytest.raises(FileNotFoundError, match="Folder .* was not found"):

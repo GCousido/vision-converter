@@ -1,6 +1,55 @@
 from PIL import Image
 from pathlib import Path
 
+
+def find_annotation_file(directory_or_file: str, extension: str) -> str:
+    """Locates the unique annotation file with specified extension in a directory structure.
+    
+    Args:
+        directory_or_file (str): Path to either a directory (searched recursively) 
+            or a direct file candidate.
+        extension (str): File extension to search for (case-insensitive)
+
+    Returns:
+        str: Full path to the unique matching file
+
+    Raises:
+        FileNotFoundError: If input path doesn't exist or no files found
+        ValueError: For multiple files or extension mismatch
+    """
+    path = Path(directory_or_file)
+    if not path.exists():
+        raise FileNotFoundError(f"Invalid path: {directory_or_file}")
+
+    # Normalize extension
+    extension = f".{extension.strip('. ').lower()}"
+
+    # Validate direct path to the annotation file
+    if path.is_file():
+        if path.suffix.lower() == extension:
+            return str(path)
+        else:
+            raise ValueError(f"File extension mismatch. Expected {extension}")
+
+    # Find files in the directory
+    matched_files = [
+        str(p) for p in path.rglob(f"*{extension}") 
+        if p.suffix.lower() == extension and p.is_file()
+    ]
+    
+    if len(matched_files) == 0:
+        raise FileNotFoundError(f"Annotations file not found in the folder: {directory_or_file}")
+
+    if len(matched_files) > 1:
+        raise ValueError(
+            f"Found {len(matched_files)} '{extension}' files. "
+            f"Please check your dataset structure. First 3:\n" +
+            "\n".join(f"• {f}" for f in matched_files[:3])
+        )
+
+    return matched_files[0]
+
+
 def get_image_info_from_file(image_path: str):
     """Retrieves image dimensions and color depth from an image file.
 

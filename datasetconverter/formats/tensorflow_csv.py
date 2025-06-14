@@ -2,6 +2,8 @@ from pathlib import Path
 from typing import Optional
 import csv
 
+from datasetconverter.utils.file_utils import find_annotation_file
+
 from .pascal_voc import PascalVocBoundingBox
 
 from .base import Annotation, DatasetFormat, FileFormat
@@ -63,7 +65,7 @@ class TensorflowCsvFormat(DatasetFormat[TensorflowCsvFile]):
         return TensorflowCsvFormat(name, files, folder_path)
 
     @staticmethod
-    def read_from_folder(csv_path: str) -> 'TensorflowCsvFormat':
+    def read_from_folder(path: str) -> 'TensorflowCsvFormat':
         """Constructs TensorFlow CSV dataset from CSV file.
 
         Expected CSV format:
@@ -75,7 +77,7 @@ class TensorflowCsvFormat(DatasetFormat[TensorflowCsvFile]):
         ```
         
         Args:
-            csv_path (str): Path to CSV annotation file
+            path (str): Path to the dataset folder or annotation file
             
         Returns:
             TensorflowCsvFormat: Dataset object
@@ -84,12 +86,12 @@ class TensorflowCsvFormat(DatasetFormat[TensorflowCsvFile]):
             FileNotFoundError: If CSV file is missing
             KeyError: If required CSV columns are missing
         """
-        if not Path(csv_path).exists():
-            raise FileNotFoundError(f"CSV file {csv_path} was not found")
+
+        annotations_path = Path(find_annotation_file(path, "csv"))
 
         files_dict = {}
         
-        with open(csv_path, newline='') as csvfile:
+        with open(annotations_path, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             
             # Validate required columns
@@ -134,9 +136,9 @@ class TensorflowCsvFormat(DatasetFormat[TensorflowCsvFile]):
             ))
 
         return TensorflowCsvFormat.build(
-            name = Path(csv_path).stem,
+            name = Path(annotations_path).stem,
             files = files,
-            folder_path = str(Path(csv_path).parent)
+            folder_path = str(Path(annotations_path).parent)
         )
 
     def save(self, folder_path: str) -> None:

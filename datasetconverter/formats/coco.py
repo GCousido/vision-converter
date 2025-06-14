@@ -3,6 +3,8 @@ from pathlib import Path
 import json
 from typing import Optional
 
+from datasetconverter.utils.file_utils import find_annotation_file
+
 from .base import Annotation, BoundingBox, DatasetFormat, FileFormat
 
 class CocoBoundingBox(BoundingBox):
@@ -287,11 +289,11 @@ class CocoFormat(DatasetFormat[CocoFile]):
             )
 
     @staticmethod
-    def read_from_folder(json_file_path: str) -> 'CocoFormat':
+    def read_from_folder(path: str) -> 'CocoFormat':
         """Loads a COCO dataset from a folder.
 
         Args:
-            json_file_path (str): Path to the dataset file.
+            path (str): Path to the dataset folder or annotation file
 
         Returns:
             CocoFormat: Loaded COCO dataset.
@@ -300,10 +302,7 @@ class CocoFormat(DatasetFormat[CocoFile]):
             FileNotFoundError: If the folder or JSON files are missing.
         """
 
-        file = Path(json_file_path)
-
-        if not file.exists():
-            raise FileNotFoundError(f"File {file} was not found")
+        file = Path(find_annotation_file(path, "json"))
 
         with open(file, 'r') as f:
             coco_data = json.load(f)

@@ -3,6 +3,8 @@ from typing import Any, Optional, Dict, List
 import json
 from pathlib import Path
 
+from datasetconverter.utils.file_utils import find_annotation_file
+
 from .base import Annotation, DatasetFormat, FileFormat, Shape
 from .pascal_voc import PascalVocBoundingBox
 
@@ -364,21 +366,21 @@ class VGGFormat(DatasetFormat[VGGFile]):
         return VGGFile(filename, size, annotations, file_attributes)
 
     @staticmethod
-    def read_from_folder(json_file_path: str) -> 'VGGFormat':
+    def read_from_folder(path: str) -> 'VGGFormat':
         """Load VGG dataset from a single JSON file.
         
         Args:
-            json_file_path (str): Path to the VIA JSON file.
+            path (str): Path to the dataset folder or annotation file
             
         Returns:
             VGGFormat: VGG dataset object.
+
+        Raises:
+            FileNotFoundError: If the folder or JSON files are missing.
         """
-        path = Path(json_file_path)
+        annotations_path = Path(find_annotation_file(path, "json"))
         
-        if not path.exists():
-            raise FileNotFoundError(f"File {json_file_path} not found")
-        
-        with open(path, 'r', encoding='utf-8') as f:
+        with open(annotations_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
         
         # Extract VIA image metadata
@@ -394,9 +396,9 @@ class VGGFormat(DatasetFormat[VGGFile]):
             vgg_files.append(vgg_file)
         
         return VGGFormat(
-            name=path.stem,
+            name=annotations_path.stem,
             files=vgg_files,
-            folder_path=str(path.parent)
+            folder_path=str(annotations_path.parent)
         )
 
 

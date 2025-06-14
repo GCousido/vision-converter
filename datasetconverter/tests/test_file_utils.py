@@ -1,9 +1,10 @@
 import pytest
+import tempfile
+
 from PIL import UnidentifiedImageError
 from pathlib import Path
 from unittest.mock import patch, PropertyMock
-
-from datasetconverter.utils.file_utils import get_image_info_from_file, get_image_path, estimate_file_size
+from datasetconverter.utils.file_utils import find_annotation_file, get_image_info_from_file, get_image_path, estimate_file_size
 
 ########################################################
 #          Tests for get_image_info_from_file 
@@ -156,3 +157,97 @@ def test_grayscale_depth():
     width, height, depth = 256, 256, 1
     expected = int(width * height * depth * 0.1)
     assert estimate_file_size(width, height, depth, '.jpg') == expected
+
+
+########################################################
+#          Tests for find_annotation_file 
+########################################################
+
+def test_find_annotation_file_valid_file(tmp_path):
+    """Test with valid direct file path matching extension"""
+    test_file = tmp_path / "annotations.xml"
+    test_file.touch()
+    result = find_annotation_file(str(test_file), "xml")
+    assert result == str(test_file)
+
+def test_find_annotation_file_wrong_extension(tmp_path):
+    """Test direct file path with incorrect extension"""
+    test_file = tmp_path / "wrong.txt"
+    test_file.touch()
+    with pytest.raises(ValueError) as excinfo:
+        find_annotation_file(str(test_file), "xml")
+    assert "extension mismatch" in str(excinfo.value)
+
+def test_find_single_file_in_directory(tmp_path):
+    """Test finding single annotation file in directory"""
+    subdir = tmp_path / "dataset"
+    subdir.mkdir()
+    ann_file = subdir / "coco.json"
+    ann_file.touch()
+    
+    result = find_annotation_file(str(subdir), "json")
+    assert result == str(ann_file)
+
+def test_multiple_files_error(tmp_path):
+    """Test error when multiple annotation files found"""
+    files = [tmp_path / f"ann{i}.json" for i in range(3)]
+    for f in files:
+        f.touch()
+    
+    with pytest.raises(ValueError) as excinfo:
+        find_annotation_file(str(tmp_path), "json")
+    
+    assert "3 '.json' files" in str(excinfo.value)
+    for f in files[:3]:
+        assert str(f) in str(excinfo.value)
+
+def test_no_files_found_error(tmp_path):
+    """Test error when no annotation files exist"""
+    with pytest.raises(FileNotFoundError):
+        find_annotation_file(str(tmp_path), "xml")
+
+def test_case_insensitive_extension(tmp_path):
+    """Test case-insensitive extension handling"""
+    test_file = tmp_path / "ANNOTATIONS.XML"
+    test_file.touch()
+    
+    # With lowercase extension
+    result = find_annotation_file(str(tmp_path), "xml")
+    assert result == str(test_file)
+    
+    # With uppercase extension
+    result = find_annotation_file(str(tmp_path), "XML")
+    assert result == str(test_file)
+
+def test_normalization_edge_cases(tmp_path):
+    """Test extension normalization with edge cases"""
+    test_file = tmp_path / "file.json"
+    test_file.touch()
+    
+    # Extension with spaces and dots
+    assert find_annotation_file(str(tmp_path), " .JSON ") == str(test_file)
+    assert find_annotation_file(str(tmp_path), "json.") == str(test_file)
+
+def test_invalid_path_error():
+    """Test error for non-existent path"""
+    with pytest.raises(FileNotFoundError):
+        find_annotation_file("/invalid/path/123", "json")
+
+def test_nested_directory_search(tmp_path):
+    """Test recursive search in nested directories"""
+    (tmp_path / "subdir1/subdir2").mkdir(parents=True)
+    ann_file = tmp_path / "subdir1/subdir2/annotations.json"
+    ann_file.touch()
+    
+    result = find_annotation_file(str(tmp_path), "json")
+    assert result == str(ann_file)
+
+def test_mixed_extensions_in_directory(tmp_path):
+    """Test handling of mixed valid/invalid extensions"""
+    valid = tmp_path / "correct.xml"
+    valid.touch()
+    invalid = tmp_path / "wrong.txt"
+    invalid.touch()
+    
+    result = find_annotation_file(str(tmp_path), "xml")
+    assert result == str(valid)
