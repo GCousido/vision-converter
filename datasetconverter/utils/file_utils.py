@@ -112,6 +112,10 @@ def get_image_path(folder_path: str, image_folder_route: str , filename: str):
     """
     base_name = Path(filename).stem
     images_folder = Path(folder_path) / image_folder_route
+
+    if not images_folder.exists():
+        return None
+
     image_exts = {'.jpg', '.jpeg', '.png', '.bmp', '.webp'}
 
     for file in images_folder.iterdir():
