@@ -80,6 +80,27 @@ def test_yolo_format_construction(sample_yolo_dataset):
     assert ann2.geometry.width == 0.1
     assert ann2.geometry.height == 0.1
 
+@pytest.mark.parametrize("location", ["labels", "root"])
+def test_classes_txt_locations(tmp_path, location):
+    labels_dir = tmp_path / "labels"
+    labels_dir.mkdir()
+    images_dir = tmp_path / "images"
+    images_dir.mkdir()
+
+    image1 = Image.new('RGB', (100, 100), color='red')
+    image1.save(images_dir / 'image1.png')
+
+    (labels_dir / "image1.txt").write_text("0 0.5 0.5 0.3 0.3\n")
+
+    if location == "labels":
+        (labels_dir / "classes.txt").write_text("person\ncar\ntruck")
+    else:
+        (tmp_path / "classes.txt").write_text("person\ncar\ntruck")
+
+    yolo_format = YoloFormat.read_from_folder(tmp_path)
+    assert yolo_format.class_labels == {0: "person", 1: "car", 2: "truck"}
+    assert len(yolo_format.files) == 1
+    assert yolo_format.files[0].filename == "image1.png"
 
 def test_invalid_dataset_structure(tmp_path):
     # Case without labels directory

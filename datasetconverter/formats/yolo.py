@@ -117,13 +117,16 @@ class YoloFormat(DatasetFormat[YoloFile]):
             raise FileNotFoundError(f"Folder 'labels' was not found in {folder_path}")
         
         # 1. Read classes
-        classes_file = labels_dir / "classes.txt"
-        if classes_file.exists():
-            with open(classes_file, 'r') as f:
-                class_labels = {i: line.strip() for i, line in enumerate(f.readlines())}
+        if (labels_dir / "classes.txt").exists():
+            classes_file = labels_dir / "classes.txt"
+        elif (Path(folder_path) / "classes.txt").exists():
+            classes_file = Path(folder_path) / "classes.txt"
         else:
-            raise FileNotFoundError(f"File 'classes.txt' was not found in {labels_dir}")
-        
+            raise FileNotFoundError(f"File 'classes.txt' was not found in {folder_path}")
+
+        with open(classes_file, 'r') as f:
+            class_labels = {i: line.strip() for i, line in enumerate(f.readlines())}
+
         # 2. Read annotations (archivos .txt)
         for ann_file in labels_dir.glob("*.txt"):
             if ann_file.name == "classes.txt":
