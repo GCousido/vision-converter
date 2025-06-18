@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 # Import
-from datasetconverter.cli.main import dconverter, FORMATS, to_camel_case
+from datasetconverter.cli.main import dconverter, FORMATS, get_dataset_names
 
 # Fixture for Click Runner
 @pytest.fixture
@@ -29,7 +29,7 @@ def mock_imports(mocker):
         fmt_class_mock.read_from_folder.return_value = mocker.MagicMock()
         
         #  Configure the format to return a mock class when accesing with getattr
-        setattr(fmt_mock, f"{to_camel_case(fmt)}Format", fmt_class_mock)
+        setattr(fmt_mock, f"{get_dataset_names(fmt)}Format", fmt_class_mock)
         format_mocks[f'datasetconverter.formats.{fmt}'] = fmt_mock
         
         # 2. Mock for converter
@@ -45,7 +45,7 @@ def mock_imports(mocker):
         conv_class_mock.fromNeutral.return_value = output_dataset
         
         # Asign mock class to the converter
-        setattr(conv_mock, f"{to_camel_case(fmt)}Converter", conv_class_mock)
+        setattr(conv_mock, f"{get_dataset_names(fmt)}Converter", conv_class_mock)
         converter_mocks[f'datasetconverter.converters.{fmt}_converter'] = conv_mock
     
     # All mocks in a single dictionary

@@ -57,20 +57,20 @@ def dconverter(input_format, input_path, output_format, output_path):
     try:
         # Dynamic import of format classes
         input_format_module = importlib.import_module(f'datasetconverter.formats.{input_format}')
-        input_format_class_name = f"{to_camel_case(input_format)}Format"
+        input_format_class_name = f"{get_dataset_names(input_format)}Format"
         input_format_class = getattr(input_format_module, input_format_class_name)
 
         output_format_module = importlib.import_module(f'datasetconverter.formats.{output_format}')
-        output_format_class_name = f"{to_camel_case(output_format)}Format"
+        output_format_class_name = f"{get_dataset_names(output_format)}Format"
         output_format_class = getattr(output_format_module, output_format_class_name)
         
         # Dynamic import of converters
         input_converter_module = importlib.import_module(f'datasetconverter.converters.{input_format}_converter')
-        input_converter_class_name = f"{to_camel_case(input_format)}Converter"
+        input_converter_class_name = f"{get_dataset_names(input_format)}Converter"
         input_converter_class = getattr(input_converter_module,input_converter_class_name)
 
         output_converter_module = importlib.import_module(f'datasetconverter.converters.{output_format}_converter')
-        output_converter_class_name = f"{to_camel_case(output_format)}Converter"
+        output_converter_class_name = f"{get_dataset_names(output_format)}Converter"
         output_converter_class = getattr(output_converter_module, output_converter_class_name)
         
         # Load input dataset
@@ -99,7 +99,7 @@ def dconverter(input_format, input_path, output_format, output_path):
         click.echo(f"Error while converting: {e}", err=True)
         sys.exit(1)
 
-def to_camel_case(input: str) -> str:
+def get_dataset_names(input: str) -> str:
     # Map special cases
     specific_formats = {
         'createml': 'CreateML',
