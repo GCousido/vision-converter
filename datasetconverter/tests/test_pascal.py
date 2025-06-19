@@ -1,7 +1,9 @@
+import os
 from pathlib import Path
 import pytest
 import xml.etree.ElementTree as ET
 from datasetconverter.formats.pascal_voc import PascalVocBoundingBox, PascalVocFile, PascalVocFormat, PascalVocObject, PascalVocSource
+from datasetconverter.tests.utils_for_tests import normalize_path
 
 # Helper for creating XML Pascal VOC files
 def create_pascalvoc_xml(path, filename, objects, width=800, height=600, depth=3, folder="VOC", segmented=0, source=None):
@@ -307,3 +309,155 @@ def verify_xml_content(xml_path: Path, expected_objects: int, expected_size: tup
         if "pose" in expected:
             assert obj.findtext("pose") == expected["pose"], f"Pose wrong in object {i} of {xml_path.name}"
 
+@pytest.fixture()
+def pascalvoc_image_handling_dataset(tmp_path):
+    """Fixture para tests con imágenes en Pascal VOC"""
+    dataset_dir = tmp_path / "pascalvoc_image_handling"
+    annotations_dir = dataset_dir / "Annotations"
+    images_dir = dataset_dir / "JPEGImages"
+
+    annotations_dir.mkdir(parents=True)
+    images_dir.mkdir(parents=True)
+
+    # Crear imágenes
+    (images_dir / "img1.jpg").write_bytes(b"image_data")
+    (images_dir / "img2.png").write_bytes(b"image_data")
+
+    # Crear archivos XML mínimos
+    for img_name in ["img1.jpg", "img2.png"]:
+        root = ET.Element("annotation")
+        ET.SubElement(root, "folder").text = "JPEGImages"
+        ET.SubElement(root, "filename").text = img_name
+        ET.SubElement(root, "path").text = str(images_dir / img_name)
+        source = ET.SubElement(root, "source")
+        ET.SubElement(source, "database").text = "Unknown"
+        ET.SubElement(source, "annotation").text = "Unknown"
+        ET.SubElement(source, "image").text = "Unknown"
+        size = ET.SubElement(root, "size")
+        ET.SubElement(size, "width").text = "100"
+        ET.SubElement(size, "height").text = "100"
+        ET.SubElement(size, "depth").text = "3"
+        ET.SubElement(root, "segmented").text = "0"
+        tree = ET.ElementTree(root)
+        tree.write(annotations_dir / (img_name.replace('.', '_') + ".xml"), encoding="utf-8", xml_declaration=True)
+
+    return dataset_dir
+
+@pytest.fixture()
+def pascalvoc_format_image_instance(tmp_path):
+    """Fixture para instancia PascalVocFormat"""
+    img_dir = tmp_path / "source_imgs"
+    img_dir.mkdir()
+    img1 = img_dir / "test_img1.jpg"
+    img2 = img_dir / "test_img2.png"
+    img1.write_bytes(b"source1")
+    img2.write_bytes(b"source2")
+
+    files = [
+        PascalVocFile(
+            filename="test_img1.jpg",
+            annotations=[],
+            folder="JPEGImages",
+            path=str(img1),
+            source=PascalVocSource("Unknown", "Unknown", "Unknown"),
+            width=100, height=100, depth=3, segmented=0
+        ),
+        PascalVocFile(
+            filename="test_img2.png",
+            annotations=[],
+            folder="JPEGImages",
+            path=str(img2),
+            source=PascalVocSource("Unknown", "Unknown", "Unknown"),
+            width=100, height=100, depth=3, segmented=0
+        )
+    ]
+    return PascalVocFormat(
+        name="image_test",
+        files=files,
+        folder_path=str(tmp_path),
+        images_path_list=[str(img1), str(img2)]
+    )
+
+def test_pascalvoc_read_with_copy_images(pascalvoc_image_handling_dataset):
+    pascal = PascalVocFormat.read_from_folder(
+        str(pascalvoc_image_handling_dataset),
+        copy_images=True,
+        copy_as_links=False
+    )
+    assert pascal.images_path_list is not None
+    assert len(pascal.images_path_list) == 2
+    assert all(
+        any(img_name in p for p in pascal.images_path_list)
+        for img_name in ['img1.jpg', 'img2.png']
+    )
+
+def test_pascalvoc_read_with_links(pascalvoc_image_handling_dataset):
+    pascal = PascalVocFormat.read_from_folder(
+        str(pascalvoc_image_handling_dataset),
+        copy_images=False,
+        copy_as_links=True
+    )
+    assert pascal.images_path_list is not None
+    assert len(pascal.images_path_list) == 2
+    assert all(
+        any(img_name in p for p in pascal.images_path_list)
+        for img_name in ['img1.jpg', 'img2.png']
+    )
+
+def test_pascalvoc_read_without_copy(pascalvoc_image_handling_dataset):
+    pascal = PascalVocFormat.read_from_folder(
+        str(pascalvoc_image_handling_dataset),
+        copy_images=False,
+        copy_as_links=False
+    )
+    assert pascal.images_path_list is None
+
+def test_pascalvoc_save_with_copy_images(pascalvoc_format_image_instance, tmp_path):
+    output_dir = tmp_path / "output"
+    pascalvoc_format_image_instance.save(
+        str(output_dir),
+        copy_images=True,
+        copy_as_links=False
+    )
+    images_dir = output_dir / "JPEGImages"
+    output_images = list(images_dir.iterdir())
+    assert len(output_images) == 2
+    assert (images_dir / "test_img1.jpg").read_bytes() == b"source1"
+    assert (images_dir / "test_img2.png").read_bytes() == b"source2"
+
+def test_pascalvoc_save_with_links(pascalvoc_format_image_instance, tmp_path):
+    if os.name == "nt":
+        try:
+            test_link = tmp_path / "test_link"
+            test_target = tmp_path / "test_target.txt"
+            test_target.write_text("test")
+            test_link.symlink_to(test_target)
+        except OSError as e:
+            if getattr(e, "winerror", None) == 1314:
+                pytest.skip("Symlinks requieren privilegios de administrador en Windows")
+            else:
+                raise
+
+    output_dir = tmp_path / "output"
+    pascalvoc_format_image_instance.save(
+        str(output_dir),
+        copy_images=False,
+        copy_as_links=True
+    )
+    images_dir = output_dir / "JPEGImages"
+    img1 = images_dir / "test_img1.jpg"
+    img2 = images_dir / "test_img2.png"
+    assert img1.is_symlink()
+    assert Path(normalize_path(os.readlink(img1))).resolve()== Path(pascalvoc_format_image_instance.images_path_list[0]).resolve()
+    assert img2.is_symlink()
+    assert Path(normalize_path(os.readlink(img2))).resolve()== Path(pascalvoc_format_image_instance.images_path_list[1]).resolve()
+
+def test_pascalvoc_save_without_copy(pascalvoc_format_image_instance, tmp_path):
+    output_dir = tmp_path / "output"
+    pascalvoc_format_image_instance.save(
+        str(output_dir),
+        copy_images=False,
+        copy_as_links=False
+    )
+    images_dir = output_dir / "JPEGImages"
+    assert not any(images_dir.iterdir()) if images_dir.exists() else True

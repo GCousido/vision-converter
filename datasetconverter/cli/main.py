@@ -28,7 +28,9 @@ FORMATS = ['coco', 'pascal_voc', 'yolo', 'createml', 'tensorflow_csv', 'labelme'
                 required=True, 
                 type=click.Path(), 
                 help='Path to save the Output dataset')
-def dconverter(input_format, input_path, output_format, output_path):
+@click.option('--copy-images', is_flag=True, default=False, help='If set, copies image files to the output directory.')
+@click.option('--symlink-images', is_flag=True, default=False, help='If set, creates symbolic links to the original images in the output directory.')
+def dconverter(input_format, input_path, output_format, output_path, copy_images, symlink_images):
     """Convert object detection datasets between popular annotation formats.
 
     This CLI tool provides conversion between annotation formats through a neutral intermediate representation.
@@ -74,8 +76,12 @@ def dconverter(input_format, input_path, output_format, output_path):
         output_converter_class = getattr(output_converter_module, output_converter_class_name)
         
         # Load input dataset
-        click.echo(f"Loading dataset {input_format} from {input_path}")
-        input_dataset = input_format_class.read_from_folder(input_path)
+        message_read = f"Loading dataset {input_format} from {input_path} "
+        if copy_images or symlink_images:
+            message_read += f"with mode {'copy_images' if copy_images else 'symlink_images'}"
+
+        click.echo(message_read)
+        input_dataset = input_format_class.read_from_folder(input_path, copy_images, symlink_images)
         
         # Convert to NeutralFormat
         click.echo(f"Converting from {input_format} to neutral format...")
@@ -86,8 +92,12 @@ def dconverter(input_format, input_path, output_format, output_path):
         output_dataset = output_converter_class.fromNeutral(neutral_format)
         
         # Save output dataset 
-        click.echo(f"Saving dataset {output_format} in {output_path}")
-        output_dataset.save(output_path)
+        message_save = f"Saving dataset {output_format} in {output_path} "
+        if copy_images or symlink_images:
+            message_save += f"with mode {'copy_images' if copy_images else 'symlink_images'}"
+
+        click.echo(message_save)
+        output_dataset.save(output_path, copy_images, symlink_images)
         
     except ImportError as e:
         click.echo(f"Error: Could not import necessary modules: {e}", err=True)

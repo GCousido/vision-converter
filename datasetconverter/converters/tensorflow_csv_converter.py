@@ -36,7 +36,8 @@ class TensorflowCsvConverter(DatasetConverter[TensorflowCsvFormat]):
             files = neutral_files,
             original_format = "tensorflow_csv",
             metadata = None,
-            class_map = class_map
+            class_map = class_map,
+            images_path_list = df.images_path_list
         )
     
     @staticmethod
@@ -55,7 +56,8 @@ class TensorflowCsvConverter(DatasetConverter[TensorflowCsvFormat]):
         return TensorflowCsvFormat(
             name = nf.name,
             files = tf_files,
-            folder_path = nf.folder_path
+            folder_path = nf.folder_path,
+            images_path_list = nf.images_path_list
         )
 
 

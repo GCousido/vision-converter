@@ -73,20 +73,21 @@ class YoloFormat(DatasetFormat[YoloFile]):
         name (str): Inherited - Dataset name
         files (list[YoloFile]): Inherited - List of YOLO files
         folder_path (Optional[str]): Inherited - Dataset root path
+        images_path_list (Optional[list[str]]): Inherited - List of images paths
     """
     class_labels: dict[int, str]
 
-    def __init__(self, name: str, files: list[YoloFile], class_labels: dict[int, str], folder_path: Optional[str] = None) -> None:
-        super().__init__(name,files, folder_path)
+    def __init__(self, name: str, files: list[YoloFile], class_labels: dict[int, str], folder_path: Optional[str] = None, images_path_list: Optional[list[str]] = None) -> None:
+        super().__init__(name,files, folder_path, images_path_list)
         self.class_labels = class_labels
 
     
     @staticmethod
-    def build(name: str, files: list[YoloFile], class_labels: dict[int, str], folder_path: Optional[str] = None) -> 'YoloFormat':
-        return YoloFormat(name, files, class_labels, folder_path)
+    def build(name: str, files: list[YoloFile], class_labels: dict[int, str], folder_path: Optional[str] = None, images_path_list: Optional[list[str]] = None) -> 'YoloFormat':
+        return YoloFormat(name, files, class_labels, folder_path, images_path_list)
 
     @staticmethod
-    def read_from_folder(folder_path: str) -> 'YoloFormat':
+    def read_from_folder(folder_path: str, copy_images: bool = False, copy_as_links: bool = False) -> 'YoloFormat':
         """Constructs YOLO dataset from standard folder structure.
 
         Expected structure:
@@ -97,6 +98,8 @@ class YoloFormat(DatasetFormat[YoloFile]):
         ```
         Args:
             folder_path (str): Root directory of YOLO dataset
+            copy_images (bool, default False): If True, loads and stores the image file paths in the dataset object; if False, image paths are not loaded.
+            copy_as_links (bool, default False): If True, loads and stores the image file paths in the dataset object; if False, image paths are not loaded.
             
         Returns:
             YoloFormat: Dataset object
@@ -116,6 +119,13 @@ class YoloFormat(DatasetFormat[YoloFile]):
         if not labels_dir.exists():
             raise FileNotFoundError(f"Folder 'labels' was not found in {folder_path}")
         
+        images_dir = Path(folder_path) / "images"
+
+        if not images_dir.exists():
+            raise FileNotFoundError(f"Folder 'images' was not found in {folder_path}")
+        
+        image_paths = []
+
         # 1. Read classes
         if (labels_dir / "classes.txt").exists():
             classes_file = labels_dir / "classes.txt"
@@ -146,33 +156,46 @@ class YoloFormat(DatasetFormat[YoloFile]):
                         )
                         annotations.append(YoloAnnotation(bbox, class_id))
 
-            filename = get_image_path(folder_path, "images", ann_file.name)
+            image_path = get_image_path(folder_path, "images", ann_file.name)
 
-            if not filename:
+            if not image_path:
                 raise Exception("Dataset structure error in the YOLO Dataset, annotations file must have the same name as the image")
+            
+            if copy_images or copy_as_links:
+                image_paths.append(image_path)
 
-            files.append(YoloFile(Path(filename).name, annotations))
-        
+            files.append(YoloFile(Path(image_path).name, annotations))
+
         return YoloFormat.build(
             name=Path(folder_path).name,
             files=files,
             folder_path=folder_path,
-            class_labels=class_labels
+            class_labels=class_labels,
+            images_path_list=image_paths if len(image_paths) > 0 else None
         )
 
 
-    def save(self, folder: str) -> None:
-        """Saves YOLO dataset to standard folder structure.
-        
-        ```
-        {folder}/  
-            ├── images/
-            └── labels/  
-                ├── classes.txt
-                └── *.txt    # Annotation files  
-        ```
+    def save(self, folder: str, copy_images: bool = False, copy_as_links: bool = False) -> None:
+        """
+        Saves YOLO dataset to standard folder structure.
+
+        Structure:
+            {folder}/  
+                ├── images/
+                └── labels/  
+                    ├── classes.txt
+                    └── *.txt    # Annotation files  
+
         Args:
-            folder: Output directory path
+            folder (str): Output directory path.
+            copy_images (bool, default False): If True, copies image files to the output directory. If False, images are not copied.
+            copy_as_links (bool, default False): If True, creates links to the original images in the output directory instead of copying them. If False, no links are created.
+
+        Returns:
+            None
+
+        Raises:
+            Exception: If image paths are not found or an error occurs during copy/symlink.
         """
         folder_path = Path(folder)
         
@@ -200,3 +223,6 @@ class YoloFormat(DatasetFormat[YoloFile]):
                     bbox = ann.geometry
                     line = f"{ann.id_class} {bbox.x_center} {bbox.y_center} {bbox.width} {bbox.height}\n"
                     f.write(line)
+
+        if copy_images or copy_as_links:
+            self.handle_images(self.images_path_list, str(images_dir), copy_images, copy_as_links)

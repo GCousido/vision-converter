@@ -2,6 +2,8 @@ from pathlib import Path
 from typing import Optional
 import xml.etree.ElementTree as ET
 
+from datasetconverter.utils.file_utils import find_all_images_folders
+
 from .base import Annotation, BoundingBox, DatasetFormat, FileFormat
 
 class PascalVocBoundingBox(BoundingBox):
@@ -123,23 +125,26 @@ class PascalVocFormat(DatasetFormat[PascalVocFile]):
         name (str): Inherited. Name of the dataset.
         files (list[PascalVocFile]): Inherited. List of PascalVocFile objects.
         folder_path (Optional[str]): Inherited. Path to the dataset folder.
+        images_path_list (Optional[list[str]]): Inherited - List of images paths
     """
 
-    def __init__(self, name: str, files: list[PascalVocFile], folder_path: Optional[str] = None) -> None:
-        super().__init__(name, files, folder_path)
+    def __init__(self, name: str, files: list[PascalVocFile], folder_path: Optional[str] = None, images_path_list: Optional[list[str]] = None) -> None:
+        super().__init__(name, files, folder_path, images_path_list)
 
     @staticmethod
-    def build(name: str, files: list[PascalVocFile], folder_path: Optional[str] = None) -> 'PascalVocFormat':
-        return PascalVocFormat(name, files, folder_path)
+    def build(name: str, files: list[PascalVocFile], folder_path: Optional[str] = None, images_path_list: Optional[list[str]] = None) -> 'PascalVocFormat':
+        return PascalVocFormat(name, files, folder_path, images_path_list)
 
     @staticmethod
-    def read_from_folder(folder_path: str) -> 'PascalVocFormat':
+    def read_from_folder(folder_path: str, copy_images: bool = False, copy_as_links: bool = False) -> 'PascalVocFormat':
         """Create a dataset in Pascal VOC format from a folder.
 
         Expecting annotations in Annotations folder.
 
         Args:
             folder_path (str): Path to the Pascal VOC dataset root folder.
+            copy_images (bool, default False): If True, loads and stores the image file paths in the dataset object; if False, image paths are not loaded.
+            copy_as_links (bool, default False): If True, loads and stores the image file paths in the dataset object; if False, image paths are not loaded.
 
         Returns:
             PascalVocFormat: Object with the Pascal VOC dataset.
@@ -213,26 +218,37 @@ class PascalVocFormat(DatasetFormat[PascalVocFile]):
                 )
             )
 
+        # Save images path
+        image_paths = []
+        if copy_images or copy_as_links:
+            # Search for images folders
+            list_images_dir = find_all_images_folders(folder_path)
+            for images_dir in list_images_dir:
+                image_paths += PascalVocFormat.get_image_paths(images_dir)
+
         return PascalVocFormat.build(
             name=Path(folder_path).name,
             files=pascal_files,
-            folder_path=folder_path
+            folder_path=folder_path,
+            images_path_list=image_paths  if len(image_paths) > 0 else None
         )
 
 
-    def save(self, folder: str) -> None:
+    def save(self, folder: str, copy_images: bool = False, copy_as_links: bool = False) -> None:
         """Save the Pascal VOC dataset to the specified folder, creating the standard structure.
 
         The following structure will be created:
         ```
         {folder}/
             ├── Annotations/    # XML annotation files
-            ├── JPEGImages/     # Image files (not written here)
+            ├── JPEGImages/     # Image files
             └── ImageSets/      # Image set text files (not written here)
         ```
 
         Args:
             folder (str): Output directory path.
+            copy_images (bool, default False): If True, copies image files to the output directory. If False, images are not copied.
+            copy_as_links (bool, default False): If True, creates links to the original images in the output directory instead of copying them. If False, no links are created.
         """
         folder_path = Path(folder)
         
@@ -242,11 +258,11 @@ class PascalVocFormat(DatasetFormat[PascalVocFile]):
         # Create folder structure for PascalVoc
         annotations_dir = folder_path / "Annotations"
         imagesets_dir = folder_path / "ImageSets"
-        jpegs_dir = folder_path / "JPEGImages"
+        images_dir = folder_path / "JPEGImages"
         
         annotations_dir.mkdir(exist_ok=True)
         imagesets_dir.mkdir(exist_ok=True)
-        jpegs_dir.mkdir(exist_ok=True)
+        images_dir.mkdir(exist_ok=True)
         
         
         # Save all XML Annotations files
@@ -295,3 +311,5 @@ class PascalVocFormat(DatasetFormat[PascalVocFile]):
             tree = ET.ElementTree(root)
             tree.write(xml_path, encoding="utf-8", xml_declaration=True)
 
+        if copy_images or copy_as_links:
+            self.handle_images(self.images_path_list, str(images_dir), copy_images, copy_as_links)

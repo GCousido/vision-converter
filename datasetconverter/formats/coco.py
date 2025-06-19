@@ -3,7 +3,7 @@ from pathlib import Path
 import json
 from typing import Optional
 
-from datasetconverter.utils.file_utils import find_annotation_file
+from datasetconverter.utils.file_utils import find_all_images_folders, find_annotation_file
 
 from .base import Annotation, BoundingBox, DatasetFormat, FileFormat
 
@@ -180,14 +180,15 @@ class CocoFormat(DatasetFormat[CocoFile]):
         name (str): Inherited. Name of the dataset.
         files (list[CocoFile]): Inherited. List of COCO annotation files.
         folder_path (Optional[str]): Inherited. Path to the dataset folder.
+        images_path_list (Optional[list[str]]): Inherited - List of images paths
     """
 
-    def __init__(self, name: str, files: list[CocoFile], folder_path: Optional[str] = None) -> None:
-        super().__init__(name, files, folder_path)
+    def __init__(self, name: str, files: list[CocoFile], folder_path: Optional[str] = None, images_path_list: Optional[list[str]] = None) -> None:
+        super().__init__(name, files, folder_path, images_path_list)
 
     @staticmethod
-    def build(name: str, files: list[CocoFile], folder_path: Optional[str] = None) -> 'CocoFormat':
-        return CocoFormat(name, files, folder_path)
+    def build(name: str, files: list[CocoFile], folder_path: Optional[str] = None, images_path_list: Optional[list[str]] = None) -> 'CocoFormat':
+        return CocoFormat(name, files, folder_path, images_path_list)
     
     @staticmethod
     def create_coco_file_from_json(coco_data, name: str) -> CocoFile:
@@ -289,11 +290,13 @@ class CocoFormat(DatasetFormat[CocoFile]):
             )
 
     @staticmethod
-    def read_from_folder(path: str) -> 'CocoFormat':
+    def read_from_folder(path: str, copy_images: bool = False, copy_as_links: bool = False) -> 'CocoFormat':
         """Loads a COCO dataset from a folder.
 
         Args:
             path (str): Path to the dataset folder or annotation file
+            copy_images (bool, default False): If True, loads and stores the image file paths in the dataset object; if False, image paths are not loaded.
+            copy_as_links (bool, default False): If True, loads and stores the image file paths in the dataset object; if False, image paths are not loaded.
 
         Returns:
             CocoFormat: Loaded COCO dataset.
@@ -307,10 +310,19 @@ class CocoFormat(DatasetFormat[CocoFile]):
         with open(file, 'r') as f:
             coco_data = json.load(f)
 
+        # Save images path
+        image_paths = []
+        if copy_images or copy_as_links:
+            # Search for images folders
+            list_images_dir = find_all_images_folders(file.parent) 
+            for images_dir in list_images_dir:
+                image_paths += CocoFormat.get_image_paths(images_dir)
+
         return CocoFormat.build(
             name = "CocoDataset",
             files=[CocoFormat.create_coco_file_from_json(coco_data, file.name)],
-            folder_path=str(file.parent)
+            folder_path=str(file.parent),
+            images_path_list=image_paths  if len(image_paths) > 0 else None
         )
     
     @staticmethod
@@ -329,23 +341,29 @@ class CocoFormat(DatasetFormat[CocoFile]):
         )
 
 
-    def save(self, output_folder: str) -> None:
+    def save(self, output_folder: str, copy_images: bool = False, copy_as_links: bool = False) -> None:
         """Saves the COCO dataset to the specified output folder.
 
         ```
         {folder}/  
-            ├── images/      # (Note: copies images if path exists)  
+            ├── images/      # Image files
             └── annotations.json
         ```
 
         Args:
             output_folder (str): Path to the output directory.
+            copy_images (bool, default False): If True, copies image files to the output directory. If False, images are not copied.
+            copy_as_links (bool, default False): If True, creates links to the original images in the output directory instead of copying them. If False, no links are created.
         """
         # Save the dataset in output_folder and create a folder with the dataset name
         folder_path = Path(output_folder)
 
         # Create any folder if necesary
         folder_path.mkdir(parents=True, exist_ok=True)
+
+        # Create images folder
+        images_dir = Path(output_folder) / "images"
+        images_dir.mkdir(exist_ok=True)
 
         # Path to create the json file
         json_path = folder_path / "annotations.json"
@@ -401,3 +419,6 @@ class CocoFormat(DatasetFormat[CocoFile]):
         # Save as json
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(coco_dict, f, ensure_ascii=False, indent=4)
+
+        if copy_images or copy_as_links:
+            self.handle_images(self.images_path_list, str(images_dir), copy_images, copy_as_links)

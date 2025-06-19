@@ -3,7 +3,7 @@ from typing import Any, Optional, Dict, List
 import json
 from pathlib import Path
 
-from datasetconverter.utils.file_utils import find_annotation_file
+from datasetconverter.utils.file_utils import find_all_images_folders, find_annotation_file
 
 from .base import Annotation, DatasetFormat, FileFormat, Shape
 from .pascal_voc import PascalVocBoundingBox
@@ -296,14 +296,15 @@ class VGGFormat(DatasetFormat[VGGFile]):
         name (str): Name of the dataset.
         files (List[VGGFile]): List of VGGFile objects.
         folder_path (Optional[str]): Path to the dataset folder.
+        images_path_list (Optional[list[str]]): Inherited - List of images paths
     """
 
-    def __init__(self, name: str, files: List[VGGFile], folder_path: Optional[str] = None) -> None:
-        super().__init__(name, files, folder_path)
+    def __init__(self, name: str, files: List[VGGFile], folder_path: Optional[str] = None, images_path_list: Optional[list[str]] = None) -> None:
+        super().__init__(name, files, folder_path, images_path_list)
 
     @staticmethod
-    def build(name: str, files: List[VGGFile], folder_path: Optional[str] = None) -> 'VGGFormat':
-        return VGGFormat(name, files, folder_path)
+    def build(name: str, files: List[VGGFile], folder_path: Optional[str] = None, images_path_list: Optional[list[str]] = None) -> 'VGGFormat':
+        return VGGFormat(name, files, folder_path, images_path_list)
     
     @staticmethod
     def create_vgg_file(image_data: Dict[str, Any]) -> VGGFile:
@@ -366,11 +367,20 @@ class VGGFormat(DatasetFormat[VGGFile]):
         return VGGFile(filename, size, annotations, file_attributes)
 
     @staticmethod
-    def read_from_folder(path: str) -> 'VGGFormat':
+    def read_from_folder(path: str, copy_images: bool = False, copy_as_links: bool = False) -> 'VGGFormat':
         """Load VGG dataset from a single JSON file.
+
+        Expected structure:
+        ``` 
+        - {folder_path}/  
+            ├── images/               # Contains image files  
+            └── annotations.json      # Contains .txt annotations and classes.txt
+        ```
         
         Args:
             path (str): Path to the dataset folder or annotation file
+            copy_images (bool, default False): If True, loads and stores the image file paths in the dataset object; if False, image paths are not loaded.
+            copy_as_links (bool, default False): If True, loads and stores the image file paths in the dataset object; if False, image paths are not loaded.
             
         Returns:
             VGGFormat: VGG dataset object.
@@ -394,15 +404,24 @@ class VGGFormat(DatasetFormat[VGGFile]):
         for image_key, image_data in via_img_metadata.items():
             vgg_file = VGGFormat.create_vgg_file(image_data)
             vgg_files.append(vgg_file)
+
+        # Save images path
+        image_paths = []
+        if copy_images or copy_as_links:
+            # Search for images folders
+            list_images_dir = find_all_images_folders(annotations_path.parent) 
+            for images_dir in list_images_dir:
+                image_paths += VGGFormat.get_image_paths(images_dir)
         
         return VGGFormat(
             name=annotations_path.stem,
             files=vgg_files,
-            folder_path=str(annotations_path.parent)
+            folder_path=str(annotations_path.parent),
+            images_path_list=image_paths  if len(image_paths) > 0 else None
         )
 
 
-    def save(self, output_path: str) -> None:
+    def save(self, output_path: str, copy_images: bool = False, copy_as_links: bool = False) -> None:
         """Save VGG dataset to JSON file.
         
         ```text
@@ -414,11 +433,14 @@ class VGGFormat(DatasetFormat[VGGFile]):
         '''
         Args:
             output_path (str): Output folder path for the VIA JSON.
+            copy_images (bool, default False): If True, copies image files to the output directory. If False, images are not copied.
+            copy_as_links (bool, default False): If True, creates links to the original images in the output directory instead of copying them. If False, no links are created.
         """
         # Create output directory if needed
         Path(output_path).mkdir(parents=True, exist_ok=True)
 
-        Path(output_path + "/images").mkdir(exist_ok=True)
+        images_dir = Path(output_path) / "images"
+        images_dir.mkdir(exist_ok=True)
         output_file = Path(output_path) / "annotations.json"
 
         
@@ -458,6 +480,9 @@ class VGGFormat(DatasetFormat[VGGFile]):
         # Save to file
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(via_json, f, indent=2, ensure_ascii=False)
+
+        if copy_images or copy_as_links:
+            self.handle_images(self.images_path_list, str(images_dir), copy_images, copy_as_links)
 
 
 def extract_class_name(region_attributes: dict[str, Any]) -> str:

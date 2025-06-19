@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+from pathlib import Path
+import shutil
 from typing import Any, Generic, Optional, TypeVar, Union
 
 class BoundingBox(ABC):
@@ -76,12 +78,60 @@ class DatasetFormat(ABC, Generic[X]):
         name (str): Name/identifier of the dataset
         files (list[X]): List of files in the dataset
         folder_path (Optional[str]): Optional filesystem path to dataset root
+        images_path_list (Optional[list[str]]): Optional list of images paths
     """
     name: str
     files: list[X]
     folder_path: Optional[str]
+    images_path_list: Optional[list[str]]
 
-    def __init__(self, name: str, files: list[X], folder_path: Optional[str] = None) -> None:
+    def __init__(self, name: str, files: list[X], folder_path: Optional[str] = None, images_path_list: Optional[list[str]] = None) -> None:
         self.name = name
         self.files = files
         self.folder_path = folder_path
+        self.images_path_list = images_path_list
+
+    @staticmethod
+    def get_image_paths(images_dir: str, extensions=('.jpg', '.jpeg', '.png', '.bmp', '.webp')) -> list[str]:
+        """
+        Retrieve image file paths from a specified directory with given file extensions.
+
+        Args:
+            images_dir (str): Path to the directory containing image files.
+            extensions (tuple, optional): Tuple of file extensions to search for. Defaults to ('.jpg', '.jpeg', '.png', '.bmp', '.webp').
+
+        Returns:
+            list: List of image file paths as strings.
+
+        Raises:
+            FileNotFoundError: If no image files matching the extensions are found in the directory.
+        """
+        image_paths: list[str] = []
+        for ext in extensions:
+            image_paths.extend(str(p) for p in Path(images_dir).glob(f'*{ext}'))
+        if not image_paths:
+            raise FileNotFoundError(f"No images found to copy at {images_dir}")
+        return image_paths
+
+    def handle_images(self, images_path_list: Optional[list[str]], images_dir: str, copy_images=False, copy_as_links=False) -> None:
+        """
+        Copy or create symbolic links for a list of image files into a target directory.
+
+        Args:
+            images_path_list (list): List of paths to image files to handle.
+            images_dir (str): Target directory where images will be copied or linked.
+            copy_images (bool, optional): If True, images are copied to the target directory. Defaults to False.
+            copy_as_links (bool, optional): If True, symbolic links to the images are created in the target directory. Defaults to False.
+
+        Raises:
+            FileNotFoundError: If the provided image path list is empty.
+        """
+        if not images_path_list:
+            raise FileNotFoundError("Images not found to copy")
+        for image_path in images_path_list:
+            img_name = Path(image_path).name
+            dest = Path(images_dir) / img_name
+            if copy_images:
+                shutil.copy(image_path, dest)
+            elif copy_as_links:
+                dest.symlink_to(Path(image_path).resolve())

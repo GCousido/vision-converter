@@ -1,10 +1,11 @@
 from abc import abstractmethod
-from genericpath import exists
 import math
 from typing import Any, Optional
 import json
 import base64
 from pathlib import Path
+
+from datasetconverter.utils.file_utils import find_all_images_folders
 
 from .base import Annotation, DatasetFormat, FileFormat, Shape
 from .pascal_voc import PascalVocBoundingBox
@@ -355,13 +356,14 @@ class LabelMeFormat(DatasetFormat[LabelMeFile]):
         name (str): Inherited. Name of the dataset.
         files (list[LabelMeFile]): Inherited. List of LabelMeFile objects.
         folder_path (Optional[str]): Inherited. Path to the dataset folder.
+        images_path_list (Optional[list[str]]): Inherited - List of images paths
     """
-    def __init__(self, name: str, files: list[LabelMeFile], folder_path: str | None = None) -> None:
-        super().__init__(name, files, folder_path)
+    def __init__(self, name: str, files: list[LabelMeFile], folder_path: str | None = None, images_path_list: Optional[list[str]] = None) -> None:
+        super().__init__(name, files, folder_path, images_path_list)
 
     @staticmethod
-    def build(name: str, files: list[LabelMeFile], folder_path: Optional[str] = None) -> 'LabelMeFormat':
-        return LabelMeFormat(name, files, folder_path)
+    def build(name: str, files: list[LabelMeFile], folder_path: Optional[str] = None, images_path_list: Optional[list[str]] = None) -> 'LabelMeFormat':
+        return LabelMeFormat(name, files, folder_path, images_path_list)
     
     @staticmethod
     def create_labelme_file(json_file_name: str, json_data):
@@ -451,17 +453,20 @@ class LabelMeFormat(DatasetFormat[LabelMeFile]):
 
 
     @staticmethod
-    def read_from_folder(folder_path: str) -> 'LabelMeFormat':
+    def read_from_folder(folder_path: str, copy_images: bool = False, copy_as_links: bool = False) -> 'LabelMeFormat':
         """Create a dataset in LabelMe format from a folder.
 
-        Expecting JSON annotation files in the root folder or annotations subfolder.
+        Expecting JSON annotation files in the root folder.
         ```
         folder_path/
                 *.json        # JSON annotation files
                 *.jpg         # Image files
         ```
+
         Args:
             folder_path (str): Path to the LabelMe dataset root folder.
+            copy_images (bool, default False): If True, loads and stores the image file paths in the dataset object; if False, image paths are not loaded.
+            copy_as_links (bool, default False): If True, loads and stores the image file paths in the dataset object; if False, image paths are not loaded.
 
         Returns:
             LabelMeFormat: Object with the LabelMe dataset.
@@ -488,13 +493,22 @@ class LabelMeFormat(DatasetFormat[LabelMeFile]):
 
             labelme_files.append(LabelMeFormat.create_labelme_file(json_file.stem, data))
 
+        # Save images path
+        image_paths = []
+        if copy_images or copy_as_links:
+            # Search for images folders
+            list_images_dir = find_all_images_folders(path) 
+            for images_dir in list_images_dir:
+                image_paths += LabelMeFormat.get_image_paths(images_dir)
+
         return LabelMeFormat.build(
             name = path.name,
             files = labelme_files,
-            folder_path = str(folder_path)
+            folder_path = str(folder_path),
+            images_path_list = image_paths if len(image_paths) > 0 else None
         )
 
-    def save(self, folder: str) -> None:
+    def save(self, folder: str, copy_images: bool = False, copy_as_links: bool = False) -> None:
         """Save the LabelMe dataset to the specified folder.
 
         The JSON annotation files will be saved in the root folder with the same
@@ -502,6 +516,8 @@ class LabelMeFormat(DatasetFormat[LabelMeFile]):
 
         Args:
             folder (str): Output directory path.
+            copy_images (bool, default False): If True, copies image files to the output directory. If False, images are not copied.
+            copy_as_links (bool, default False): If True, creates links to the original images in the output directory instead of copying them. If False, no links are created.
         """
         folder_path = Path(folder)
         
@@ -568,3 +584,6 @@ class LabelMeFormat(DatasetFormat[LabelMeFile]):
             
             with open(json_path, 'w', encoding='utf-8') as f:
                 json.dump(json_data, f, indent=2, ensure_ascii=False)
+
+        if copy_images or copy_as_links:
+            self.handle_images(self.images_path_list, folder, copy_images, copy_as_links)

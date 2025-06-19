@@ -46,7 +46,8 @@ class CreateMLConverter(DatasetConverter[CreateMLFormat]):
                 name = df.name, 
                 files = neutral_files,
                 original_format = "createml",
-                class_map = class_map
+                class_map = class_map,
+                images_path_list = df.images_path_list
             )
     
     
@@ -65,7 +66,8 @@ class CreateMLConverter(DatasetConverter[CreateMLFormat]):
 
         return CreateMLFormat(
                 name = nf.name,
-                files = createml_files
+                files = createml_files,
+                images_path_list = nf.images_path_list
             )
 
 

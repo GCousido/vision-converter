@@ -76,14 +76,15 @@ class CreateMLFormat(DatasetFormat[CreateMLFile]):
         name (str): Inherited - Dataset name
         files (list[CreateMLFile]): Inherited - List of CreateML files
         folder_path (Optional[str]): Inherited - Dataset root path
+        images_path_list (Optional[list[str]]): Inherited - List of images paths
     """
 
-    def __init__(self, name: str, files: list[CreateMLFile], folder_path: Optional[str] = None) -> None:
-        super().__init__(name,files, folder_path)
+    def __init__(self, name: str, files: list[CreateMLFile], folder_path: Optional[str] = None, images_path_list: Optional[list[str]] = None) -> None:
+        super().__init__(name,files, folder_path, images_path_list)
 
     @staticmethod
-    def build(name: str, files: list[CreateMLFile], folder_path: Optional[str] = None) -> 'CreateMLFormat':
-        return CreateMLFormat(name, files, folder_path)
+    def build(name: str, files: list[CreateMLFile], folder_path: Optional[str] = None, images_path_list: Optional[list[str]] = None) -> 'CreateMLFormat':
+        return CreateMLFormat(name, files, folder_path, images_path_list)
     
     @staticmethod
     def create_files_from_jsondata(json_data) -> list[CreateMLFile]:
@@ -109,7 +110,7 @@ class CreateMLFormat(DatasetFormat[CreateMLFile]):
         return files
     
     @staticmethod
-    def read_from_folder(path: str) -> 'CreateMLFormat':
+    def read_from_folder(path: str, copy_images: bool = False, copy_as_links: bool = False) -> 'CreateMLFormat':
         """Constructs CreateML dataset from standard folder structure.
 
         Expected structure:
@@ -121,6 +122,8 @@ class CreateMLFormat(DatasetFormat[CreateMLFile]):
 
         Args:
             path (str): Path to the dataset folder or annotation file
+            copy_images (bool, default False): If True, loads and stores the image file paths in the dataset object; if False, image paths are not loaded.
+            copy_as_links (bool, default False): If True, loads and stores the image file paths in the dataset object; if False, image paths are not loaded.
             
         Returns:
             CreateMLFormat: Dataset object
@@ -156,24 +159,27 @@ class CreateMLFormat(DatasetFormat[CreateMLFile]):
             image_patterns = ['*.jpg', '*.jpeg', '*.png', '*.bmp', '*.tiff']
             for pattern in image_patterns:
                 for img_path in glob.glob(os.path.join(images_path, pattern)):
-                    image_files.add(os.path.basename(img_path))
+                    image_files.add(os.path.abspath(img_path))
         else:
             raise FileNotFoundError(f"Images directory {images_path} does not exist")
 
-
+        image_basenames = {os.path.basename(path) for path in image_files}
         # 3. Validate image-annotation correspondence
         annotated_filenames = {entry["image"] for entry in json_data}
         for filename in annotated_filenames:
-            if filename not in image_files:
+            if filename not in image_basenames:
                 raise Exception(f'Dataset structure error: Image file {filename} not found in images folder')
 
+
+        image_paths = list(image_files)
         return CreateMLFormat.build(
             name = "CreateMLDataset",
             files = files,
-            folder_path = str(annotations_path.parent)
+            folder_path = str(annotations_path.parent),
+            images_path_list= image_paths if len(image_paths) > 0 and (copy_images or copy_as_links) else None
         )
     
-    def save(self, folder: str) -> None:
+    def save(self, folder: str, copy_images: bool = False, copy_as_links: bool = False) -> None:
         """Saves CreateML dataset to standard folder structure.
         
         ```
@@ -183,6 +189,8 @@ class CreateMLFormat(DatasetFormat[CreateMLFile]):
         ```
         Args:
             folder: Output directory path
+            copy_images (bool, default False): If True, copies image files to the output directory. If False, images are not copied.
+            copy_as_links (bool, default False): If True, creates links to the original images in the output directory instead of copying them. If False, no links are created.
         """
         folder_path = Path(folder)
 
@@ -221,3 +229,6 @@ class CreateMLFormat(DatasetFormat[CreateMLFile]):
                 json.dump(annotations_json, f, indent=4, ensure_ascii=False)
         except Exception as e:
             raise IOError(f"Error writing annotations.json: {e}")
+        
+        if copy_images or copy_as_links:
+            self.handle_images(self.images_path_list, str(images_dir), copy_images, copy_as_links)

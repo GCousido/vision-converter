@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Optional
 import csv
 
-from datasetconverter.utils.file_utils import find_annotation_file
+from datasetconverter.utils.file_utils import find_all_images_folders, find_annotation_file
 
 from .pascal_voc import PascalVocBoundingBox
 
@@ -47,10 +47,11 @@ class TensorflowCsvFormat(DatasetFormat[TensorflowCsvFile]):
         name (str): Inherited - Dataset name
         files (list[TensorflowCsvFile]): Inherited - List of TensorFlow CSV files
         folder_path (Optional[str]): Inherited - Dataset root path
+        images_path_list (Optional[list[str]]): Inherited - List of images paths
     """
 
-    def __init__(self, name: str, files: list[TensorflowCsvFile], folder_path: Optional[str] = None) -> None:
-        super().__init__(name, files, folder_path)
+    def __init__(self, name: str, files: list[TensorflowCsvFile], folder_path: Optional[str] = None, images_path_list: Optional[list[str]] = None) -> None:
+        super().__init__(name, files, folder_path, images_path_list)
 
     def get_unique_classes(self) -> set[str]:
         """Get all unique class names in the dataset."""
@@ -61,11 +62,11 @@ class TensorflowCsvFormat(DatasetFormat[TensorflowCsvFile]):
         return classes
 
     @staticmethod
-    def build(name: str, files: list[TensorflowCsvFile], folder_path: Optional[str] = None) -> 'TensorflowCsvFormat':
-        return TensorflowCsvFormat(name, files, folder_path)
+    def build(name: str, files: list[TensorflowCsvFile], folder_path: Optional[str] = None, images_path_list: Optional[list[str]] = None) -> 'TensorflowCsvFormat':
+        return TensorflowCsvFormat(name, files, folder_path, images_path_list)
 
     @staticmethod
-    def read_from_folder(path: str) -> 'TensorflowCsvFormat':
+    def read_from_folder(path: str, copy_images: bool = False, copy_as_links: bool = False) -> 'TensorflowCsvFormat':
         """Constructs TensorFlow CSV dataset from CSV file.
 
         Expected CSV format:
@@ -78,6 +79,8 @@ class TensorflowCsvFormat(DatasetFormat[TensorflowCsvFile]):
         
         Args:
             path (str): Path to the dataset folder or annotation file
+            copy_images (bool, default False): If True, loads and stores the image file paths in the dataset object; if False, image paths are not loaded.
+            copy_as_links (bool, default False): If True, loads and stores the image file paths in the dataset object; if False, image paths are not loaded.
             
         Returns:
             TensorflowCsvFormat: Dataset object
@@ -135,19 +138,28 @@ class TensorflowCsvFormat(DatasetFormat[TensorflowCsvFile]):
                 height=file_data['height']
             ))
 
+        # Save images path
+        image_paths = []
+        if copy_images or copy_as_links:
+            # Search for images folders
+            list_images_dir = find_all_images_folders(annotations_path.parent) 
+            for images_dir in list_images_dir:
+                image_paths += TensorflowCsvFormat.get_image_paths(images_dir)
+
         return TensorflowCsvFormat.build(
             name = Path(annotations_path).stem,
             files = files,
-            folder_path = str(Path(annotations_path).parent)
+            folder_path = str(Path(annotations_path).parent),
+            images_path_list = image_paths if len(image_paths) > 0 else None
         )
 
-    def save(self, folder_path: str) -> None:
+    def save(self, folder_path: str, copy_images: bool = False, copy_as_links: bool = False) -> None:
         """Saves TensorFlow CSV dataset to CSV file.
         
         Output format:
         ```
         folder_path/
-                |-- images/             # image files (not written)
+                |-- images/             # image files
                 └── tensorflow.csv      # annotations file
                         filename,width,height,class,xmin,ymin,xmax,ymax
                         ->
@@ -155,12 +167,14 @@ class TensorflowCsvFormat(DatasetFormat[TensorflowCsvFile]):
         
         Args:
             csv_path (str): Output CSV file path
+            copy_images (bool, default False): If True, copies image files to the output directory. If False, images are not copied.
+            copy_as_links (bool, default False): If True, creates links to the original images in the output directory instead of copying them. If False, no links are created.
         """
         # Ensure output directory exists
         Path(folder_path).mkdir(parents=True, exist_ok=True)
 
-        if not Path(folder_path + "/images").exists():
-            Path(folder_path + "/images").mkdir()
+        images_dir = Path(folder_path) / "images"
+        images_dir.mkdir(exist_ok=True)
 
         csv_path = Path(folder_path) / "tensorflow.csv"
         
@@ -181,3 +195,6 @@ class TensorflowCsvFormat(DatasetFormat[TensorflowCsvFile]):
                         'xmax': ann.geometry.x_max,
                         'ymax': ann.geometry.y_max
                     })
+
+        if copy_images or copy_as_links:
+            self.handle_images(self.images_path_list, str(images_dir), copy_images, copy_as_links)

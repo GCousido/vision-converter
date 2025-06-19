@@ -2,8 +2,10 @@ from pathlib import Path
 from PIL import Image
 import pytest
 import json
+import os
 
 from datasetconverter.formats.createml import CreateMLAnnotation, CreateMLBoundingBox, CreateMLFile, CreateMLFormat
+from datasetconverter.tests.utils_for_tests import normalize_path
 
 # Fixture for CreateML dataset
 @pytest.fixture
@@ -322,3 +324,145 @@ def test_create_files_from_jsondata():
     
     assert files[1].filename == "test2.png"
     assert len(files[1].annotations) == 0
+
+# Fixture for CreateML dataset with images
+@pytest.fixture()
+def createml_image_dataset(tmp_path):
+    """Fixture for tests with images in CreateML format"""
+    dataset_dir = tmp_path / "image_handling"
+    dataset_dir.mkdir()
+    
+    # Create annotations.json
+    annotations_data = [
+        {
+            "image": "img1.jpg",
+            "annotations": []
+        },
+        {
+            "image": "img2.png",
+            "annotations": []
+        }
+    ]
+    
+    annotations_file = dataset_dir / "annotations.json"
+    with open(annotations_file, 'w', encoding='utf-8') as f:
+        json.dump(annotations_data, f, indent=4)
+    
+    # Create images
+    images_dir = dataset_dir / "images"
+    images_dir.mkdir()
+    (images_dir / "img1.jpg").write_bytes(b"image_data")
+    (images_dir / "img2.png").write_bytes(b"image_data")
+    
+    return dataset_dir
+
+# Fixture for CreateMLFormat instance
+@pytest.fixture()
+def createml_format_image_instance(tmp_path):
+    """Fixture for CreateMLFormat instance with images"""
+    img_dir = tmp_path / "source_imgs"
+    img_dir.mkdir()
+    img1 = img_dir / "test_img1.jpg"
+    img2 = img_dir / "test_img2.png"
+    img1.write_bytes(b"source1")
+    img2.write_bytes(b"source2")
+    
+    # Create CreateMLFile instances
+    files = [
+        CreateMLFile(filename="test_img1.jpg", annotations=[]),
+        CreateMLFile(filename="test_img2.png", annotations=[])
+    ]
+    
+    return CreateMLFormat(
+        name="image_test",
+        files=files,
+        folder_path=str(tmp_path),
+        images_path_list=[str(img1), str(img2)]
+    )
+
+# Read tests
+def test_createml_read_with_copy_images(createml_image_dataset):
+    createml = CreateMLFormat.read_from_folder(
+        str(createml_image_dataset),
+        copy_images=True,
+        copy_as_links=False
+    )
+    assert createml.images_path_list is not None
+    assert len(createml.images_path_list) == 2
+    assert all(
+        any(img_name in p for p in createml.images_path_list)
+        for img_name in ['img1.jpg', 'img2.png']
+    )
+
+def test_createml_read_with_links(createml_image_dataset):
+    createml = CreateMLFormat.read_from_folder(
+        str(createml_image_dataset),
+        copy_images=False,
+        copy_as_links=True
+    )
+    assert createml.images_path_list is not None
+    assert len(createml.images_path_list) == 2
+    assert all(
+        any(img_name in p for p in createml.images_path_list)
+        for img_name in ['img1.jpg', 'img2.png']
+    )
+
+def test_createml_read_without_copy(createml_image_dataset):
+    createml = CreateMLFormat.read_from_folder(
+        str(createml_image_dataset),
+        copy_images=False,
+        copy_as_links=False
+    )
+    assert createml.images_path_list is None
+
+# Save tests
+def test_createml_save_with_copy_images(createml_format_image_instance, tmp_path):
+    output_dir = tmp_path / "output"
+    createml_format_image_instance.save(
+        str(output_dir),
+        copy_images=True,
+        copy_as_links=False
+    )
+    
+    output_images = list((output_dir / "images").iterdir())
+    assert len(output_images) == 2
+    assert (output_dir / "images" / "test_img1.jpg").read_bytes() == b"source1"
+    assert (output_dir / "images" / "test_img2.png").read_bytes() == b"source2"
+
+def test_createml_save_with_links(createml_format_image_instance, tmp_path):
+    # Windows symlink permission check
+    if os.name == "nt":
+        try:
+            test_link = tmp_path / "test_link"
+            test_target = tmp_path / "test_target.txt"
+            test_target.write_text("test")
+            test_link.symlink_to(test_target)
+        except OSError as e:
+            if e.winerror == 1314:
+                pytest.skip("Symlinks require admin privileges on Windows")
+            else:
+                raise
+                
+    output_dir = tmp_path / "output"
+    createml_format_image_instance.save(
+        str(output_dir),
+        copy_images=False,
+        copy_as_links=True
+    )
+    
+    img1 = output_dir / "images" / "test_img1.jpg"
+    img2 = output_dir / "images" / "test_img2.png"
+    assert img1.is_symlink()
+    assert Path(normalize_path(os.readlink(img1))).resolve()== Path(createml_format_image_instance.images_path_list[0]).resolve()
+    assert img2.is_symlink()
+    assert Path(normalize_path(os.readlink(img2))).resolve()== Path(createml_format_image_instance.images_path_list[1]).resolve()
+
+def test_createml_save_without_copy(createml_format_image_instance, tmp_path):
+    output_dir = tmp_path / "output"
+    createml_format_image_instance.save(
+        str(output_dir),
+        copy_images=False,
+        copy_as_links=False
+    )
+    images_dir = output_dir / "images"
+    assert not any(images_dir.iterdir()) if images_dir.exists() else True

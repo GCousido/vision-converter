@@ -32,12 +32,13 @@ class YoloConverter(DatasetConverter[YoloFormat]):
         neutral_files: list[NeutralFile] = [YoloFile_to_NeutralFile(i, df.class_labels, df.folder_path) for i in df.files]
 
         return NeutralFormat(
-                name = df.name, 
-                files = neutral_files,
-                original_format = "yolo",
-                metadata = None,
-                class_map = df.class_labels
-            )
+            name = df.name, 
+            files = neutral_files,
+            original_format = "yolo",
+            metadata = None,
+            class_map = df.class_labels,
+            images_path_list = df.images_path_list
+        )
     
     
     @staticmethod
@@ -60,10 +61,11 @@ class YoloConverter(DatasetConverter[YoloFormat]):
         yolo_files: list[YoloFile] = [NeutralFile_to_YoloFile(i, inverse_class_map) for i in nf.files]
 
         return YoloFormat(
-                name = nf.name,
-                files = yolo_files,
-                class_labels = nf.class_map
-            )
+            name = nf.name,
+            files = yolo_files,
+            class_labels = nf.class_map,
+            images_path_list = nf.images_path_list
+        )
 
 
 

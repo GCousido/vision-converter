@@ -1,10 +1,12 @@
+import os
 import pytest
 import tempfile
 
 from PIL import UnidentifiedImageError
 from pathlib import Path
 from unittest.mock import patch, PropertyMock
-from datasetconverter.utils.file_utils import find_annotation_file, get_image_info_from_file, get_image_path, estimate_file_size
+from datasetconverter.tests.utils_for_tests import normalize_path
+from datasetconverter.utils.file_utils import find_all_images_folders, find_annotation_file, get_image_info_from_file, get_image_path, estimate_file_size
 
 ########################################################
 #          Tests for get_image_info_from_file 
@@ -251,3 +253,72 @@ def test_mixed_extensions_in_directory(tmp_path):
     
     result = find_annotation_file(str(tmp_path), "xml")
     assert result == str(valid)
+
+########################################################
+#          Tests for find_all_images_folders
+########################################################
+
+def test_find_all_images_folders_basic():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        img_folder = Path(tmpdir) / "images"
+        img_folder.mkdir()
+        (img_folder / "test.jpg").write_text("fake image content")
+        result = find_all_images_folders(tmpdir)
+        assert str(img_folder.resolve()) in result
+
+def test_find_all_images_folders_multiple_folders():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        folder1 = Path(tmpdir) / "folder1"
+        folder2 = Path(tmpdir) / "folder2"
+        folder1.mkdir()
+        folder2.mkdir()
+        (folder1 / "img1.png").write_text("fake image content")
+        (folder2 / "img2.jpeg").write_text("fake image content")
+        result = find_all_images_folders(tmpdir)
+        assert str(folder1.resolve()) in result
+        assert str(folder2.resolve()) in result
+
+def test_find_all_images_folders_no_images():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        empty_folder = Path(tmpdir) / "empty"
+        empty_folder.mkdir()
+        with pytest.raises(FileNotFoundError):
+            find_all_images_folders(tmpdir)
+
+def test_find_all_images_folders_custom_extensions():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        folder = Path(tmpdir) / "folder"
+        folder.mkdir()
+        (folder / "file.tiff").write_text("fake image content")
+        with pytest.raises(FileNotFoundError):
+            find_all_images_folders(tmpdir)
+        result = find_all_images_folders(tmpdir, exts=(".tiff",))
+        assert str(folder.resolve()) in result
+
+def test_find_all_images_folders_nested_folders():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        parent = Path(tmpdir) / "parent"
+        child = parent / "child"
+        child.mkdir(parents=True)
+        (child / "pic.bmp").write_text("fake image content")
+        result = find_all_images_folders(tmpdir)
+        assert str(child.resolve()) in result
+        assert str(parent.resolve()) not in result
+
+def test_find_all_images_folders_link():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        target = Path(tmpdir) / "target"
+        target.mkdir()
+        (target / "image.webp").write_text("fake image content")
+        link = Path(tmpdir) / "link"
+        try:
+            link.symlink_to(target, target_is_directory=True)
+        except OSError as e:
+            if os.name == "nt" and getattr(e, "winerror", None) == 1314:
+                pytest.skip("Symlinks require admin privileges on Windows")
+            else:
+                raise
+
+        result = find_all_images_folders(tmpdir)
+        assert str(target.resolve()) in result
+        assert normalize_path(str(link.resolve())) not in result

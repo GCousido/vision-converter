@@ -99,7 +99,8 @@ class CocoConverter(DatasetConverter[CocoFormat]):
             files = neutral_files,
             original_format = "coco",
             metadata = None,
-            class_map = class_map
+            class_map = class_map,
+            images_path_list = df.images_path_list
         )
 
     
@@ -228,7 +229,8 @@ class CocoConverter(DatasetConverter[CocoFormat]):
 
         return CocoFormat(
             name=nf.name,
-            files=[coco_file]
+            files=[coco_file],
+            images_path_list = nf.images_path_list
         )
 
 

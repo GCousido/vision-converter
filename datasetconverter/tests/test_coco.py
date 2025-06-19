@@ -1,8 +1,10 @@
 import pytest
 from pathlib import Path
 import json
+import os
 
 from datasetconverter.formats.coco import Category, CocoBoundingBox, CocoFile, CocoFormat, CocoImage, CocoLabel, Info, License, RLESegmentation
+from datasetconverter.tests.utils_for_tests import normalize_path
 
 def test_coco_format_creation(sample_coco_dataset):
     # Load dataset
@@ -377,3 +379,131 @@ def test_coco_format_save(tmp_path):
         assert isinstance(ann["bbox"], list)
         assert len(ann["bbox"]) == 4
         assert all(isinstance(x, float) or isinstance(x, int) for x in ann["bbox"])
+
+
+@pytest.fixture()
+def image_handling_dataset(tmp_path):
+    """Fixture for tests with images"""
+    dataset_dir = tmp_path / "image_handling"
+    dataset_dir.mkdir()
+    
+    annotations = dataset_dir / "annotations.json"
+    annotations.write_text(json.dumps({
+        "info": {"description": "Image Handling Test"},
+        "images": [{"id": 1, "file_name": "img1.jpg"}],
+        "categories": [{"id": 1, "name": "test"}],
+        "annotations": []
+    }))
+    
+    images_dir = dataset_dir / "images"
+    images_dir.mkdir()
+    (images_dir / "img1.jpg").write_bytes(b"image_data")
+    (images_dir / "img2.png").write_bytes(b"image_data")
+    
+    return dataset_dir
+
+@pytest.fixture()
+def coco_format_image_instance(tmp_path):
+    """Fixture for CocoFormat instance"""
+    img_dir = tmp_path / "source_imgs"
+    img_dir.mkdir()
+    img1 = img_dir / "test_img1.jpg"
+    img2 = img_dir / "test_img2.png"
+    img1.write_bytes(b"source1")
+    img2.write_bytes(b"source2")
+    
+    return CocoFormat(
+        name="image_test",
+        files=[CocoFile(
+            filename="annotations.json",
+            annotations=[],
+            images=[CocoImage(id=1, file_name="test_img1.jpg", width=480, height=480, date_captured="test")],
+            categories=[]
+        )],
+        folder_path=str(tmp_path),
+        images_path_list=[str(img1), str(img2)]
+    )
+
+def test_read_with_copy_images(image_handling_dataset):
+    coco = CocoFormat.read_from_folder(
+        str(image_handling_dataset),
+        copy_images=True,
+        copy_as_links=False
+    )
+    assert coco.images_path_list is not None
+    assert len(coco.images_path_list) == 2
+    assert all(
+        any(img_name in p for p in coco.images_path_list)
+        for img_name in ['img1.jpg', 'img2.png']
+    )
+
+def test_read_with_links(image_handling_dataset):
+    coco = CocoFormat.read_from_folder(
+        str(image_handling_dataset),
+        copy_images=False,
+        copy_as_links=True
+    )
+    assert coco.images_path_list is not None
+    assert len(coco.images_path_list) == 2
+    assert all(
+        any(img_name in p for p in coco.images_path_list)
+        for img_name in ['img1.jpg', 'img2.png']
+    )
+
+def test_read_without_copy(image_handling_dataset):
+    coco = CocoFormat.read_from_folder(
+        str(image_handling_dataset),
+        copy_images=False,
+        copy_as_links=False
+    )
+    assert coco.images_path_list is None
+
+def test_save_with_copy_images(coco_format_image_instance, tmp_path):
+    output_dir = tmp_path / "output"
+    coco_format_image_instance.save(
+        str(output_dir),
+        copy_images=True,
+        copy_as_links=False
+    )
+    
+    output_images = list((output_dir / "images").iterdir())
+    assert len(output_images) == 2
+    assert (output_dir / "images" / "test_img1.jpg").read_bytes() == b"source1"
+    assert (output_dir / "images" / "test_img2.png").read_bytes() == b"source2"
+
+def test_save_with_links(coco_format_image_instance, tmp_path):
+    if os.name == "nt":
+        try:
+            test_link = tmp_path / "test_link"
+            test_target = tmp_path / "test_target.txt"
+            test_target.write_text("test")
+            test_link.symlink_to(test_target)
+        except OSError as e:
+            if e.winerror == 1314:
+                pytest.skip("Symlinks requieren privilegios de administrador en Windows")
+            else:
+                raise
+    
+    output_dir = tmp_path / "output"
+    coco_format_image_instance.save(
+        str(output_dir),
+        copy_images=False,
+        copy_as_links=True
+    )
+    
+    img1 = output_dir / "images" / "test_img1.jpg"
+    img2 = output_dir / "images" / "test_img2.png"
+    assert img1.is_symlink()
+    assert Path(normalize_path(os.readlink(img1))).resolve()== Path(coco_format_image_instance.images_path_list[0]).resolve()
+    assert img2.is_symlink()
+    assert Path(normalize_path(os.readlink(img2))).resolve()== Path(coco_format_image_instance.images_path_list[1]).resolve()
+
+def test_save_without_copy(coco_format_image_instance, tmp_path):
+    output_dir = tmp_path / "output"
+    coco_format_image_instance.save(
+        str(output_dir),
+        copy_images=False,
+        copy_as_links=False
+    )
+    images_dir = output_dir / "images"
+    assert not any(images_dir.iterdir()) if images_dir.exists() else True

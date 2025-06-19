@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from PIL import Image
 import pytest
@@ -5,6 +6,7 @@ import csv
 
 from datasetconverter.formats.tensorflow_csv import TensorflowCsvAnnotation, TensorflowCsvFile, TensorflowCsvFormat
 from datasetconverter.formats.pascal_voc import PascalVocBoundingBox
+from datasetconverter.tests.utils_for_tests import normalize_path
 
 # Fixture for TensorFlow CSV dataset
 @pytest.fixture
@@ -196,3 +198,154 @@ def test_get_unique_classes(sample_tensorflow_csv_dataset):
     
     assert unique_classes == expected_classes
     assert len(unique_classes) == 3
+
+# Fixture for TensorFlow CSV dataset with images
+@pytest.fixture
+def tensorflow_csv_with_images(tmp_path):
+    # Create directory structure
+    images_dir = tmp_path / "images"
+    images_dir.mkdir()
+    
+    # Create real images
+    img1 = images_dir / "image1.jpg"
+    img2 = images_dir / "image2.jpg"
+    img1.write_bytes(b"image1_data")
+    img2.write_bytes(b"image2_data")
+    
+    # Create CSV file
+    csv_path = tmp_path / "annotations.csv"
+    csv_content = (
+        "filename,width,height,class,xmin,ymin,xmax,ymax\n"
+        "image1.jpg,800,600,person,100,150,200,300\n"
+        "image2.jpg,1000,800,truck,400,300,600,500\n"
+    )
+    csv_path.write_text(csv_content)
+    
+    return tmp_path
+
+
+# Fixture for TensorflowCsvFormat instance
+@pytest.fixture()
+def tensorflow_csv_format_instance(tmp_path):
+    """Fixture para instancia TensorflowCsvFormat con imágenes"""
+    img_dir = tmp_path / "source_imgs"
+    img_dir.mkdir()
+    
+    img1 = img_dir / "image1.jpg"
+    img2 = img_dir / "image2.jpg"
+    img1.write_bytes(b"dummy_image_data")
+    img2.write_bytes(b"dummy_image_data")
+    
+    bbox = PascalVocBoundingBox(10, 20, 30, 40)
+    annotation = TensorflowCsvAnnotation(bbox, "test_class")
+    
+    files = [
+        TensorflowCsvFile(
+            filename="image1.jpg",
+            annotations=[annotation],
+            width=100,
+            height=100
+        ),
+        TensorflowCsvFile(
+            filename="image2.jpg",
+            annotations=[annotation],
+            width=100,
+            height=100
+        )
+    ]
+    
+    return TensorflowCsvFormat(
+        name="tensorflow_test",
+        files=files,
+        folder_path=str(tmp_path),
+        images_path_list=[str(img1), str(img2)]
+    )
+
+# Tests for read_from_folder
+def test_read_tensorflow_with_copy_images(tensorflow_csv_with_images):
+    tf_format = TensorflowCsvFormat.read_from_folder(
+        str(tensorflow_csv_with_images),
+        copy_images=True,
+        copy_as_links=False
+    )
+    
+    assert tf_format.images_path_list is not None
+    assert len(tf_format.images_path_list) == 2
+    assert all(
+        any(img_name in p for p in tf_format.images_path_list)
+        for img_name in ['image1.jpg', 'image2.jpg']
+    )
+
+def test_read_tensorflow_with_links(tensorflow_csv_with_images):
+    tf_format = TensorflowCsvFormat.read_from_folder(
+        str(tensorflow_csv_with_images),
+        copy_images=False,
+        copy_as_links=True
+    )
+    
+    assert tf_format.images_path_list is not None
+    assert len(tf_format.images_path_list) == 2
+
+def test_read_tensorflow_without_copy(tensorflow_csv_with_images):
+    tf_format = TensorflowCsvFormat.read_from_folder(
+        str(tensorflow_csv_with_images),
+        copy_images=False,
+        copy_as_links=False
+    )
+    
+    assert tf_format.images_path_list is None
+
+# Tests for save
+def test_save_tensorflow_with_copy_images(tensorflow_csv_format_instance, tmp_path):
+    output_dir = tmp_path / "output"
+    tensorflow_csv_format_instance.save(
+        str(output_dir),
+        copy_images=True,
+        copy_as_links=False
+    )
+    
+    # Verify that images were copied
+    output_images = list((output_dir / "images").iterdir())
+    assert len(output_images) == 2
+    assert (output_dir / "images" / "image1.jpg").exists()
+    assert (output_dir / "images" / "image2.jpg").exists()
+
+def test_save_tensorflow_with_links(tensorflow_csv_format_instance, tmp_path):
+    if os.name == "nt":
+        try:
+            test_link = tmp_path / "test_link"
+            test_target = tmp_path / "test_target.txt"
+            test_target.write_text("test")
+            test_link.symlink_to(test_target)
+        except OSError as e:
+            if e.winerror == 1314:
+                pytest.skip("Symlinks require administrator privileges on Windows")
+            else:
+                raise
+    
+    output_dir = tmp_path / "output"
+    tensorflow_csv_format_instance.save(
+        str(output_dir),
+        copy_images=False,
+        copy_as_links=True
+    )
+    
+    img1 = output_dir / "images" / "image1.jpg"
+    img2 = output_dir / "images" / "image2.jpg"
+    assert img1.is_symlink()
+    assert img2.is_symlink()
+    source_img1 = Path(tensorflow_csv_format_instance.images_path_list[0])
+    source_img2 = Path(tensorflow_csv_format_instance.images_path_list[1])
+    assert Path(normalize_path(os.readlink(img1))).resolve() == source_img1.resolve()
+    assert Path(normalize_path(os.readlink(img2))).resolve() == source_img2.resolve()
+
+def test_save_tensorflow_without_copy(tensorflow_csv_format_instance, tmp_path):
+    output_dir = tmp_path / "output"
+    tensorflow_csv_format_instance.save(
+        str(output_dir),
+        copy_images=False,
+        copy_as_links=False
+    )
+    
+    images_dir = output_dir / "images"
+    assert not any(images_dir.iterdir()) if images_dir.exists() else True

@@ -1,3 +1,4 @@
+from typing import Union
 from PIL import Image
 from pathlib import Path
 
@@ -161,3 +162,42 @@ def estimate_file_size(width: int, height: int, depth: int, extension: str) -> i
     
     factor = compression_factors.get(extension.lower(), 0.2)  # Default 20% for unknown formats
     return int(uncompressed_size * factor)
+
+def find_all_images_folders(
+    base_path: Union[str, Path],
+    exts: tuple = ('.jpg', '.jpeg', '.png', '.bmp', '.webp')
+) -> list[str]:
+    """
+    Recursively search for folders containing image files with specified extensions.
+
+    Args:
+        base_path (Union[str, Path]): The root directory path to start the search.
+        exts (tuple, optional): Tuple of image file extensions to look for. Defaults to common image formats.
+
+    Returns:
+        list[str]: Sorted list of folder paths containing at least one image file with the specified extensions.
+
+    Raises:
+        FileNotFoundError: If no folders with supported image files are found.
+    """
+    base_path = Path(base_path)
+    found_folders = set()
+
+    # Recursively search for any folder with images
+    for folder in base_path.rglob("*"):
+        if folder.is_dir():
+            # Check if there is at least one file with an image extension
+            has_images = False
+            for ext in exts:
+                # Check if there is at least one file with this extension
+                if any(folder.glob(f"*{ext}")):
+                    has_images = True
+                    break
+
+            if has_images:
+                found_folders.add(folder.resolve())
+
+    if not found_folders:
+        raise FileNotFoundError("Couldn't find any folder with supported image files.")
+
+    return sorted(str(folder) for folder in found_folders)

@@ -32,12 +32,13 @@ class PascalVocConverter(DatasetConverter[PascalVocFormat]):
         class_map = {i: class_name for i, class_name in enumerate(unique_classes)}
 
         return NeutralFormat(
-                name = df.name, 
-                files = neutral_files,
-                original_format = "pascal_voc",
-                metadata = None,
-                class_map = class_map
-            )
+            name = df.name, 
+            files = neutral_files,
+            original_format = "pascal_voc",
+            metadata = None,
+            class_map = class_map,
+            images_path_list = df.images_path_list
+        )
     
 
     @staticmethod
@@ -54,7 +55,8 @@ class PascalVocConverter(DatasetConverter[PascalVocFormat]):
 
         return PascalVocFormat(
             name = nf.name,
-            files = pascal_files
+            files = pascal_files,
+            images_path_list = nf.images_path_list
         )
 
 
@@ -132,8 +134,8 @@ def NeutralFile_to_PascalFile(file: NeutralFile, original_dataset_name: str) -> 
     return PascalVocFile(
         filename = file.filename + file.image_origin.extension,
         annotations = pascal_annotations,
-        folder = "Annotations",
-        path = "Annotations/" + file.filename + file.image_origin.extension,
+        folder = "JPEGImages",
+        path = "JPEGImages/" + file.filename + file.image_origin.extension,
         source = source,
         width = file.width,
         height = file.height,

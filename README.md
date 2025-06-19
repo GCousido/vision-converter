@@ -87,7 +87,7 @@ The CLI provides a simple interface for converting datasets:
 #### Basic Usage
 
 ```bash
-dconverter --input-format <INPUT_FORMAT> --input-path <INPUT_PATH> --output-format <OUTPUT_FORMAT> --output-path <OUTPUT_PATH>
+dconverter --input-format <INPUT_FORMAT> --input-path <INPUT_PATH> --output-format <OUTPUT_FORMAT> --output-path <OUTPUT_PATH> <OPTIONS>
 ```
 
 #### Required Arguments
@@ -96,6 +96,11 @@ dconverter --input-format <INPUT_FORMAT> --input-path <INPUT_PATH> --output-form
 * `--input-path`: Path to the folder containing the input dataset
 * `--output-format`: Target format
 * `--output-path`: Path to save the converted dataset
+
+#### Options
+
+* `--copy-images`: Copy images files to the output directory.
+* `--symlink-images`: Creates symbolic links to the original images in the output directory.
 
 #### Examples
 
@@ -111,10 +116,10 @@ Convert **Pascal VOC** to **YOLO**:
 dconverter --input-format pascal_voc --input-path ./datasets/pascalvoc --output-format yolo --output-path ./datasets/yolo
 ```
 
-Convert **COCO** to **Pascal VOC**:
+Convert **COCO** to **Pascal VOC** with images:
 
 ```bash
-dconverter --input-format coco --input-path ./datasets/coco --output-format pascal_voc --output-path ./datasets/pascalvoc
+dconverter --input-format coco --input-path ./datasets/coco --output-format pascal_voc --output-path ./datasets/pascalvoc --copy-images
 ```
 
 ---

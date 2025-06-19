@@ -57,7 +57,8 @@ class VGGConverter(DatasetConverter[VGGFormat]):
                     for annotation in file.annotations
                 })
             },
-            class_map=class_map
+            class_map=class_map,
+            images_path_list=df.images_path_list
         )
     
 
@@ -76,7 +77,8 @@ class VGGConverter(DatasetConverter[VGGFormat]):
         return VGGFormat(
             name=nf.name,
             files=vgg_files,
-            folder_path=nf.folder_path
+            folder_path=nf.folder_path,
+            images_path_list=nf.images_path_list
         )
 
 

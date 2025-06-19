@@ -116,6 +116,7 @@ class NeutralFormat(DatasetFormat[NeutralFile]):
         original_format (str): Original dataset format name (e.g., "PascalVOC")
         name (str): Inherited attribute - dataset name
         files (list[NeutralFile]): Inherited attribute - list of image files of NeutralFile class
+        images_path_list (Optional[list[str]]): Inherited attribute - List of images paths
     """
     metadata: dict[str, Any]
     class_map: dict[int, str]
@@ -123,8 +124,10 @@ class NeutralFormat(DatasetFormat[NeutralFile]):
 
     def __init__(self, name: str, files: list[NeutralFile], original_format: str,
                 metadata: Optional[dict[str, Any]] = None, 
-                class_map: Optional[dict[int, str]] = None) -> None:
+                class_map: Optional[dict[int, str]] = None, 
+                images_path_list: Optional[list[str]] = None) -> None:
         super().__init__(name, files)
         self.metadata = metadata if metadata is not None else {}
         self.class_map = class_map if class_map is not None else {}
         self.original_format = original_format
+        self.images_path_list = images_path_list

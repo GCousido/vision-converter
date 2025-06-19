@@ -3,9 +3,7 @@ from typing import Any
 from .dataset_converter import DatasetConverter
 from ..formats.neutral_format import ImageOrigin, NeutralAnnotation, NeutralFile, NeutralFormat
 from ..formats.labelme import (
-    LabelMeFile, LabelMeFormat, LabelMeAnnotation,
-    LabelMePolygon, LabelMeRectangle, LabelMeCircle, LabelMePoint, 
-    LabelMeLine, LabelMeLinestrip, LabelMePoints, LabelMeMask
+    LabelMeFile, LabelMeFormat, LabelMeAnnotation, LabelMeRectangle, LabelMeCircle, LabelMeMask
 )
 from ..formats.pascal_voc import PascalVocBoundingBox
 
@@ -44,7 +42,8 @@ class LabelMeConverter(DatasetConverter[LabelMeFormat]):
             metadata = {
                 "labelme_version": df.files[0].version if df.files else "5.0.0"
             },
-            class_map = class_map
+            class_map = class_map,
+            images_path_list = df.images_path_list
         )
     
 
@@ -62,7 +61,8 @@ class LabelMeConverter(DatasetConverter[LabelMeFormat]):
 
         return LabelMeFormat(
             name = nf.name,
-            files = labelme_files
+            files = labelme_files,
+            images_path_list = nf.images_path_list
         )
 
 

@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from PIL import Image
 import pytest
@@ -8,6 +9,7 @@ from datasetconverter.formats.vgg import (
     VGGRect, VGGCircle, VGGEllipse, VGGPolygon, VGGPolyline, VGGPoint,
     VGGAnnotation, VGGFile, VGGFormat
 )
+from datasetconverter.tests.utils_for_tests import normalize_path
 
 # Fixture para dataset VGG
 @pytest.fixture
@@ -540,3 +542,160 @@ def test_vgg_format_via_metadata_structure(tmp_path):
     annotation = file.annotations[0]
     assert isinstance(annotation.geometry, VGGRect)
     assert annotation.region_attributes["label"] == "object"
+
+# Fixture for VGG dataset with images
+@pytest.fixture()
+def vgg_image_dataset(tmp_path):
+    """Fixture for tests with images in VGG format"""
+    dataset_dir = tmp_path / "vgg_dataset"
+    dataset_dir.mkdir()
+    
+    # Create annotations.json
+    annotations_data = {
+        "_via_img_metadata": {
+            "img1.jpg12345": {
+                "filename": "img1.jpg",
+                "size": 12345,
+                "regions": [],
+                "file_attributes": {}
+            },
+            "img2.png67890": {
+                "filename": "img2.png",
+                "size": 67890,
+                "regions": [],
+                "file_attributes": {}
+            }
+        }
+    }
+    
+    annotations_file = dataset_dir / "annotations.json"
+    with open(annotations_file, 'w', encoding='utf-8') as f:
+        json.dump(annotations_data, f, indent=4)
+    
+    # Create images
+    images_dir = dataset_dir / "images"
+    images_dir.mkdir()
+    (images_dir / "img1.jpg").write_bytes(b"image_data")
+    (images_dir / "img2.png").write_bytes(b"image_data")
+    
+    return dataset_dir
+
+# Fixture for VGGFormat instance
+@pytest.fixture()
+def vgg_format_image_instance(tmp_path):
+    """Fixture for VGGFormat instance with images"""
+    img_dir = tmp_path / "source_imgs"
+    img_dir.mkdir()
+    img1 = img_dir / "test_img1.jpg"
+    img2 = img_dir / "test_img2.png"
+    img1.write_bytes(b"source1")
+    img2.write_bytes(b"source2")
+    
+    # Create VGGFile instances
+    files = [
+        VGGFile(filename="test_img1.jpg", size=12345, annotations=[]),
+        VGGFile(filename="test_img2.png", size=67890, annotations=[])
+    ]
+    
+    return VGGFormat(
+        name="vgg_test",
+        files=files,
+        folder_path=str(tmp_path),
+        images_path_list=[str(img1), str(img2)]
+    )
+
+# Read tests
+def test_vgg_read_with_copy_images(vgg_image_dataset):
+    """Test reading VGG dataset with image copying enabled"""
+    vgg = VGGFormat.read_from_folder(
+        str(vgg_image_dataset),
+        copy_images=True,
+        copy_as_links=False
+    )
+    assert vgg.images_path_list is not None
+    assert len(vgg.images_path_list) == 2
+    assert all(
+        any(img_name in p for p in vgg.images_path_list)
+        for img_name in ['img1.jpg', 'img2.png']
+    )
+
+def test_vgg_read_with_links(vgg_image_dataset):
+    """Test reading VGG dataset with symbolic links enabled"""
+    vgg = VGGFormat.read_from_folder(
+        str(vgg_image_dataset),
+        copy_images=False,
+        copy_as_links=True
+    )
+    assert vgg.images_path_list is not None
+    assert len(vgg.images_path_list) == 2
+    assert all(
+        any(img_name in p for p in vgg.images_path_list)
+        for img_name in ['img1.jpg', 'img2.png']
+    )
+
+def test_vgg_read_without_copy(vgg_image_dataset):
+    """Test reading VGG dataset without image handling"""
+    vgg = VGGFormat.read_from_folder(
+        str(vgg_image_dataset),
+        copy_images=False,
+        copy_as_links=False
+    )
+    assert vgg.images_path_list is None
+
+# Save tests
+def test_vgg_save_with_copy_images(vgg_format_image_instance, tmp_path):
+    """Test saving VGG dataset with image copying"""
+    output_dir = tmp_path / "output"
+    vgg_format_image_instance.save(
+        str(output_dir),
+        copy_images=True,
+        copy_as_links=False
+    )
+    
+    # Verify that images were copied
+    output_images = list((output_dir / "images").iterdir())
+    assert len(output_images) == 2
+    assert (output_dir / "images" / "test_img1.jpg").exists()
+    assert (output_dir / "images" / "test_img2.png").exists()
+
+def test_vgg_save_with_links(vgg_format_image_instance, tmp_path):
+    """Test saving VGG dataset with symbolic links (with Windows permission check)"""
+    # Windows symlink permission check
+    if os.name == "nt":
+        try:
+            test_link = tmp_path / "test_link"
+            test_target = tmp_path / "test_target.txt"
+            test_target.write_text("test")
+            test_link.symlink_to(test_target)
+        except OSError as e:
+            if e.winerror == 1314:
+                pytest.skip("Symlinks require admin privileges on Windows")
+            else:
+                raise
+                
+    output_dir = tmp_path / "output"
+    vgg_format_image_instance.save(
+        str(output_dir),
+        copy_images=False,
+        copy_as_links=True
+    )
+    
+    # Verify that symbolic links were created
+    img1 = output_dir / "images" / "test_img1.jpg"
+    img2 = output_dir / "images" / "test_img2.png"
+    assert img1.is_symlink()
+    assert Path(normalize_path(os.readlink(img1))).resolve() == Path(vgg_format_image_instance.images_path_list[0]).resolve()
+    assert img2.is_symlink()
+    assert Path(normalize_path(os.readlink(img2))).resolve() == Path(vgg_format_image_instance.images_path_list[1]).resolve()
+
+def test_vgg_save_without_copy(vgg_format_image_instance, tmp_path):
+    """Test saving VGG dataset without image handling"""
+    output_dir = tmp_path / "output"
+    vgg_format_image_instance.save(
+        str(output_dir),
+        copy_images=False,
+        copy_as_links=False
+    )
+    
+    images_dir = output_dir / "images"
+    assert not any(images_dir.iterdir()) if images_dir.exists() else True
