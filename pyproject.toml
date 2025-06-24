@@ -7,12 +7,11 @@ requires-python = ">=3.12"
 authors = [
     { name = "Guillermo Cousido Martínez", email = "guillermo.cousido@gmail.com" }
 ]
-license = { text = "MIT" }
+license = "MIT"
 keywords = ["dataset", "converter", "computer vision", "cli", "yolo", "coco", "pascal voc"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Intended Audience :: Developers",
     "Topic :: Software Development :: Libraries :: Python Modules"
@@ -20,6 +19,12 @@ classifiers = [
 dependencies = [
     "click>=8.1.8",
     "pillow>=11.2.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.5",
+    "pytest-mock>=3.14.0",
 ]
 
 [project.urls]
@@ -35,12 +40,6 @@ vconverter = "vision_converter.cli.main:vconverter"
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
-
-[dependency-groups]
-dev = [
-    "pytest>=8.3.5",
-    "pytest-mock>=3.14.0",
-]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
