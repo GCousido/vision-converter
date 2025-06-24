@@ -1,4 +1,4 @@
-# VisionConveter
+# VisionConverter
 
 ![License](https://img.shields.io/github/license/GCousido/VisionConverter)
 ![Status](https://img.shields.io/badge/status-in%20development-yellow)
@@ -14,7 +14,7 @@
 
 ## Description
 
-VisionConveter is a **library** for converting object detection annotation datasets between popular formats. It simplifies dataset interoperability for machine learning and computer vision projects.
+VisionConverter is a **library** for converting object detection annotation datasets between popular formats. It simplifies dataset interoperability for machine learning and computer vision projects.
 
 Key Features:
 
