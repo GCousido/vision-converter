@@ -1,8 +1,8 @@
-# DatasetConverter
+# VisionConveter
 
-![License](https://img.shields.io/github/license/GCousido/TFG-DatasetConverter)
+![License](https://img.shields.io/github/license/GCousido/VisionConverter)
 ![Status](https://img.shields.io/badge/status-in%20development-yellow)
-![Last Commit](https://img.shields.io/github/last-commit/GCousido/TFG-DatasetConverter)
+![Last Commit](https://img.shields.io/github/last-commit/GCousido/VisionConverter)
 
 ## Index
 
@@ -14,7 +14,7 @@
 
 ## Description
 
-DatasetConverter is a **library** for converting object detection annotation datasets between popular formats. It simplifies dataset interoperability for machine learning and computer vision projects.
+VisionConveter is a **library** for converting object detection annotation datasets between popular formats. It simplifies dataset interoperability for machine learning and computer vision projects.
 
 Key Features:
 
@@ -43,8 +43,8 @@ Conversion Process:
 Clone the repository and install the package:
 
 ```bash
-git clone https://github.com/GCousido/TFG-DatasetConverter.git
-cd TFG-DatasetConverter
+git clone https://github.com/GCousido/VisionConverter.git
+cd VisionConverter
 pip install  .
 ```
 
@@ -53,8 +53,8 @@ pip install  .
 For development (including dependencies for testing) and in editable mode:
 
 ```bash
-git clone https://github.com/GCousido/TFG-DatasetConverter.git
-cd TFG-DatasetConverter
+git clone https://github.com/GCousido/VisionConverter.git
+cd VisionConverter
 pip install -e ".[dev]"
 ```
 
@@ -69,7 +69,7 @@ You can use DatasetConverter as a Python library to convert datasets programmati
 #### Example
 
 ```python
-from datasetconverter import YoloFormat, YoloConverter, CocoFormat, CocoConverter, NeutralFormat
+from vision_converter import YoloFormat, YoloConverter, CocoFormat, CocoConverter, NeutralFormat
 
 yolo_dataset: YoloFormat = YoloFormat.read_from_folder("./dataset/yolo")
 
@@ -87,7 +87,7 @@ The CLI provides a simple interface for converting datasets:
 #### Basic Usage
 
 ```bash
-dconverter --input-format <INPUT_FORMAT> --input-path <INPUT_PATH> --output-format <OUTPUT_FORMAT> --output-path <OUTPUT_PATH> <OPTIONS>
+vconverter --input-format <INPUT_FORMAT> --input-path <INPUT_PATH> --output-format <OUTPUT_FORMAT> --output-path <OUTPUT_PATH> <OPTIONS>
 ```
 
 #### Required Arguments
@@ -107,19 +107,19 @@ dconverter --input-format <INPUT_FORMAT> --input-path <INPUT_PATH> --output-form
 Convert a **YOLO** dataset to **COCO**:
 
 ```bash
-dconverter --input-format yolo --input-path ./datasets/yolo --output-format coco --output-path ./datasets/coco
+vconverter --input-format yolo --input-path ./datasets/yolo --output-format coco --output-path ./datasets/coco
 ```
 
 Convert **Pascal VOC** to **YOLO**:
 
 ```bash
-dconverter --input-format pascal_voc --input-path ./datasets/pascalvoc --output-format yolo --output-path ./datasets/yolo
+vconverter --input-format pascal_voc --input-path ./datasets/pascalvoc --output-format yolo --output-path ./datasets/yolo
 ```
 
 Convert **COCO** to **Pascal VOC** with images:
 
 ```bash
-dconverter --input-format coco --input-path ./datasets/coco --output-format pascal_voc --output-path ./datasets/pascalvoc --copy-images
+vconverter --input-format coco --input-path ./datasets/coco --output-format pascal_voc --output-path ./datasets/pascalvoc --copy-images
 ```
 
 ---

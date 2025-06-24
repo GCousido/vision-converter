@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 # Import
-from datasetconverter.cli.main import dconverter, FORMATS, get_dataset_names
+from vision_converter.cli.main import vconverter, FORMATS, get_dataset_names
 
 # Fixture for Click Runner
 @pytest.fixture
@@ -30,7 +30,7 @@ def mock_imports(mocker):
         
         #  Configure the format to return a mock class when accesing with getattr
         setattr(fmt_mock, f"{get_dataset_names(fmt)}Format", fmt_class_mock)
-        format_mocks[f'datasetconverter.formats.{fmt}'] = fmt_mock
+        format_mocks[f'vision_converter.formats.{fmt}'] = fmt_mock
         
         # 2. Mock for converter
         conv_mock = mocker.MagicMock()
@@ -46,7 +46,7 @@ def mock_imports(mocker):
         
         # Asign mock class to the converter
         setattr(conv_mock, f"{get_dataset_names(fmt)}Converter", conv_class_mock)
-        converter_mocks[f'datasetconverter.converters.{fmt}_converter'] = conv_mock
+        converter_mocks[f'vision_converter.converters.{fmt}_converter'] = conv_mock
     
     # All mocks in a single dictionary
     all_mocks = {**format_mocks, **converter_mocks}
@@ -69,7 +69,7 @@ def test_successful_conversion(runner, input_fmt, output_fmt ,  tmp_path):
     output_dir = tmp_path / "output"
 
     result = runner.invoke(
-        dconverter,
+        vconverter,
         ['-if', input_fmt, '-ip', str(input_dir), '-of', output_fmt, '-op', str(output_dir)]
     )
     
@@ -95,7 +95,7 @@ def test_non_writable_output(runner, mocker, tmp_path):
     mocker.patch('os.access', mock_access)
     
     result = runner.invoke(
-        dconverter,
+        vconverter,
         ['-if', 'coco', '-ip', str(input_dir), '-of', 'yolo', '-op', output_path]
     )
     
@@ -110,10 +110,10 @@ def test_missing_converter_class(runner, mocker, tmp_path):
     input_dir = tmp_path / "input"
     input_dir.mkdir()
     
-    mocker.patch.dict('sys.modules', {'datasetconverter.converters.coco_converter': None})
+    mocker.patch.dict('sys.modules', {'vision_converter.converters.coco_converter': None})
     
     result = runner.invoke(
-        dconverter,
+        vconverter,
         ['-if', 'coco', '-ip', str(input_dir), '-of', 'yolo', '-op', 'output']
     )
     assert result.exit_code == 1
@@ -126,12 +126,12 @@ def test_general_conversion_error(runner, mocker, tmp_path):
     input_dir.mkdir()
     
     mocker.patch(
-        'datasetconverter.converters.coco_converter.CocoConverter.toNeutral',
+        'vision_converter.converters.coco_converter.CocoConverter.toNeutral',
         side_effect=Exception("Conversion failed")
     )
     
     result = runner.invoke(
-        dconverter,
+        vconverter,
         ['-if', 'coco', '-ip', str(input_dir), '-of', 'yolo', '-op', 'output']
     )
     assert result.exit_code == 1
@@ -139,7 +139,7 @@ def test_general_conversion_error(runner, mocker, tmp_path):
 
 # Case where there are missing required params
 def test_missing_required_parameters(runner):
-    result = runner.invoke(dconverter)
+    result = runner.invoke(vconverter)
     assert result.exit_code == 2
     assert "Missing option" in result.output
 
@@ -147,7 +147,7 @@ def test_missing_required_parameters(runner):
 # Case with an invalid input format
 def test_invalid_input_format(runner):
     result = runner.invoke(
-        dconverter,
+        vconverter,
         ['-if', 'invalid', '-ip', 'input', '-of', 'yolo', '-op', 'output']
     )
     assert result.exit_code == 2
@@ -163,7 +163,7 @@ def test_invalid_output_format(runner, tmp_path):
 
 
     result = runner.invoke(
-        dconverter,
+        vconverter,
         ['-if', 'yolo', '-ip', str(input_dir), '-of', 'invalid', '-op', 'output']
     )
     assert result.exit_code == 2
@@ -180,7 +180,7 @@ def test_output_directory_creation(runner, mocker, tmp_path):
     mocker.patch('os.access', return_value=True)
     
     result = runner.invoke(
-        dconverter,
+        vconverter,
         ['-if', 'coco', '-ip', str(input_dir), '-of', 'yolo', '-op', str(output_path)]
     )
     assert result.exit_code == 0

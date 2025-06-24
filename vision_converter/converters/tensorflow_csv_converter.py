@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional
 
-from datasetconverter.utils.file_utils import get_image_info_from_file, get_image_path
+from vision_converter.utils.file_utils import get_image_info_from_file, get_image_path
 
 from .dataset_converter import DatasetConverter
 from ..formats.neutral_format import ImageOrigin, NeutralAnnotation, NeutralFile, NeutralFormat

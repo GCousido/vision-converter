@@ -30,7 +30,7 @@ FORMATS = ['coco', 'pascal_voc', 'yolo', 'createml', 'tensorflow_csv', 'labelme'
                 help='Path to save the Output dataset')
 @click.option('--copy-images', is_flag=True, default=False, help='If set, copies image files to the output directory.')
 @click.option('--symlink-images', is_flag=True, default=False, help='If set, creates symbolic links to the original images in the output directory.')
-def dconverter(input_format, input_path, output_format, output_path, copy_images, symlink_images):
+def vconverter(input_format, input_path, output_format, output_path, copy_images, symlink_images):
     """Convert object detection datasets between popular annotation formats.
 
     This CLI tool provides conversion between annotation formats through a neutral intermediate representation.
@@ -58,20 +58,20 @@ def dconverter(input_format, input_path, output_format, output_path, copy_images
 
     try:
         # Dynamic import of format classes
-        input_format_module = importlib.import_module(f'datasetconverter.formats.{input_format}')
+        input_format_module = importlib.import_module(f'vision_converter.formats.{input_format}')
         input_format_class_name = f"{get_dataset_names(input_format)}Format"
         input_format_class = getattr(input_format_module, input_format_class_name)
 
-        output_format_module = importlib.import_module(f'datasetconverter.formats.{output_format}')
+        output_format_module = importlib.import_module(f'vision_converter.formats.{output_format}')
         output_format_class_name = f"{get_dataset_names(output_format)}Format"
         output_format_class = getattr(output_format_module, output_format_class_name)
         
         # Dynamic import of converters
-        input_converter_module = importlib.import_module(f'datasetconverter.converters.{input_format}_converter')
+        input_converter_module = importlib.import_module(f'vision_converter.converters.{input_format}_converter')
         input_converter_class_name = f"{get_dataset_names(input_format)}Converter"
         input_converter_class = getattr(input_converter_module,input_converter_class_name)
 
-        output_converter_module = importlib.import_module(f'datasetconverter.converters.{output_format}_converter')
+        output_converter_module = importlib.import_module(f'vision_converter.converters.{output_format}_converter')
         output_converter_class_name = f"{get_dataset_names(output_format)}Converter"
         output_converter_class = getattr(output_converter_module, output_converter_class_name)
         
@@ -126,4 +126,4 @@ def get_dataset_names(input: str) -> str:
 
 
 if __name__ == "__main__":
-    dconverter()
+    vconverter()

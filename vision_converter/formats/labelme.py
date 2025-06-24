@@ -5,7 +5,7 @@ import json
 import base64
 from pathlib import Path
 
-from datasetconverter.utils.file_utils import find_all_images_folders
+from vision_converter.utils.file_utils import find_all_images_folders
 
 from .base import Annotation, DatasetFormat, FileFormat, Shape
 from .pascal_voc import PascalVocBoundingBox

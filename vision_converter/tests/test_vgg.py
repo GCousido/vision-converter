@@ -5,11 +5,11 @@ import pytest
 import json
 import math
 
-from datasetconverter.formats.vgg import (
+from vision_converter.formats.vgg import (
     VGGRect, VGGCircle, VGGEllipse, VGGPolygon, VGGPolyline, VGGPoint,
     VGGAnnotation, VGGFile, VGGFormat
 )
-from datasetconverter.tests.utils_for_tests import normalize_path
+from vision_converter.tests.utils_for_tests import normalize_path
 
 # Fixture para dataset VGG
 @pytest.fixture

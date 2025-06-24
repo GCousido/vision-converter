@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Optional
 import xml.etree.ElementTree as ET
 
-from datasetconverter.utils.file_utils import find_all_images_folders
+from vision_converter.utils.file_utils import find_all_images_folders
 
 from .base import Annotation, BoundingBox, DatasetFormat, FileFormat
 

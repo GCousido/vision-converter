@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="datasetconverter",
+    name="vision-converter",
     version="0.1.0",
     description="This project consist of a library and a CLI for converting datasets between annotation formats.",
     long_description=open("README.md", encoding="utf-8").read(),
@@ -19,7 +19,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "dconverter=datasetconverter.cli.main:dconverter",
+            "vconverter=vision_converter.cli.main:vconverter",
         ],
     },
     extras_require={

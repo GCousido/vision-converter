@@ -4,9 +4,9 @@ from PIL import Image
 import pytest
 import csv
 
-from datasetconverter.formats.tensorflow_csv import TensorflowCsvAnnotation, TensorflowCsvFile, TensorflowCsvFormat
-from datasetconverter.formats.pascal_voc import PascalVocBoundingBox
-from datasetconverter.tests.utils_for_tests import normalize_path
+from vision_converter.formats.tensorflow_csv import TensorflowCsvAnnotation, TensorflowCsvFile, TensorflowCsvFormat
+from vision_converter.formats.pascal_voc import PascalVocBoundingBox
+from vision_converter.tests.utils_for_tests import normalize_path
 
 # Fixture for TensorFlow CSV dataset
 @pytest.fixture

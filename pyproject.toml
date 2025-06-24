@@ -1,5 +1,5 @@
 [project]
-name = "datasetconverter"
+name = "vision-converter"
 version = "0.1.0"
 description = "This project consist of a library and a CLI for converting datasets between annotation formats."
 readme = "README.md"
@@ -23,14 +23,14 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/GCousido/TFG-DatasetConverter"
-Documentation = "https://github.com/GCousido/TFG-DatasetConverter#readme"
-Repository = "https://github.com/GCousido/TFG-DatasetConverter"
-Issues = "https://github.com/GCousido/TFG-DatasetConverter/issues"
-Changelog = "https://github.com/GCousido/TFG-DatasetConverter/releases"
+Homepage = "https://github.com/GCousido/VisionConverter"
+Documentation = "https://github.com/GCousido/VisionConverter#readme"
+Repository = "https://github.com/GCousido/VisionConverter"
+Issues = "https://github.com/GCousido/VisionConverter/issues"
+Changelog = "https://github.com/GCousido/VisionConverter/releases"
 
 [project.scripts]
-dconverter = "datasetconverter.cli.main:dconverter"
+vconverter = "vision_converter.cli.main:vconverter"
 
 [build-system]
 requires = ["setuptools", "wheel"]
@@ -44,4 +44,4 @@ dev = [
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-testpaths = ["datasetconverter/tests"]
+testpaths = ["vision_converter/tests"]

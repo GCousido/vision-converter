@@ -5,8 +5,8 @@ import tempfile
 from PIL import UnidentifiedImageError
 from pathlib import Path
 from unittest.mock import patch, PropertyMock
-from datasetconverter.tests.utils_for_tests import normalize_path
-from datasetconverter.utils.file_utils import find_all_images_folders, find_annotation_file, get_image_info_from_file, get_image_path, estimate_file_size
+from vision_converter.tests.utils_for_tests import normalize_path
+from vision_converter.utils.file_utils import find_all_images_folders, find_annotation_file, get_image_info_from_file, get_image_path, estimate_file_size
 
 ########################################################
 #          Tests for get_image_info_from_file 

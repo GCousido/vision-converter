@@ -3,7 +3,7 @@ from pathlib import Path
 import json
 from typing import Optional
 
-from datasetconverter.utils.file_utils import find_all_images_folders, find_annotation_file
+from vision_converter.utils.file_utils import find_all_images_folders, find_annotation_file
 
 from .base import Annotation, BoundingBox, DatasetFormat, FileFormat
 

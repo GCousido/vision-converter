@@ -4,12 +4,12 @@ import json
 import os
 from pathlib import Path
 
-from datasetconverter.formats.labelme import (
+from vision_converter.formats.labelme import (
     LabelMePolygon, LabelMeRectangle, LabelMeCircle, LabelMePoint, 
     LabelMeLine, LabelMeLinestrip, LabelMePoints, LabelMeMask,
     LabelMeAnnotation, LabelMeFile, LabelMeFormat
 )
-from datasetconverter.tests.utils_for_tests import normalize_path
+from vision_converter.tests.utils_for_tests import normalize_path
 
 # Fixture for LabelMe dataset
 @pytest.fixture

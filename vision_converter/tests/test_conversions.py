@@ -1,24 +1,24 @@
 import os
 import pytest
 
-from datasetconverter.converters.coco_converter import CocoConverter
-from datasetconverter.converters.createml_converter import CreateMLConverter
-from datasetconverter.converters.labelme_converter import LabelMeConverter
-from datasetconverter.converters.pascal_voc_converter import PascalVocConverter
-from datasetconverter.converters.tensorflow_csv_converter import TensorflowCsvConverter
-from datasetconverter.converters.vgg_converter import VGGConverter
-from datasetconverter.converters.yolo_converter import YoloConverter
+from vision_converter.converters.coco_converter import CocoConverter
+from vision_converter.converters.createml_converter import CreateMLConverter
+from vision_converter.converters.labelme_converter import LabelMeConverter
+from vision_converter.converters.pascal_voc_converter import PascalVocConverter
+from vision_converter.converters.tensorflow_csv_converter import TensorflowCsvConverter
+from vision_converter.converters.vgg_converter import VGGConverter
+from vision_converter.converters.yolo_converter import YoloConverter
 
-from datasetconverter.formats import vgg
-from datasetconverter.formats.coco import CocoFormat
-from datasetconverter.formats.createml import CreateMLFormat
-from datasetconverter.formats.labelme import LabelMeFormat
-from datasetconverter.formats.neutral_format import NeutralFormat
-from datasetconverter.formats.pascal_voc import PascalVocFormat
-from datasetconverter.formats.tensorflow_csv import TensorflowCsvFormat
-from datasetconverter.formats.vgg import VGGFormat
-from datasetconverter.formats.yolo import YoloFormat
-from datasetconverter.utils.bbox_utils import CreateMLBBox_to_PascalVocBBox, PascalVocBBox_to_YoloBBox
+from vision_converter.formats import vgg
+from vision_converter.formats.coco import CocoFormat
+from vision_converter.formats.createml import CreateMLFormat
+from vision_converter.formats.labelme import LabelMeFormat
+from vision_converter.formats.neutral_format import NeutralFormat
+from vision_converter.formats.pascal_voc import PascalVocFormat
+from vision_converter.formats.tensorflow_csv import TensorflowCsvFormat
+from vision_converter.formats.vgg import VGGFormat
+from vision_converter.formats.yolo import YoloFormat
+from vision_converter.utils.bbox_utils import CreateMLBBox_to_PascalVocBBox, PascalVocBBox_to_YoloBBox
 
 
 def bbox_almost_equal(bbox1, bbox2, epsilon=1e-3) -> bool:

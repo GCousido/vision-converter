@@ -3,7 +3,7 @@ from typing import Any, Optional, Dict, List
 import json
 from pathlib import Path
 
-from datasetconverter.utils.file_utils import find_all_images_folders, find_annotation_file
+from vision_converter.utils.file_utils import find_all_images_folders, find_annotation_file
 
 from .base import Annotation, DatasetFormat, FileFormat, Shape
 from .pascal_voc import PascalVocBoundingBox

@@ -2,8 +2,8 @@ from pathlib import Path
 from PIL import Image
 import pytest
 
-from datasetconverter.formats.yolo import YoloAnnotation, YoloBoundingBox, YoloFile, YoloFormat
-from datasetconverter.tests.utils_for_tests import normalize_path
+from vision_converter.formats.yolo import YoloAnnotation, YoloBoundingBox, YoloFile, YoloFormat
+from vision_converter.tests.utils_for_tests import normalize_path
 
 # Fixture for YOLO dataset
 @pytest.fixture
