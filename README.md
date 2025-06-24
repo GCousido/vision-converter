@@ -38,6 +38,12 @@ Conversion Process:
 * [Click](https://pypi.org/project/click/) >= 8.1.8
 * [Pillow](https://pypi.org/project/Pillow/) >= 11.2.1
 
+### Install from PyPI
+
+```bash
+pip install vision-converter
+```
+
 ### Install from Source
 
 Clone the repository and install the package:
@@ -50,7 +56,7 @@ pip install  .
 
 ### Development Installation
 
-For development (including dependencies for testing) and in editable mode:
+For development including dependencies for testing and in editable mode:
 
 ```bash
 git clone https://github.com/GCousido/VisionConverter.git
@@ -64,7 +70,7 @@ pip install -e ".[dev]"
 
 ### Library Usage
 
-You can use DatasetConverter as a Python library to convert datasets programmatically.
+You can use VisionConverter as a Python library to convert datasets programmatically.
 
 #### Example
 
