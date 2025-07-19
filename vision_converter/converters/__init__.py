@@ -6,4 +6,12 @@ from .tensorflow_csv_converter import TensorflowCsvConverter
 from .labelme_converter import LabelMeConverter
 from .vgg_converter import VGGConverter
 
-__all__ = ['CocoConverter', 'PascalVocConverter', 'YoloConverter', 'CreateMLConverter', 'TensorflowCsvConverter', 'LabelMeConverter', 'VGGConverter']
+__all__ = [
+    'CocoConverter', 
+    'PascalVocConverter', 
+    'YoloConverter', 
+    'CreateMLConverter', 
+    'TensorflowCsvConverter', 
+    'LabelMeConverter', 
+    'VGGConverter'
+]

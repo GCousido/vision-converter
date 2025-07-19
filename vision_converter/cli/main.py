@@ -6,8 +6,9 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from ..formats.neutral_format import NeutralFormat
+from ..formats import FORMATS_NAME
 
-FORMATS = ['coco', 'pascal_voc', 'yolo', 'createml', 'tensorflow_csv', 'labelme', 'vgg']
+FORMATS = list(FORMATS_NAME.keys())
 
 @click.command()
 @click.option('--input-format', '-if', 
@@ -59,21 +60,31 @@ def vconverter(input_format, input_path, output_format, output_path, copy_images
     try:
         # Dynamic import of format classes
         input_format_module = importlib.import_module(f'vision_converter.formats.{input_format}')
-        input_format_class_name = f"{get_dataset_names(input_format)}Format"
+        input_format_class_name = f"{FORMATS_NAME.get(input_format)}Format"
         input_format_class = getattr(input_format_module, input_format_class_name)
 
         output_format_module = importlib.import_module(f'vision_converter.formats.{output_format}')
-        output_format_class_name = f"{get_dataset_names(output_format)}Format"
+        output_format_class_name = f"{FORMATS_NAME.get(output_format)}Format"
         output_format_class = getattr(output_format_module, output_format_class_name)
+
+        if not input_format_class:
+            raise ImportError(f"Format not found for format: {input_format}")
+        if not output_format_class:
+            raise ImportError(f"Format not found for format: {output_format}")
         
         # Dynamic import of converters
         input_converter_module = importlib.import_module(f'vision_converter.converters.{input_format}_converter')
-        input_converter_class_name = f"{get_dataset_names(input_format)}Converter"
+        input_converter_class_name = f"{FORMATS_NAME.get(input_format)}Converter"
         input_converter_class = getattr(input_converter_module,input_converter_class_name)
 
         output_converter_module = importlib.import_module(f'vision_converter.converters.{output_format}_converter')
-        output_converter_class_name = f"{get_dataset_names(output_format)}Converter"
+        output_converter_class_name = f"{FORMATS_NAME.get(output_format)}Converter"
         output_converter_class = getattr(output_converter_module, output_converter_class_name)
+
+        if not input_converter_class:
+            raise ImportError(f"Converter not found for format: {input_format}")
+        if not output_converter_class:
+            raise ImportError(f"Converter not found for format: {output_format}")
         
         # Load input dataset
         message_read = f"Loading dataset {input_format} from {input_path} "
@@ -108,22 +119,6 @@ def vconverter(input_format, input_path, output_format, output_path, copy_images
     except Exception as e:
         click.echo(f"Error while converting: {e}", err=True)
         sys.exit(1)
-
-def get_dataset_names(input: str) -> str:
-    # Map special cases
-    specific_formats = {
-        'createml': 'CreateML',
-        'labelme': 'LabelMe',
-        'vgg': 'VGG'
-    }
-    
-    # For special cases
-    if input.lower() in specific_formats:
-        return specific_formats[input.lower()]
-    
-    # default
-    return "".join(word.capitalize() for word in input.split("_"))
-
 
 if __name__ == "__main__":
     vconverter()

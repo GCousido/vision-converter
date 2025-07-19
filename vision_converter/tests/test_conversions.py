@@ -9,7 +9,6 @@ from vision_converter.converters.tensorflow_csv_converter import TensorflowCsvCo
 from vision_converter.converters.vgg_converter import VGGConverter
 from vision_converter.converters.yolo_converter import YoloConverter
 
-from vision_converter.formats import vgg
 from vision_converter.formats.coco import CocoFormat
 from vision_converter.formats.createml import CreateMLFormat
 from vision_converter.formats.labelme import LabelMeFormat
