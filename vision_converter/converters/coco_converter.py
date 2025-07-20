@@ -3,12 +3,13 @@ import re
 
 from pathlib import Path
 
-from .dataset_converter import DatasetConverter
-from ..formats.coco import Category, CocoBoundingBox, CocoFile, CocoFormat, CocoImage, CocoLabel, Info, License
-from ..formats.neutral_format import ImageOrigin, NeutralAnnotation, NeutralFile, NeutralFormat
-from ..formats.pascal_voc import PascalVocBoundingBox
-from ..utils.bbox_utils import CocoBBox_to_PascalVocBBox, PascalVocBBox_to_CocoBBox
 
+from .dataset_converter import DatasetConverter
+from ..formats.coco import Category, CocoFile, CocoFormat, CocoImage, CocoLabel, Info, License
+from ..formats.neutral_format import ImageOrigin, NeutralAnnotation, NeutralFile, NeutralFormat
+from ..formats.pascal_voc import CornerAbsoluteBoundingBox
+from ..utils.bbox_utils import CocoBBox_to_PascalVocBBox, PascalVocBBox_to_CocoBBox
+from ..formats.bounding_box import TopLeftAbsoluteBoundingBox
 
 class CocoConverter(DatasetConverter[CocoFormat]):
     """Converter between CocoFormat and NeutralFormat
@@ -201,7 +202,7 @@ class CocoConverter(DatasetConverter[CocoFormat]):
                     next_cat_id += 1
                 
                 # Convert bbox
-                coco_bbox: CocoBoundingBox = PascalVocBBox_to_CocoBBox(ann.geometry)
+                coco_bbox: TopLeftAbsoluteBoundingBox = PascalVocBBox_to_CocoBBox(ann.geometry)
                 
                 # Create CocoLabel
                 coco_ann = CocoLabel(
@@ -244,7 +245,7 @@ def COCOLabel_to_NeutralAnnotation(annotation: CocoLabel, category_map: dict[int
     Returns:
         NeutralAnnotation: Converted annotation in Neutral format
     """
-    bbox: PascalVocBoundingBox = CocoBBox_to_PascalVocBBox(annotation.geometry)
+    bbox: CornerAbsoluteBoundingBox = CocoBBox_to_PascalVocBBox(annotation.geometry)
 
     return NeutralAnnotation(
         bbox = bbox,

@@ -2,11 +2,10 @@ from typing import Optional
 
 from .dataset_converter import DatasetConverter
 from ..formats.neutral_format import ImageOrigin, NeutralAnnotation, NeutralFile, NeutralFormat
-from ..formats.pascal_voc import PascalVocBoundingBox
-from ..formats.yolo import YoloAnnotation, YoloBoundingBox, YoloFile, YoloFormat
+from ..formats.yolo import YoloAnnotation, CenterNormalizedBoundingBox, YoloFile, YoloFormat
 from ..utils.bbox_utils import PascalVocBBox_to_YoloBBox, YoloBBox_to_PascalVocBBox
 from ..utils.file_utils import get_image_path, get_image_info_from_file
-
+from ..formats.bounding_box import CornerAbsoluteBoundingBox
 
 class YoloConverter(DatasetConverter[YoloFormat]):
     """Converter between YoloFormat and NeutralFormat
@@ -140,7 +139,7 @@ def YoloAnnotation_to_NeutralAnnotation(annotation: YoloAnnotation, class_labels
         KeyError: If class ID doesn't exist in class_labels
     """
     
-    bbox: PascalVocBoundingBox = YoloBBox_to_PascalVocBBox(annotation.geometry, image_width, image_height)
+    bbox: CornerAbsoluteBoundingBox = YoloBBox_to_PascalVocBBox(annotation.geometry, image_width, image_height)
 
     class_name: str = class_labels[annotation.id_class]
 
@@ -189,7 +188,7 @@ def NeutralAnnotation_to_YoloAnnotation(annotation: NeutralAnnotation, inverse_c
         ValueError: If class name doesn't exist in inverse_class_map
     """
 
-    bbox: YoloBoundingBox = PascalVocBBox_to_YoloBBox(annotation.geometry, image_width, image_height)
+    bbox: CenterNormalizedBoundingBox = PascalVocBBox_to_YoloBBox(annotation.geometry, image_width, image_height)
 
     try:
         id_class = inverse_class_list[annotation.class_name]

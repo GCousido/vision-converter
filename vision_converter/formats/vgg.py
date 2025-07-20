@@ -6,7 +6,7 @@ from pathlib import Path
 from vision_converter.utils.file_utils import find_all_images_folders, find_annotation_file
 
 from .base import Annotation, DatasetFormat, FileFormat, Shape
-from .bounding_box import PascalVocBoundingBox
+from .bounding_box import CornerAbsoluteBoundingBox
 
 class VGGRect(Shape):
     """Rectangle shape in VGG format.
@@ -39,9 +39,9 @@ class VGGRect(Shape):
             "height": self.height
         }
     
-    def getBoundingBox(self) -> PascalVocBoundingBox:
+    def getBoundingBox(self) -> CornerAbsoluteBoundingBox:
         """Convert to Pascal VOC bounding box format."""
-        return PascalVocBoundingBox(
+        return CornerAbsoluteBoundingBox(
             int(self.x),
             int(self.y),
             int(self.x + self.width),
@@ -77,9 +77,9 @@ class VGGCircle(Shape):
             "r": self.r
         }
     
-    def getBoundingBox(self) -> PascalVocBoundingBox:
+    def getBoundingBox(self) -> CornerAbsoluteBoundingBox:
         """Convert circle to bounding box."""
-        return PascalVocBoundingBox(
+        return CornerAbsoluteBoundingBox(
             int(self.cx - self.r),
             int(self.cy - self.r),
             int(self.cx + self.r),
@@ -123,7 +123,7 @@ class VGGEllipse(Shape):
             "theta": self.theta
         }
     
-    def getBoundingBox(self) -> PascalVocBoundingBox:
+    def getBoundingBox(self) -> CornerAbsoluteBoundingBox:
         """Convert ellipse to bounding box considering rotation."""
         # Calculate bounding box for rotated ellipse
         cos_theta = math.cos(self.theta)
@@ -133,7 +133,7 @@ class VGGEllipse(Shape):
         extent_x = math.sqrt((self.rx * cos_theta) ** 2 + (self.ry * sin_theta) ** 2)
         extent_y = math.sqrt((self.rx * sin_theta) ** 2 + (self.ry * cos_theta) ** 2)
         
-        return PascalVocBoundingBox(
+        return CornerAbsoluteBoundingBox(
             int(self.cx - extent_x),
             int(self.cy - extent_y),
             int(self.cx + extent_x),
@@ -167,9 +167,9 @@ class VGGPolygon(Shape):
             "all_points_y": self.all_points_y
         }
     
-    def getBoundingBox(self) -> PascalVocBoundingBox:
+    def getBoundingBox(self) -> CornerAbsoluteBoundingBox:
         """Convert polygon to bounding box."""
-        return PascalVocBoundingBox(
+        return CornerAbsoluteBoundingBox(
             int(min(self.all_points_x)),
             int(min(self.all_points_y)),
             int(max(self.all_points_x)),
@@ -203,9 +203,9 @@ class VGGPolyline(Shape):
             "all_points_y": self.all_points_y
         }
     
-    def getBoundingBox(self) -> PascalVocBoundingBox:
+    def getBoundingBox(self) -> CornerAbsoluteBoundingBox:
         """Convert polyline to bounding box."""
-        return PascalVocBoundingBox(
+        return CornerAbsoluteBoundingBox(
             int(min(self.all_points_x)),
             int(min(self.all_points_y)),
             int(max(self.all_points_x)),
@@ -237,9 +237,9 @@ class VGGPoint(Shape):
             "cy": self.cy
         }
     
-    def getBoundingBox(self) -> PascalVocBoundingBox:
+    def getBoundingBox(self) -> CornerAbsoluteBoundingBox:
         """Convert point to minimal bounding box."""
-        return PascalVocBoundingBox(
+        return CornerAbsoluteBoundingBox(
             int(self.cx),
             int(self.cy),
             int(self.cx + 1),

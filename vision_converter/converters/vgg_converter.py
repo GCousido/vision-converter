@@ -6,9 +6,8 @@ from ..formats.vgg import (
     VGGFile, VGGFormat, VGGAnnotation,
     VGGRect, VGGCircle, VGGEllipse, VGGPolygon, VGGPolyline, VGGPoint, extract_class_name
 )
-from ..formats.pascal_voc import PascalVocBoundingBox
 from ..utils.file_utils import estimate_file_size, get_image_path, get_image_info_from_file
-
+from ..formats.bounding_box import CornerAbsoluteBoundingBox
 
 class VGGConverter(DatasetConverter[VGGFormat]):
     """Converter between VGGFormat and NeutralFormat
@@ -155,14 +154,14 @@ def VGGAnnotation_to_NeutralAnnotation(annotation: VGGAnnotation) -> NeutralAnno
         "original_region_attributes": annotation.region_attributes
     }
 
-    if isinstance(bbox, PascalVocBoundingBox):
+    if isinstance(bbox, CornerAbsoluteBoundingBox):
         return NeutralAnnotation(
             bbox=bbox,
             class_name=class_name,
             attributes=attributes
         )
     else:
-        raise TypeError(f"Expected PascalVocBoundingBox, got {type(bbox)}")
+        raise TypeError(f"Expected CornerAbsoluteBoundingBox, got {type(bbox)}")
 
 
 def NeutralFile_to_VGGFile(file: NeutralFile) -> VGGFile:

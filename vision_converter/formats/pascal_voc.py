@@ -2,12 +2,12 @@ from pathlib import Path
 from typing import Optional
 import xml.etree.ElementTree as ET
 
-from .bounding_box import PascalVocBoundingBox
+from .bounding_box import CornerAbsoluteBoundingBox
 from ..utils.file_utils import find_all_images_folders
 
 from .base import Annotation, DatasetFormat, FileFormat
 
-class PascalVocObject(Annotation[PascalVocBoundingBox]):
+class PascalVocObject(Annotation[CornerAbsoluteBoundingBox]):
     """Annotation for a single Pascal VOC Object, with bounding box and metadata.
 
     Attributes:
@@ -15,14 +15,14 @@ class PascalVocObject(Annotation[PascalVocBoundingBox]):
         pose (str): Pose label (e.g., 'Unspecified').
         truncated (bool): True if object is truncated in the image.
         difficult (bool): True if object is difficult to detect.
-        bbox (PascalVocBoundingBox): Inherited. Bounding box of the object.
+        bbox (CornerAbsoluteBoundingBox): Inherited. Bounding box of the object.
     """
     name: str
     pose: str
     truncated: bool
     difficult: bool
 
-    def __init__(self, bbox: PascalVocBoundingBox, name: str, pose: str, truncated: bool, difficult: bool) -> None:
+    def __init__(self, bbox: CornerAbsoluteBoundingBox, name: str, pose: str, truncated: bool, difficult: bool) -> None:
         super().__init__(bbox)
         self.name = name
         self.pose = pose
@@ -167,7 +167,7 @@ class PascalVocFormat(DatasetFormat[PascalVocFile]):
                     y_min = int(bndbox.findtext('ymin', default="0"))
                     x_max = int(bndbox.findtext('xmax', default="0"))
                     y_max = int(bndbox.findtext('ymax', default="0"))
-                    bbox = PascalVocBoundingBox(x_min, y_min, x_max, y_max)
+                    bbox = CornerAbsoluteBoundingBox(x_min, y_min, x_max, y_max)
                     annotations.append(PascalVocObject(bbox, name, pose, truncated, difficult))
 
             pascal_files.append(

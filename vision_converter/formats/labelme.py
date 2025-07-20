@@ -8,7 +8,7 @@ from pathlib import Path
 from vision_converter.utils.file_utils import find_all_images_folders
 
 from .base import Annotation, DatasetFormat, FileFormat, Shape
-from .bounding_box import PascalVocBoundingBox
+from .bounding_box import CornerAbsoluteBoundingBox
 
 class LabelMePolygon(Shape):
     """Polygon shape with multiple vertices in LabelMe format.
@@ -29,11 +29,11 @@ class LabelMePolygon(Shape):
         """Returns all polygon vertices as [[x1, y1], [x2, y2], ...]"""
         return self.points
     
-    def getBoundingBox(self) -> PascalVocBoundingBox:
-        """Calculate bounding box as PascalVocBoundingBox object"""
+    def getBoundingBox(self) -> CornerAbsoluteBoundingBox:
+        """Calculate bounding box as CornerAbsoluteBoundingBox object"""
         x_coords: list[float] = [point[0] for point in self.points]
         y_coords: list[float] = [point[1] for point in self.points]
-        return PascalVocBoundingBox(
+        return CornerAbsoluteBoundingBox(
             int(min(x_coords)), 
             int(min(y_coords)), 
             int(max(x_coords)), 
@@ -67,9 +67,9 @@ class LabelMeRectangle(Shape):
         """Returns two diagonal points [[x_min, y_min], [x_max, y_max]]"""
         return [[self.x_min, self.y_min], [self.x_max, self.y_max]]
     
-    def getBoundingBox(self) -> PascalVocBoundingBox:
-        """Returns bounding box as PascalVocBoundingBox object"""
-        return PascalVocBoundingBox(
+    def getBoundingBox(self) -> CornerAbsoluteBoundingBox:
+        """Returns bounding box as CornerAbsoluteBoundingBox object"""
+        return CornerAbsoluteBoundingBox(
             int(self.x_min), 
             int(self.y_min), 
             int(self.x_max), 
@@ -106,9 +106,9 @@ class LabelMeCircle(Shape):
         """Returns center and edge points [[center_x, center_y], [edge_x, edge_y]]"""
         return [[self.center_x, self.center_y], [self.edge_x, self.edge_y]]
     
-    def getBoundingBox(self) -> PascalVocBoundingBox:
-        """Calculate bounding box that encloses the circle as PascalVocBoundingBox object"""
-        return PascalVocBoundingBox(
+    def getBoundingBox(self) -> CornerAbsoluteBoundingBox:
+        """Calculate bounding box that encloses the circle as CornerAbsoluteBoundingBox object"""
+        return CornerAbsoluteBoundingBox(
             int(self.center_x - self.radius),
             int(self.center_y - self.radius),
             int(self.center_x + self.radius),
@@ -136,9 +136,9 @@ class LabelMePoint(Shape):
         """Returns single point [[x, y]]"""
         return [[self.x, self.y]]
     
-    def getBoundingBox(self) -> PascalVocBoundingBox:
-        """Returns point as zero-area bounding box as PascalVocBoundingBox object"""
-        return PascalVocBoundingBox(int(self.x), int(self.y), int(self.x), int(self.y))
+    def getBoundingBox(self) -> CornerAbsoluteBoundingBox:
+        """Returns point as zero-area bounding box as CornerAbsoluteBoundingBox object"""
+        return CornerAbsoluteBoundingBox(int(self.x), int(self.y), int(self.x), int(self.y))
 
 
 class LabelMeLine(Shape):
@@ -167,9 +167,9 @@ class LabelMeLine(Shape):
         """Returns start and end points [[x1, y1], [x2, y2]]"""
         return [[self.x1, self.y1], [self.x2, self.y2]]
     
-    def getBoundingBox(self) -> PascalVocBoundingBox:
-        """Calculate bounding box that encloses the line as PascalVocBoundingBox object"""
-        return PascalVocBoundingBox(
+    def getBoundingBox(self) -> CornerAbsoluteBoundingBox:
+        """Calculate bounding box that encloses the line as CornerAbsoluteBoundingBox object"""
+        return CornerAbsoluteBoundingBox(
             int(min(self.x1, self.x2)),
             int(min(self.y1, self.y2)),
             int(max(self.x1, self.x2)),
@@ -197,11 +197,11 @@ class LabelMeLinestrip(Shape):
         """Returns all connected points [[x1, y1], [x2, y2], ...]"""
         return self.points
     
-    def getBoundingBox(self) -> PascalVocBoundingBox:
-        """Calculate bounding box that encloses all line segments as PascalVocBoundingBox object"""
+    def getBoundingBox(self) -> CornerAbsoluteBoundingBox:
+        """Calculate bounding box that encloses all line segments as CornerAbsoluteBoundingBox object"""
         x_coords = [point[0] for point in self.points]
         y_coords = [point[1] for point in self.points]
-        return PascalVocBoundingBox(
+        return CornerAbsoluteBoundingBox(
             int(min(x_coords)), 
             int(min(y_coords)), 
             int(max(x_coords)), 
@@ -229,11 +229,11 @@ class LabelMePoints(Shape):
         """Returns all points [[x1, y1], [x2, y2], ...]"""
         return self.points
     
-    def getBoundingBox(self) -> PascalVocBoundingBox:
-        """Calculate bounding box that encloses all points as PascalVocBoundingBox object"""
+    def getBoundingBox(self) -> CornerAbsoluteBoundingBox:
+        """Calculate bounding box that encloses all points as CornerAbsoluteBoundingBox object"""
         x_coords = [point[0] for point in self.points]
         y_coords = [point[1] for point in self.points]
-        return PascalVocBoundingBox(
+        return CornerAbsoluteBoundingBox(
             int(min(x_coords)), 
             int(min(y_coords)), 
             int(max(x_coords)), 
@@ -270,9 +270,9 @@ class LabelMeMask(Shape):
         """Returns rectangular bounds [[x1, y1], [x2, y2]]"""
         return [[self.x1, self.y1], [self.x2, self.y2]]
     
-    def getBoundingBox(self) -> PascalVocBoundingBox:
-        """Returns the mask bounding box as PascalVocBoundingBox object"""
-        return PascalVocBoundingBox(
+    def getBoundingBox(self) -> CornerAbsoluteBoundingBox:
+        """Returns the mask bounding box as CornerAbsoluteBoundingBox object"""
+        return CornerAbsoluteBoundingBox(
             int(min(self.x1, self.x2)),
             int(min(self.y1, self.y2)),
             int(max(self.x1, self.x2)),

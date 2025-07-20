@@ -4,7 +4,7 @@ import pytest
 import json
 import os
 
-from vision_converter.formats.bounding_box import CreateMLBoundingBox
+from vision_converter.formats.bounding_box import CenterAbsoluteBoundingBox
 from vision_converter.formats.createml import CreateMLAnnotation, CreateMLFile, CreateMLFormat
 from vision_converter.tests.utils_for_tests import normalize_path
 
@@ -122,7 +122,7 @@ def test_createml_format_construction(sample_createml_dataset):
 def test_createml_bounding_box():
     """Test CreateML bounding box functionality."""
     
-    bbox = CreateMLBoundingBox(x_center=100, y_center=150, width=50, height=75)
+    bbox = CenterAbsoluteBoundingBox(x_center=100, y_center=150, width=50, height=75)
     
     assert bbox.x_center == 100
     assert bbox.y_center == 150
@@ -137,7 +137,7 @@ def test_createml_bounding_box():
 def test_createml_annotation():
     """Test CreateML annotation functionality."""
     
-    bbox = CreateMLBoundingBox(x_center=200, y_center=250, width=60, height=80)
+    bbox = CenterAbsoluteBoundingBox(x_center=200, y_center=250, width=60, height=80)
     annotation = CreateMLAnnotation(bbox=bbox, label="bicycle")
     
     assert annotation.label == "bicycle"
@@ -204,13 +204,13 @@ def test_createml_format_save_full(tmp_path: Path):
     
     # Prepare test data
     annotations1 = [
-        CreateMLAnnotation(CreateMLBoundingBox(320, 240, 100, 150), "person"),
-        CreateMLAnnotation(CreateMLBoundingBox(500, 300, 80, 60), "car")
+        CreateMLAnnotation(CenterAbsoluteBoundingBox(320, 240, 100, 150), "person"),
+        CreateMLAnnotation(CenterAbsoluteBoundingBox(500, 300, 80, 60), "car")
     ]
 
     annotations2 = [
-        CreateMLAnnotation(CreateMLBoundingBox(400, 300, 120, 180), "truck"),
-        CreateMLAnnotation(CreateMLBoundingBox(200, 150, 60, 80), "bicycle")
+        CreateMLAnnotation(CenterAbsoluteBoundingBox(400, 300, 120, 180), "truck"),
+        CreateMLAnnotation(CenterAbsoluteBoundingBox(200, 150, 60, 80), "bicycle")
     ]
 
     createml_files = [

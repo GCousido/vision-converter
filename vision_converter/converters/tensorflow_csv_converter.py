@@ -7,7 +7,6 @@ from .dataset_converter import DatasetConverter
 from ..formats.neutral_format import ImageOrigin, NeutralAnnotation, NeutralFile, NeutralFormat
 from ..formats.tensorflow_csv import TensorflowCsvAnnotation, TensorflowCsvFile, TensorflowCsvFormat
 
-
 class TensorflowCsvConverter(DatasetConverter[TensorflowCsvFormat]):
     """Converter between TensorflowCsvFormat and NeutralFormat
     
@@ -105,7 +104,7 @@ def TensorflowCsvAnnotation_to_NeutralAnnotation(annotation: TensorflowCsvAnnota
         NeutralAnnotation: Converted annotation
     """
 
-    # No conversion needed - both use PascalVocBoundingBox and class_name
+    # No conversion needed - both use CornerAbsoluteBoundingBox and class_name
     return NeutralAnnotation(annotation.geometry, annotation.class_name)
 
 
@@ -139,5 +138,5 @@ def NeutralAnnotation_to_TensorflowCsvAnnotation(annotation: NeutralAnnotation) 
         TensorflowCsvAnnotation: Converted TensorFlow CSV annotation
     """
 
-    # No conversion needed - both use PascalVocBoundingBox and class_name
+    # No conversion needed - both use CornerAbsoluteBoundingBox and class_name
     return TensorflowCsvAnnotation(bbox = annotation.geometry, class_name = annotation.class_name)

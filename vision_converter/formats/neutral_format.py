@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from typing import Any, Optional
 from .base import Shape, Annotation, DatasetFormat, FileFormat
-from .bounding_box import PascalVocBoundingBox
+from .bounding_box import CornerAbsoluteBoundingBox
 
-# TODO: implementar todo esto
+# TODO: implementate this classes
 class NeutralPolygon(Shape):
     def __init__(self, type: str) -> None:
         raise NotImplementedError("Implementation in Process")
@@ -24,23 +24,23 @@ class NeutralLineOrPolyline(Shape):
     def __init__(self, type: str) -> None:
         raise NotImplementedError("Implementation in Process")
 
-class NeutralAnnotation(Annotation[PascalVocBoundingBox]):
+class NeutralAnnotation(Annotation[CornerAbsoluteBoundingBox]):
     """Generic annotation for objects in images with extended metadata.
 
     Inherits from:
-        Annotation[PascalVocBoundingBox]: Base annotation class with Pascal VOC bounding box
+        Annotation[CornerAbsoluteBoundingBox]: Base annotation class with Pascal VOC bounding box
 
     Attributes:
         class_name (str): Name of the object class (e.g., 'person', 'car').
         attributes (dict[str, Any]): Additional object metadata key-value pairs.
-        bbox (PascalVocBoundingBox): Inherited attribute - bounding box coordinates
+        bbox (CornerAbsoluteBoundingBox): Inherited attribute - bounding box coordinates
             in Pascal VOC format (xmin, ymin, xmax, ymax).
     """
 
     class_name: str
     attributes: dict[str, Any]
 
-    def __init__(self, bbox: PascalVocBoundingBox, class_name: str, attributes: Optional[dict[str, Any]] = None) -> None:
+    def __init__(self, bbox: CornerAbsoluteBoundingBox, class_name: str, attributes: Optional[dict[str, Any]] = None) -> None:
         super().__init__(bbox)
         self.class_name = class_name
         self.attributes = attributes if attributes is not None else {}

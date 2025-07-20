@@ -3,7 +3,7 @@ from pathlib import Path
 import shutil
 from typing import Any, Generic, Optional, TypeVar, Union
 
-from .bounding_box import BoundingBox, PascalVocBoundingBox
+from .bounding_box import BoundingBox, CornerAbsoluteBoundingBox
 
 class Shape(ABC):
     """Abstract base class representing a Shape"""
@@ -17,7 +17,7 @@ class Shape(ABC):
         pass
 
     @abstractmethod
-    def getBoundingBox(self) -> PascalVocBoundingBox:
+    def getBoundingBox(self) -> CornerAbsoluteBoundingBox:
         pass
 
 T = TypeVar("T", bound=Union[BoundingBox, Shape])

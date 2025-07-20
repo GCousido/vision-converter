@@ -5,7 +5,7 @@ from ..formats.neutral_format import ImageOrigin, NeutralAnnotation, NeutralFile
 from ..formats.labelme import (
     LabelMeFile, LabelMeFormat, LabelMeAnnotation, LabelMeRectangle, LabelMeCircle, LabelMeMask
 )
-from ..formats.pascal_voc import PascalVocBoundingBox
+from ..formats.bounding_box import CornerAbsoluteBoundingBox
 
 
 class LabelMeConverter(DatasetConverter[LabelMeFormat]):
@@ -131,14 +131,14 @@ def LabelMeAnnotation_to_NeutralAnnotation(annotation: LabelMeAnnotation) -> Neu
     elif isinstance(annotation.geometry, LabelMeMask):
         attributes["has_mask_data"] = annotation.geometry.mask_data is not None
 
-    if isinstance(bbox, PascalVocBoundingBox):
+    if isinstance(bbox, CornerAbsoluteBoundingBox):
         return NeutralAnnotation(
             bbox = bbox,
             class_name = annotation.label,
             attributes = attributes
         )
     else:
-        raise TypeError(f"Expected PascalVocBoundingBox, got {type(bbox)}")
+        raise TypeError(f"Expected CornerAbsoluteBoundingBox, got {type(bbox)}")
 
 
 def NeutralFile_to_LabelMeFile(file: NeutralFile, metadata: dict[str, Any]) -> LabelMeFile:

@@ -3,7 +3,7 @@ from pathlib import Path
 import json
 from typing import Optional
 
-from .bounding_box import CocoBoundingBox
+from .bounding_box import TopLeftAbsoluteBoundingBox
 from ..utils.file_utils import find_all_images_folders, find_annotation_file
 
 from .base import Annotation, DatasetFormat, FileFormat
@@ -28,7 +28,7 @@ class RLESegmentation:
         if len(self.size) != 2 or not all(isinstance(x, int) for x in self.size):
             raise ValueError("'size' has to be a list of 2 ints [height, width].")
 
-class CocoLabel(Annotation[CocoBoundingBox]):
+class CocoLabel(Annotation[TopLeftAbsoluteBoundingBox]):
     """COCO annotation label for an object instance.
 
     Attributes:
@@ -38,7 +38,7 @@ class CocoLabel(Annotation[CocoBoundingBox]):
         segmentation (Optional[list[list[float]] | RLESegmentation]): Polygon or RLE segmentation.
         area (Optional[float]): Area of the object.
         iscrowd (Optional[bool]): Whether the annotation is a crowd region.
-        bbox (CocoBoundingBox): Inherited. Bounding box for the object.
+        bbox (TopLeftAbsoluteBoundingBox): Inherited. Bounding box for the object.
     """
     id: int
     image_id: int
@@ -47,7 +47,7 @@ class CocoLabel(Annotation[CocoBoundingBox]):
     area: Optional[float]
     iscrowd: Optional[bool]
 
-    def __init__(self, bbox: CocoBoundingBox, id: int, image_id: int, category_id: int, segmentation: Optional[list[list[float]] | RLESegmentation] = None, area: Optional[float] = None, iscrowd: Optional[bool] = None) -> None:
+    def __init__(self, bbox: TopLeftAbsoluteBoundingBox, id: int, image_id: int, category_id: int, segmentation: Optional[list[list[float]] | RLESegmentation] = None, area: Optional[float] = None, iscrowd: Optional[bool] = None) -> None:
         super().__init__(bbox)
         self.id = id
         self.image_id = image_id
@@ -226,7 +226,7 @@ class CocoFormat(DatasetFormat[CocoFile]):
         annotations = []
         for ann_data in coco_data.get('annotations', []):
             bbox_data = ann_data.get('bbox', [0, 0, 0, 0])
-            bbox = CocoBoundingBox(
+            bbox = TopLeftAbsoluteBoundingBox(
                 x_min=bbox_data[0] if len(bbox_data) > 0 else 0,
                 y_min=bbox_data[1] if len(bbox_data) > 1 else 0,
                 width=bbox_data[2] if len(bbox_data) > 2 else 0,

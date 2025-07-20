@@ -5,7 +5,7 @@ import pytest
 import csv
 
 from vision_converter.formats.tensorflow_csv import TensorflowCsvAnnotation, TensorflowCsvFile, TensorflowCsvFormat
-from vision_converter.formats.bounding_box import PascalVocBoundingBox
+from vision_converter.formats.bounding_box import CornerAbsoluteBoundingBox
 from vision_converter.tests.utils_for_tests import normalize_path
 
 # Fixture for TensorFlow CSV dataset
@@ -121,12 +121,12 @@ def test_invalid_csv_file(tmp_path):
 def test_tensorflow_csv_format_save(tmp_path):
     # Prepare test data
     annotations1 = [
-        TensorflowCsvAnnotation(PascalVocBoundingBox(100, 150, 200, 300), "person"),
-        TensorflowCsvAnnotation(PascalVocBoundingBox(300, 200, 450, 350), "car")
+        TensorflowCsvAnnotation(CornerAbsoluteBoundingBox(100, 150, 200, 300), "person"),
+        TensorflowCsvAnnotation(CornerAbsoluteBoundingBox(300, 200, 450, 350), "car")
     ]
 
     annotations2 = [
-        TensorflowCsvAnnotation(PascalVocBoundingBox(400, 300, 600, 500), "truck")
+        TensorflowCsvAnnotation(CornerAbsoluteBoundingBox(400, 300, 600, 500), "truck")
     ]
 
     tf_files = [
@@ -236,7 +236,7 @@ def tensorflow_csv_format_instance(tmp_path):
     img1.write_bytes(b"dummy_image_data")
     img2.write_bytes(b"dummy_image_data")
     
-    bbox = PascalVocBoundingBox(10, 20, 30, 40)
+    bbox = CornerAbsoluteBoundingBox(10, 20, 30, 40)
     annotation = TensorflowCsvAnnotation(bbox, "test_class")
     
     files = [

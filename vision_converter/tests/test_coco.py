@@ -3,7 +3,7 @@ from pathlib import Path
 import json
 import os
 
-from vision_converter.formats.bounding_box import CocoBoundingBox
+from vision_converter.formats.bounding_box import TopLeftAbsoluteBoundingBox
 from vision_converter.formats.coco import Category, CocoFile, CocoFormat, CocoImage, CocoLabel, Info, License, RLESegmentation
 from vision_converter.tests.utils_for_tests import normalize_path
 
@@ -221,7 +221,7 @@ def test_coco_format_save(tmp_path):
 
     annotations = [
         CocoLabel(
-            bbox=CocoBoundingBox(10, 20, 30, 40),
+            bbox=TopLeftAbsoluteBoundingBox(10, 20, 30, 40),
             id=1,
             image_id=1,
             category_id=1,
@@ -230,7 +230,7 @@ def test_coco_format_save(tmp_path):
             iscrowd=False
         ),
         CocoLabel(
-            bbox=CocoBoundingBox(50, 60, 70, 80),
+            bbox=TopLeftAbsoluteBoundingBox(50, 60, 70, 80),
             id=2,
             image_id=2,
             category_id=2,

@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 import xml.etree.ElementTree as ET
 
-from vision_converter.formats.bounding_box import PascalVocBoundingBox
+from vision_converter.formats.bounding_box import CornerAbsoluteBoundingBox
 from vision_converter.formats.pascal_voc import PascalVocFile, PascalVocFormat, PascalVocObject, PascalVocSource
 from vision_converter.tests.utils_for_tests import normalize_path
 
@@ -169,19 +169,19 @@ def test_pascalvoc_format_save_full_no_empty_annotations(tmp_path):
     source = PascalVocSource(database="MyDB", annotation="PascalVOC", image="flickr")
     
     # File 1: 2 objects
-    bbox1 = PascalVocBoundingBox(10, 20, 50, 60)
-    bbox2 = PascalVocBoundingBox(15, 25, 55, 65)
+    bbox1 = CornerAbsoluteBoundingBox(10, 20, 50, 60)
+    bbox2 = CornerAbsoluteBoundingBox(15, 25, 55, 65)
     obj1 = PascalVocObject(bbox1, name="cat", pose="Unspecified", truncated=False, difficult=False)
     obj2 = PascalVocObject(bbox2, name="dog", pose="Left", truncated=True, difficult=True)
     
     # File 2: 2 objects
-    bbox3 = PascalVocBoundingBox(5, 15, 25, 35)
-    bbox4 = PascalVocBoundingBox(30, 40, 70, 80)
+    bbox3 = CornerAbsoluteBoundingBox(5, 15, 25, 35)
+    bbox4 = CornerAbsoluteBoundingBox(30, 40, 70, 80)
     obj3 = PascalVocObject(bbox3, name="bird", pose="Back", truncated=False, difficult=True)
     obj4 = PascalVocObject(bbox4, name="horse", pose="Frontal", truncated=False, difficult=False)
     
     # File 3: 1 objects
-    bbox5 = PascalVocBoundingBox(100, 120, 150, 160)
+    bbox5 = CornerAbsoluteBoundingBox(100, 120, 150, 160)
     obj5 = PascalVocObject(bbox5, name="sheep", pose="Right", truncated=True, difficult=False)
 
     pascal_files = [

@@ -5,21 +5,21 @@ from typing import Optional
 
 from pathlib import Path
 
-from .bounding_box import CreateMLBoundingBox
+from .bounding_box import CenterAbsoluteBoundingBox
 
 from ..utils.file_utils import find_annotation_file
 from .base import Annotation, DatasetFormat, FileFormat
 
-class CreateMLAnnotation(Annotation[CreateMLBoundingBox]):
-    """CreateML format annotation with label name and bounding box in CreateMLBoundingBox format.
+class CreateMLAnnotation(Annotation[CenterAbsoluteBoundingBox]):
+    """CreateML format annotation with label name and bounding box in CenterAbsoluteBoundingBox format.
     
     Attributes:
         label (str): label of the annotated object
-        bbox (CreateMLBoundingBox): Inherited attribute - CreateML format bounding box
+        bbox (CenterAbsoluteBoundingBox): Inherited attribute - CreateML format bounding box
     """
     label: str
 
-    def __init__(self, bbox: CreateMLBoundingBox, label: str) -> None:
+    def __init__(self, bbox: CenterAbsoluteBoundingBox, label: str) -> None:
         super().__init__(bbox)
         self.label = label
 
@@ -72,7 +72,7 @@ class CreateMLFormat(DatasetFormat[CreateMLFile]):
             # Process annotations for this image
             annotations = []
             for ann in entry.get("annotations", []):
-                bbox = CreateMLBoundingBox(
+                bbox = CenterAbsoluteBoundingBox(
                     x_center=ann["coordinates"]["x"],
                     y_center=ann["coordinates"]["y"],
                     width=ann["coordinates"]["width"],
@@ -183,7 +183,7 @@ class CreateMLFormat(DatasetFormat[CreateMLFile]):
         for file in self.files:
             annotations_list = []
             for ann in file.annotations:
-                bbox: CreateMLBoundingBox = ann.geometry
+                bbox: CenterAbsoluteBoundingBox = ann.geometry
                 annotations_list.append({
                     "label": ann.label,
                     "coordinates": {

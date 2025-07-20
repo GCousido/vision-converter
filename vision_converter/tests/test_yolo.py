@@ -2,7 +2,7 @@ from pathlib import Path
 from PIL import Image
 import pytest
 
-from vision_converter.formats.bounding_box import YoloBoundingBox
+from vision_converter.formats.bounding_box import CenterNormalizedBoundingBox
 from vision_converter.formats.yolo import YoloAnnotation, YoloFile, YoloFormat
 from vision_converter.tests.utils_for_tests import normalize_path
 
@@ -127,13 +127,13 @@ def test_yolo_format_save_full(tmp_path: Path):
     # Prepare test data
     class_labels = {1: "dog", 0: "cat", 2: "car"}
     annotations1 = [
-        YoloAnnotation(YoloBoundingBox(0.5, 0.5, 0.1, 0.1), 0),
-        YoloAnnotation(YoloBoundingBox(0.2, 0.3, 0.4, 0.5), 1)
+        YoloAnnotation(CenterNormalizedBoundingBox(0.5, 0.5, 0.1, 0.1), 0),
+        YoloAnnotation(CenterNormalizedBoundingBox(0.2, 0.3, 0.4, 0.5), 1)
     ]
 
     annotations2 = [
-        YoloAnnotation(YoloBoundingBox(0.25, 0.25, 0.15, 0.8), 2),
-        YoloAnnotation(YoloBoundingBox(0.75, 0.3, 0.5, 0.1), 1)
+        YoloAnnotation(CenterNormalizedBoundingBox(0.25, 0.25, 0.15, 0.8), 2),
+        YoloAnnotation(CenterNormalizedBoundingBox(0.75, 0.3, 0.5, 0.1), 1)
     ]
 
     yolo_files = [
@@ -211,10 +211,10 @@ def yolo_format_image_instance(tmp_path):
     
     files = [
         YoloFile(filename="test_img1.jpg", annotations=[
-            YoloAnnotation(YoloBoundingBox(0.5, 0.5, 0.3, 0.3), 0)
+            YoloAnnotation(CenterNormalizedBoundingBox(0.5, 0.5, 0.3, 0.3), 0)
         ]),
         YoloFile(filename="test_img2.png", annotations=[
-            YoloAnnotation(YoloBoundingBox(0.2, 0.2, 0.1, 0.1), 1)
+            YoloAnnotation(CenterNormalizedBoundingBox(0.2, 0.2, 0.1, 0.1), 1)
         ])
     ]
     class_labels = {0: "person", 1: "car"}

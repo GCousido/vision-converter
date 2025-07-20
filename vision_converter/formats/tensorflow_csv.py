@@ -4,20 +4,20 @@ import csv
 
 from vision_converter.utils.file_utils import find_all_images_folders, find_annotation_file
 
-from .bounding_box import PascalVocBoundingBox
+from .bounding_box import CornerAbsoluteBoundingBox
 
 from .base import Annotation, DatasetFormat, FileFormat
 
-class TensorflowCsvAnnotation(Annotation[PascalVocBoundingBox]):
-    """TensorFlow CSV format annotation with class name and bounding box in PascalVocBoundingBox format.
+class TensorflowCsvAnnotation(Annotation[CornerAbsoluteBoundingBox]):
+    """TensorFlow CSV format annotation with class name and bounding box in CornerAbsoluteBoundingBox format.
     
     Attributes:
         class_name (str): String class name corresponding to class_labels
-        bbox (PascalVocBoundingBox): Inherited attribute - Pascal VOC format bounding box
+        bbox (CornerAbsoluteBoundingBox): Inherited attribute - Pascal VOC format bounding box
     """
     class_name: str
 
-    def __init__(self, bbox: PascalVocBoundingBox, class_name: str) -> None:
+    def __init__(self, bbox: CornerAbsoluteBoundingBox, class_name: str) -> None:
         super().__init__(bbox)
         self.class_name = class_name
 
@@ -116,7 +116,7 @@ class TensorflowCsvFormat(DatasetFormat[TensorflowCsvFile]):
                 xmax = int(row['xmax'])
                 ymax = int(row['ymax'])
 
-                bbox = PascalVocBoundingBox(xmin, ymin, xmax, ymax)
+                bbox = CornerAbsoluteBoundingBox(xmin, ymin, xmax, ymax)
                 annotation = TensorflowCsvAnnotation(bbox, class_name)
                 
                 # Store file info with first occurrence dimensions

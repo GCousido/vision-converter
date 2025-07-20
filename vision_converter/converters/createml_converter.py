@@ -3,11 +3,11 @@ from typing import Optional
 
 from .dataset_converter import DatasetConverter
 from ..formats.neutral_format import ImageOrigin, NeutralAnnotation, NeutralFile, NeutralFormat
-from ..formats.pascal_voc import PascalVocBoundingBox
-from ..formats.createml import CreateMLAnnotation, CreateMLBoundingBox, CreateMLFile, CreateMLFormat
+from ..formats.pascal_voc import CornerAbsoluteBoundingBox
+from ..formats.createml import CreateMLAnnotation, CreateMLFile, CreateMLFormat
 from ..utils.bbox_utils import PascalVocBBox_to_CreateMLBBox, CreateMLBBox_to_PascalVocBBox
 from ..utils.file_utils import get_image_path, get_image_info_from_file
-
+from ..formats.bounding_box import CenterAbsoluteBoundingBox
 
 class CreateMLConverter(DatasetConverter[CreateMLFormat]):
     """Converter between CreateMLFormat and NeutralFormat
@@ -136,7 +136,7 @@ def CreateMLAnnotation_to_NeutralAnnotation(annotation: CreateMLAnnotation) -> N
         NeutralAnnotation: Converted annotation
     """
     
-    bbox: PascalVocBoundingBox = CreateMLBBox_to_PascalVocBBox(annotation.geometry)
+    bbox: CornerAbsoluteBoundingBox = CreateMLBBox_to_PascalVocBBox(annotation.geometry)
 
     return NeutralAnnotation(
         bbox = bbox, 
@@ -178,7 +178,7 @@ def NeutralAnnotation_to_CreateMLAnnotation(annotation: NeutralAnnotation) -> Cr
         CreateMLAnnotation: Converted CreateML annotation
     """
 
-    bbox: CreateMLBoundingBox = PascalVocBBox_to_CreateMLBBox(annotation.geometry)
+    bbox: CenterAbsoluteBoundingBox = PascalVocBBox_to_CreateMLBBox(annotation.geometry)
 
     return CreateMLAnnotation(
         bbox = bbox,

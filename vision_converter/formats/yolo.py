@@ -1,22 +1,22 @@
 from pathlib import Path
 from typing import Optional
 
-from .bounding_box import YoloBoundingBox
+from .bounding_box import CenterNormalizedBoundingBox
 
 from ..utils.file_utils import get_image_path
 
 from .base import Annotation, DatasetFormat, FileFormat
 
-class YoloAnnotation(Annotation[YoloBoundingBox]):
-    """YOLO format annotation with class ID and bounding box in YoloBoundingBox format.
+class YoloAnnotation(Annotation[CenterNormalizedBoundingBox]):
+    """YOLO format annotation with class ID and bounding box in CenterNormalizedBoundingBox format.
     
     Attributes:
         id_class (int): Numeric class ID corresponding to class_labels
-        bbox (YoloBoundingBox): Inherited attribute - YOLO format bounding box
+        bbox (CenterNormalizedBoundingBox): Inherited attribute - YOLO format bounding box
     """
     id_class: int
 
-    def __init__(self, bbox: YoloBoundingBox, id_class: int) -> None:
+    def __init__(self, bbox: CenterNormalizedBoundingBox, id_class: int) -> None:
         super().__init__(bbox)
         self.id_class = id_class
 
@@ -125,7 +125,7 @@ class YoloFormat(DatasetFormat[YoloFile]):
                     parts = line.strip().split()
                     if len(parts) >= 5:
                         class_id = int(parts[0])
-                        bbox = YoloBoundingBox(
+                        bbox = CenterNormalizedBoundingBox(
                             x_center=float(parts[1]),
                             y_center=float(parts[2]),
                             width=float(parts[3]),
