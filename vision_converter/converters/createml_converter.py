@@ -3,11 +3,10 @@ from typing import Optional
 
 from .dataset_converter import DatasetConverter
 from ..formats.neutral_format import ImageOrigin, NeutralAnnotation, NeutralFile, NeutralFormat
-from ..formats.pascal_voc import CornerAbsoluteBoundingBox
 from ..formats.createml import CreateMLAnnotation, CreateMLFile, CreateMLFormat
 from ..utils.bbox_utils import CornerAbsolute_to_CenterAbsolute, CenterAbsolute_to_CornerAbsolute
 from ..utils.file_utils import get_image_path, get_image_info_from_file
-from ..formats.bounding_box import CenterAbsoluteBoundingBox
+from ..formats.bounding_box import CenterAbsoluteBoundingBox, CornerAbsoluteBoundingBox
 
 class CreateMLConverter(DatasetConverter[CreateMLFormat]):
     """Converter between CreateMLFormat and NeutralFormat

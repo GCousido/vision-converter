@@ -7,9 +7,8 @@ from pathlib import Path
 from .dataset_converter import DatasetConverter
 from ..formats.coco import Category, CocoFile, CocoFormat, CocoImage, CocoLabel, Info, License
 from ..formats.neutral_format import ImageOrigin, NeutralAnnotation, NeutralFile, NeutralFormat
-from ..formats.pascal_voc import CornerAbsoluteBoundingBox
 from ..utils.bbox_utils import TopLeftAbsolute_to_CornerAbsolute, CornerAbsolute_to_TopLeftAbsolute
-from ..formats.bounding_box import TopLeftAbsoluteBoundingBox
+from ..formats.bounding_box import TopLeftAbsoluteBoundingBox, CornerAbsoluteBoundingBox
 
 class CocoConverter(DatasetConverter[CocoFormat]):
     """Converter between CocoFormat and NeutralFormat

@@ -2,10 +2,10 @@ from typing import Optional
 
 from .dataset_converter import DatasetConverter
 from ..formats.neutral_format import ImageOrigin, NeutralAnnotation, NeutralFile, NeutralFormat
-from ..formats.yolo import YoloAnnotation, CenterNormalizedBoundingBox, YoloFile, YoloFormat
+from ..formats.yolo import YoloAnnotation, YoloFile, YoloFormat
 from ..utils.bbox_utils import CornerAbsolute_to_CenterNormalized, CenterNormalized_to_CornerAbsolute
 from ..utils.file_utils import get_image_path, get_image_info_from_file
-from ..formats.bounding_box import CornerAbsoluteBoundingBox
+from ..formats.bounding_box import CornerAbsoluteBoundingBox, CenterNormalizedBoundingBox
 
 class YoloConverter(DatasetConverter[YoloFormat]):
     """Converter between YoloFormat and NeutralFormat
