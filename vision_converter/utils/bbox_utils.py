@@ -1,7 +1,4 @@
-from ..formats.createml import CreateMLBoundingBox
-from ..formats.coco import CocoBoundingBox
-from ..formats.pascal_voc import PascalVocBoundingBox
-from ..formats.yolo import YoloBoundingBox
+from ..formats.bounding_box import CreateMLBoundingBox, CocoBoundingBox, PascalVocBoundingBox, YoloBoundingBox
 
 
 def YoloBBox_to_PascalVocBBox(bbox: YoloBoundingBox, image_width: int, image_height: int) -> PascalVocBoundingBox:

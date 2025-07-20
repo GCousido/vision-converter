@@ -5,33 +5,10 @@ from typing import Optional
 
 from pathlib import Path
 
-from ..utils.file_utils import find_annotation_file, get_image_path
-from .base import Annotation, BoundingBox, DatasetFormat, FileFormat
+from .bounding_box import CreateMLBoundingBox
 
-class CreateMLBoundingBox(BoundingBox):
-    """CreateML format bounding box implementation using absolute coordinates.
-    
-    Attributes:
-        x_center (float): absolute x-coordinate of center
-        y_center (float): absolute y-coordinate of center
-        width (float): absolute width
-        height (float): absolute height
-    """
-    x_center: float
-    y_center: float
-    width: float
-    height: float
-
-    def __init__(self, x_center: float, y_center: float, width: float, height: float) -> None:
-        self.x_center = x_center
-        self.y_center = y_center
-        self.width = width
-        self.height = height
-
-    def getBoundingBox(self):
-        """Returns CreateML format coordinates as [x_center, y_center, width, height]."""
-        return [self.x_center, self.y_center, self.width, self.height]
-
+from ..utils.file_utils import find_annotation_file
+from .base import Annotation, DatasetFormat, FileFormat
 
 class CreateMLAnnotation(Annotation[CreateMLBoundingBox]):
     """CreateML format annotation with label name and bounding box in CreateMLBoundingBox format.

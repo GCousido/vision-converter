@@ -1,8 +1,28 @@
 from dataclasses import dataclass
 from typing import Any, Optional
-from .base import Annotation, DatasetFormat, FileFormat
-from .pascal_voc import PascalVocBoundingBox
+from .base import Shape, Annotation, DatasetFormat, FileFormat
+from .bounding_box import PascalVocBoundingBox
 
+# TODO: implementar todo esto
+class NeutralPolygon(Shape):
+    def __init__(self, type: str) -> None:
+        raise NotImplementedError("Implementation in Process")
+
+class NeutralCircle(Shape):
+    def __init__(self, type: str) -> None:
+        raise NotImplementedError("Implementation in Process")
+
+class NeutralEllipse(Shape):
+    def __init__(self, type: str) -> None:
+        raise NotImplementedError("Implementation in Process")
+
+class NeutralPointOrPoints(Shape):
+    def __init__(self, type: str) -> None:
+        raise NotImplementedError("Implementation in Process")
+
+class NeutralLineOrPolyline(Shape):
+    def __init__(self, type: str) -> None:
+        raise NotImplementedError("Implementation in Process")
 
 class NeutralAnnotation(Annotation[PascalVocBoundingBox]):
     """Generic annotation for objects in images with extended metadata.

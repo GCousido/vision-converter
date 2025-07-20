@@ -5,7 +5,7 @@ import pytest
 import csv
 
 from vision_converter.formats.tensorflow_csv import TensorflowCsvAnnotation, TensorflowCsvFile, TensorflowCsvFormat
-from vision_converter.formats.pascal_voc import PascalVocBoundingBox
+from vision_converter.formats.bounding_box import PascalVocBoundingBox
 from vision_converter.tests.utils_for_tests import normalize_path
 
 # Fixture for TensorFlow CSV dataset

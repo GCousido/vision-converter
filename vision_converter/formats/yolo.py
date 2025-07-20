@@ -1,34 +1,11 @@
 from pathlib import Path
 from typing import Optional
 
+from .bounding_box import YoloBoundingBox
+
 from ..utils.file_utils import get_image_path
 
-from .base import Annotation, BoundingBox, DatasetFormat, FileFormat
-
-class YoloBoundingBox(BoundingBox):
-    """YOLO format bounding box implementation using normalized coordinates.
-    
-    Attributes:
-        x_center (float): Normalized x-coordinate of center (0.0-1.0)
-        y_center (float): Normalized y-coordinate of center (0.0-1.0)
-        width (float): Normalized width (0.0-1.0)
-        height (float): Normalized height (0.0-1.0)
-    """
-    x_center: float
-    y_center: float
-    width: float
-    height: float
-
-    def __init__(self, x_center: float, y_center: float, width: float, height: float) -> None:
-        self.x_center = x_center
-        self.y_center = y_center
-        self.width = width
-        self.height = height
-
-    def getBoundingBox(self):
-        """Returns YOLO format coordinates as [x_center, y_center, width, height]."""
-        return [self.x_center, self.y_center, self.width, self.height]
-
+from .base import Annotation, DatasetFormat, FileFormat
 
 class YoloAnnotation(Annotation[YoloBoundingBox]):
     """YOLO format annotation with class ID and bounding box in YoloBoundingBox format.

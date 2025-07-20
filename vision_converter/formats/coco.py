@@ -3,33 +3,10 @@ from pathlib import Path
 import json
 from typing import Optional
 
-from vision_converter.utils.file_utils import find_all_images_folders, find_annotation_file
+from .bounding_box import CocoBoundingBox
+from ..utils.file_utils import find_all_images_folders, find_annotation_file
 
-from .base import Annotation, BoundingBox, DatasetFormat, FileFormat
-
-class CocoBoundingBox(BoundingBox):
-    """COCO format bounding box using absolute pixel coordinates.
-
-    Attributes:
-        x_min (float): Minimum x (left).
-        y_min (float): Minimum y (top).
-        width (float): Box width in pixels.
-        height (float): Box height in pixels.
-    """
-    x_min: float
-    y_min: float
-    width: float
-    height: float
-
-    def __init__(self, x_min: float, y_min: float, width: float, height: float) -> None:
-        self.x_min = x_min
-        self.y_min = y_min
-        self.width = width
-        self.height = height
-
-    def getBoundingBox(self):
-        """Returns COCO format coordinates as [x_min, y_min, width, height]."""
-        return [self.x_min, self.y_min, self.width, self.height]
+from .base import Annotation, DatasetFormat, FileFormat
 
 @dataclass
 class RLESegmentation:

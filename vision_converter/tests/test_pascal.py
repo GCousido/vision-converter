@@ -2,7 +2,9 @@ import os
 from pathlib import Path
 import pytest
 import xml.etree.ElementTree as ET
-from vision_converter.formats.pascal_voc import PascalVocBoundingBox, PascalVocFile, PascalVocFormat, PascalVocObject, PascalVocSource
+
+from vision_converter.formats.bounding_box import PascalVocBoundingBox
+from vision_converter.formats.pascal_voc import PascalVocFile, PascalVocFormat, PascalVocObject, PascalVocSource
 from vision_converter.tests.utils_for_tests import normalize_path
 
 # Helper for creating XML Pascal VOC files

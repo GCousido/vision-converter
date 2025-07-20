@@ -4,7 +4,8 @@ import pytest
 import json
 import os
 
-from vision_converter.formats.createml import CreateMLAnnotation, CreateMLBoundingBox, CreateMLFile, CreateMLFormat
+from vision_converter.formats.bounding_box import CreateMLBoundingBox
+from vision_converter.formats.createml import CreateMLAnnotation, CreateMLFile, CreateMLFormat
 from vision_converter.tests.utils_for_tests import normalize_path
 
 # Fixture for CreateML dataset

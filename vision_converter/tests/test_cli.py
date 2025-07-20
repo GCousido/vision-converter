@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 # Import
-from vision_converter.cli.main import vconverter, FORMATS
+from vision_converter.cli.main import vconverter
 from vision_converter.formats import FORMATS_NAME
 
 # Fixture for Click Runner
@@ -23,7 +23,7 @@ def mock_imports(mocker):
     format_mocks = {}
     converter_mocks = {}
     
-    for fmt in FORMATS:
+    for fmt in FORMATS_NAME.keys():
         # 1. Mock for one format with a read_from_folder method that returns the format itself
         fmt_mock = mocker.MagicMock()
         fmt_class_mock = mocker.MagicMock()

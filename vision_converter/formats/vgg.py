@@ -6,8 +6,7 @@ from pathlib import Path
 from vision_converter.utils.file_utils import find_all_images_folders, find_annotation_file
 
 from .base import Annotation, DatasetFormat, FileFormat, Shape
-from .pascal_voc import PascalVocBoundingBox
-
+from .bounding_box import PascalVocBoundingBox
 
 class VGGRect(Shape):
     """Rectangle shape in VGG format.

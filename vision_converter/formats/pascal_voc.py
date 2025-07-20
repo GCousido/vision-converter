@@ -2,44 +2,10 @@ from pathlib import Path
 from typing import Optional
 import xml.etree.ElementTree as ET
 
-from vision_converter.utils.file_utils import find_all_images_folders
+from .bounding_box import PascalVocBoundingBox
+from ..utils.file_utils import find_all_images_folders
 
-from .base import Annotation, BoundingBox, DatasetFormat, FileFormat
-
-class PascalVocBoundingBox(BoundingBox):
-    """Bounding box in Pascal VOC format (absolute pixel coordinates).
-
-    Attributes:
-        x_min (int): Minimum x (left).
-        y_min (int): Minimum y (top).
-        x_max (int): Maximum x (right).
-        y_max (int): Maximum y (bottom).
-    """
-    x_min: int
-    y_min: int
-    x_max: int
-    y_max: int
-
-    def __init__(self, x_min: int,  y_min: int, x_max: int, y_max: int) -> None:
-        self.x_min = x_min
-        self.y_min = y_min
-        self.x_max = x_max
-        self.y_max = y_max
-
-    def __eq__(self, other):
-        """Compare two PascalVocBoundingBox objects for equality."""
-        if not isinstance(other, PascalVocBoundingBox):
-            return NotImplemented
-        return (self.x_min == other.x_min and 
-                self.y_min == other.y_min and 
-                self.x_max == other.x_max and 
-                self.y_max == other.y_max)
-
-    def getBoundingBox(self):
-        """Returns Pascal Voc coordinates as [x_min, y_min, x_max, y_max]."""
-        return [self.x_min, self.y_min, self.x_max,  self.y_max]
-
-
+from .base import Annotation, DatasetFormat, FileFormat
 
 class PascalVocObject(Annotation[PascalVocBoundingBox]):
     """Annotation for a single Pascal VOC Object, with bounding box and metadata.

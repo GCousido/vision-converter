@@ -3,7 +3,8 @@ from pathlib import Path
 import json
 import os
 
-from vision_converter.formats.coco import Category, CocoBoundingBox, CocoFile, CocoFormat, CocoImage, CocoLabel, Info, License, RLESegmentation
+from vision_converter.formats.bounding_box import CocoBoundingBox
+from vision_converter.formats.coco import Category, CocoFile, CocoFormat, CocoImage, CocoLabel, Info, License, RLESegmentation
 from vision_converter.tests.utils_for_tests import normalize_path
 
 def test_coco_format_creation(sample_coco_dataset):

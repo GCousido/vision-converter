@@ -8,25 +8,15 @@ from pathlib import Path
 from vision_converter.utils.file_utils import find_all_images_folders
 
 from .base import Annotation, DatasetFormat, FileFormat, Shape
-from .pascal_voc import PascalVocBoundingBox
+from .bounding_box import PascalVocBoundingBox
 
-class LabelMeShape(Shape):
-
-    def __init__(self, type: str) -> None:
-        super().__init__(type)
-    
-    @abstractmethod
-    def getBoundingBox(self) -> PascalVocBoundingBox:
-        pass
-
-class LabelMePolygon(LabelMeShape):
+class LabelMePolygon(Shape):
     """Polygon shape with multiple vertices in LabelMe format.
 
     Attributes:
         points (list[list[float]]): List of polygon vertices as [[x1, y1], [x2, y2], ...].
         shape_type (str): Inherited. Type of shape ('polygon').
     """
-
     points: list[list[float]]
     
     def __init__(self, points: list[list[float]]) -> None:
@@ -51,7 +41,7 @@ class LabelMePolygon(LabelMeShape):
         )
 
 
-class LabelMeRectangle(LabelMeShape):
+class LabelMeRectangle(Shape):
     """Rectangle shape defined by two diagonal points in LabelMe format.
 
     Attributes:
@@ -87,7 +77,7 @@ class LabelMeRectangle(LabelMeShape):
         )
 
 
-class LabelMeCircle(LabelMeShape):
+class LabelMeCircle(Shape):
     """Circle shape defined by center point and edge point in LabelMe format.
 
     Attributes:
@@ -98,7 +88,6 @@ class LabelMeCircle(LabelMeShape):
         radius (float): Calculated radius of the circle.
         shape_type (str): Inherited. Type of shape ('circle').
     """
-    
     center_x: float
     center_y: float
     edge_x: float
@@ -127,7 +116,7 @@ class LabelMeCircle(LabelMeShape):
         )
 
 
-class LabelMePoint(LabelMeShape):
+class LabelMePoint(Shape):
     """Point shape with single coordinate in LabelMe format.
 
     Attributes:
@@ -135,7 +124,6 @@ class LabelMePoint(LabelMeShape):
         y (float): Y coordinate of the point.
         shape_type (str): Inherited. Type of shape ('point').
     """
-    
     x: float
     y: float
     
@@ -153,7 +141,7 @@ class LabelMePoint(LabelMeShape):
         return PascalVocBoundingBox(int(self.x), int(self.y), int(self.x), int(self.y))
 
 
-class LabelMeLine(LabelMeShape):
+class LabelMeLine(Shape):
     """Line shape defined by start and end points in LabelMe format.
 
     Attributes:
@@ -163,8 +151,6 @@ class LabelMeLine(LabelMeShape):
         y2 (float): Y coordinate of end point.
         shape_type (str): Inherited. Type of shape ('line').
     """
-
-    
     x1: float
     y1: float
     x2: float
@@ -191,7 +177,7 @@ class LabelMeLine(LabelMeShape):
         )
 
 
-class LabelMeLinestrip(LabelMeShape):
+class LabelMeLinestrip(Shape):
     """Linestrip shape with connected line segments in LabelMe format.
 
     Attributes:
@@ -223,7 +209,7 @@ class LabelMeLinestrip(LabelMeShape):
         )
 
 
-class LabelMePoints(LabelMeShape):
+class LabelMePoints(Shape):
     """Multiple points shape (collection of individual points) in LabelMe format.
 
     Attributes:
@@ -255,7 +241,7 @@ class LabelMePoints(LabelMeShape):
         )
 
 
-class LabelMeMask(LabelMeShape):
+class LabelMeMask(Shape):
     """Mask shape defined by rectangular region with binary mask data in LabelMe format.
 
     Attributes:
@@ -266,7 +252,6 @@ class LabelMeMask(LabelMeShape):
         mask_data (Optional[bytes]): Binary mask data for the region.
         shape_type (str): Inherited. Type of shape ('mask').
     """
-    
     x1: float
     y1: float
     x2: float

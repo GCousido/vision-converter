@@ -5,6 +5,7 @@ import pytest
 import json
 import math
 
+from vision_converter.formats.bounding_box import PascalVocBoundingBox
 from vision_converter.formats.vgg import (
     VGGRect, VGGCircle, VGGEllipse, VGGPolygon, VGGPolyline, VGGPoint,
     VGGAnnotation, VGGFile, VGGFormat
@@ -203,7 +204,7 @@ def test_bounding_box_calculations():
     
     # Test Rectangle bounding box (direct conversion)
     rect = VGGRect(10, 20, 50, 60)
-    bbox = rect.getBoundingBox()
+    bbox: PascalVocBoundingBox = rect.getBoundingBox()
     assert bbox.x_min == 10
     assert bbox.y_min == 20
     assert bbox.x_max == 60  # x + width
@@ -211,7 +212,7 @@ def test_bounding_box_calculations():
     
     # Test Circle bounding box
     circle = VGGCircle(100, 100, 20)
-    bbox = circle.getBoundingBox()
+    bbox: PascalVocBoundingBox = circle.getBoundingBox()
     assert bbox.x_min == 80   # cx - r
     assert bbox.y_min == 80   # cy - r
     assert bbox.x_max == 120  # cx + r
@@ -219,7 +220,7 @@ def test_bounding_box_calculations():
     
     # Test Ellipse bounding box (no rotation)
     ellipse = VGGEllipse(100, 100, 30, 20, 0)
-    bbox = ellipse.getBoundingBox()
+    bbox: PascalVocBoundingBox = ellipse.getBoundingBox()
     assert bbox.x_min == 70   # cx - rx
     assert bbox.y_min == 80   # cy - ry
     assert bbox.x_max == 130  # cx + rx
@@ -227,7 +228,7 @@ def test_bounding_box_calculations():
     
     # Test Ellipse bounding box (no rotation)
     ellipse = VGGEllipse(100, 100, 30, 20, 0)
-    bbox = ellipse.getBoundingBox()
+    bbox: PascalVocBoundingBox = ellipse.getBoundingBox()
     assert bbox.x_min == 70   # cx - rx
     assert bbox.y_min == 80   # cy - ry
     assert bbox.x_max == 130  # cx + rx
@@ -235,7 +236,7 @@ def test_bounding_box_calculations():
     
     # Test Ellipse bounding box (with rotation)
     ellipse_rotated = VGGEllipse(100, 100, 30, 20, math.pi/4)
-    bbox = ellipse_rotated.getBoundingBox()
+    bbox: PascalVocBoundingBox = ellipse_rotated.getBoundingBox()
     # For rotated elipse by 45°, bounding box should be smaller that not rotated
     assert abs(bbox.x_min - 74.5) < 1  # ~74.50
     assert abs(bbox.y_min - 74.5) < 1  # ~74.50  
@@ -248,7 +249,7 @@ def test_bounding_box_calculations():
     
     # Test Polygon bounding box
     polygon = VGGPolygon([10, 50, 60, 20], [20, 10, 40, 50])
-    bbox = polygon.getBoundingBox()
+    bbox: PascalVocBoundingBox = polygon.getBoundingBox()
     assert bbox.x_min == 10  # min(all_points_x)
     assert bbox.y_min == 10  # min(all_points_y)
     assert bbox.x_max == 60  # max(all_points_x)
@@ -256,7 +257,7 @@ def test_bounding_box_calculations():
     
     # Test Polyline bounding box
     polyline = VGGPolyline([100, 200, 150], [300, 250, 400])
-    bbox = polyline.getBoundingBox()
+    bbox: PascalVocBoundingBox = polyline.getBoundingBox()
     assert bbox.x_min == 100
     assert bbox.y_min == 250
     assert bbox.x_max == 200
@@ -264,7 +265,7 @@ def test_bounding_box_calculations():
     
     # Test Point bounding box (minimal area)
     point = VGGPoint(25, 35)
-    bbox = point.getBoundingBox()
+    bbox: PascalVocBoundingBox = point.getBoundingBox()
     assert bbox.x_min == 25
     assert bbox.y_min == 35
     assert bbox.x_max == 26  # cx + 1

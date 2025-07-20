@@ -3,16 +3,7 @@ from pathlib import Path
 import shutil
 from typing import Any, Generic, Optional, TypeVar, Union
 
-class BoundingBox(ABC):
-    """Abstract base class representing a bounding box structure.
-    
-    Subclasses must implement the getBoundingBox method to provide
-    coordinate values in a standardized format.
-    """
-
-    @abstractmethod
-    def getBoundingBox(self) -> list:
-        pass
+from .bounding_box import BoundingBox, PascalVocBoundingBox
 
 class Shape(ABC):
     """Abstract base class representing a Shape"""
@@ -26,7 +17,7 @@ class Shape(ABC):
         pass
 
     @abstractmethod
-    def getBoundingBox(self) -> BoundingBox:
+    def getBoundingBox(self) -> PascalVocBoundingBox:
         pass
 
 T = TypeVar("T", bound=Union[BoundingBox, Shape])

@@ -1,7 +1,4 @@
-from vision_converter.formats.coco import CocoBoundingBox
-from vision_converter.formats.createml import CreateMLBoundingBox
-from vision_converter.formats.pascal_voc import PascalVocBoundingBox
-from vision_converter.formats.yolo import YoloBoundingBox
+from vision_converter.formats.bounding_box import CocoBoundingBox, CreateMLBoundingBox, PascalVocBoundingBox, YoloBoundingBox
 from vision_converter.utils.bbox_utils import (
     CreateMLBBox_to_PascalVocBBox,
     PascalVocBBox_to_CreateMLBBox,
