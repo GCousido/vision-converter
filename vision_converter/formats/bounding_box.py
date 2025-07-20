@@ -12,6 +12,20 @@ class BoundingBox(ABC):
     def getBoundingBox(self) -> list:
         pass
 
+    def __eq__(self, other):
+        """Check equality based on bounding box representation and type."""
+        if not isinstance(other, type(self)):
+            return NotImplemented
+        return self.getBoundingBox() == other.getBoundingBox()
+
+    def __repr__(self):
+        cls_name = type(self).__name__
+        attrs = ", ".join(f"{key}={value!r}" for key, value in self.__dict__.items())
+        return f"{cls_name}({attrs})"
+
+    def __str__(self):
+        return f"{self.getBoundingBox()}"
+
 
 class CenterNormalizedBoundingBox(BoundingBox):
     """Bounding box with normalized center coordinates and dimensions.
@@ -94,15 +108,6 @@ class CornerAbsoluteBoundingBox(BoundingBox):
         self.y_min = y_min
         self.x_max = x_max
         self.y_max = y_max
-
-    def __eq__(self, other):
-        """Compare two CornerAbsoluteBoundingBox objects for equality."""
-        if not isinstance(other, CornerAbsoluteBoundingBox):
-            return NotImplemented
-        return (self.x_min == other.x_min and 
-                self.y_min == other.y_min and 
-                self.x_max == other.x_max and 
-                self.y_max == other.y_max)
 
     def getBoundingBox(self) -> list[int]:
         """Returns absolute corner-format bounding box as [x_min, y_min, x_max, y_max]."""

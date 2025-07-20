@@ -1,20 +1,16 @@
 from ..formats.bounding_box import CenterAbsoluteBoundingBox, TopLeftAbsoluteBoundingBox, CornerAbsoluteBoundingBox, CenterNormalizedBoundingBox
 
 
-def YoloBBox_to_PascalVocBBox(bbox: CenterNormalizedBoundingBox, image_width: int, image_height: int) -> CornerAbsoluteBoundingBox:
-    """Converts YOLO normalized bounding box to Pascal VOC absolute coordinates.
+def CenterNormalized_to_CornerAbsolute(bbox: CenterNormalizedBoundingBox, image_width: int, image_height: int) -> CornerAbsoluteBoundingBox:
+    """Converts a bounding box from center-normalized coordinates (CenterNormalizedBoundingBox) to absolute corner coordinates (CornerAbsoluteBoundingBox).
     
     Args:
-        bbox (CenterNormalizedBoundingBox): YOLO format box with normalized coordinates (0-1)
-        image_width (int): Original image width in pixels
-        image_height (int): Original image height in pixels
+        bbox (CenterNormalizedBoundingBox): Object representing the bounding box with normalized center coordinates and dimensions (values between 0 and 1).
+        image_width (int): Image width in pixels.
+        image_height (int): Image height in pixels.
     
     Returns:
-        CornerAbsoluteBoundingBox: Box in Pascal VOC format with absolute pixel coordinates
-    
-    Note:
-        YOLO format: [x_center, y_center, width, height] normalized
-        Pascal VOC: [x_min, y_min, x_max, y_max] absolute pixels
+        CornerAbsoluteBoundingBox: Bounding box with absolute coordinates of the top-left (x_min, y_min) and bottom-right (x_max, y_max) corners, in pixels.
     """
     x_center_abs = bbox.x_center * image_width
     y_center_abs = bbox.y_center * image_height
@@ -33,17 +29,15 @@ def YoloBBox_to_PascalVocBBox(bbox: CenterNormalizedBoundingBox, image_width: in
         y_max=y_max
     )
 
-def CocoBBox_to_PascalVocBBox(bbox: TopLeftAbsoluteBoundingBox) -> CornerAbsoluteBoundingBox:
-    """Converts COCO absolute bounding box to Pascal VOC absolute coordinates.
-    
+def TopLeftAbsolute_to_CornerAbsolute(bbox: TopLeftAbsoluteBoundingBox) -> CornerAbsoluteBoundingBox:
+    """Converts a bounding box defined by the top-left corner and dimensions (TopLeftAbsoluteBoundingBox) to absolute corner coordinates
+    (CornerAbsoluteBoundingBox).
+
     Args:
-        bbox (TopLeftAbsoluteBoundingBox): COCO format box [x_min, y_min, width, height] in pixels
-    
+        bbox (TopLeftAbsoluteBoundingBox): Object with (x_min, y_min) coordinates and (width, height) in pixels.
+
     Returns:
-        CornerAbsoluteBoundingBox: Box in Pascal VOC format [x_min, y_min, x_max, y_max]
-    
-    Note:
-        Both formats use absolute pixel coordinates but different representations
+        CornerAbsoluteBoundingBox: Object containing absolute coordinates of (x_min, y_min, x_max, y_max) in pixels.
     """
 
     x_max_raw = bbox.x_min + bbox.width
@@ -61,18 +55,14 @@ def CocoBBox_to_PascalVocBBox(bbox: TopLeftAbsoluteBoundingBox) -> CornerAbsolut
         y_max=y_max
     )
 
-def CreateMLBBox_to_PascalVocBBox(bbox: CenterAbsoluteBoundingBox) -> CornerAbsoluteBoundingBox:
-    """Converts CreateML bounding box (center + size) to Pascal VOC absolute coordinates.
-    
+def CenterAbsolute_to_CornerAbsolute(bbox: CenterAbsoluteBoundingBox) -> CornerAbsoluteBoundingBox:
+    """Converts a bounding box from center-absolute coordinates (CenterAbsoluteBoundingBox) to absolute corner coordinates (CornerAbsoluteBoundingBox).
+
     Args:
-        bbox (CenterAbsoluteBoundingBox): CreateML format box with center coordinates and dimensions
-    
+        bbox (CenterAbsoluteBoundingBox): Bounding box with absolute center coordinates (x_center, y_center) and size (width, height), in pixels.
+
     Returns:
-        CornerAbsoluteBoundingBox: Box in Pascal VOC format [x_min, y_min, x_max, y_max]
-    
-    Note:
-        CreateML format: [x_center, y_center, width, height] absolute pixels (center-based)
-        Pascal VOC: [x_min, y_min, x_max, y_max] absolute pixels (corner-based)
+        CornerAbsoluteBoundingBox: Absolute coordinates of the corners (x_min, y_min, x_max, y_max) in pixels.
     """
     x_min = round(bbox.x_center - bbox.width / 2)
     y_min = round(bbox.y_center - bbox.height / 2)
@@ -87,20 +77,16 @@ def CreateMLBBox_to_PascalVocBBox(bbox: CenterAbsoluteBoundingBox) -> CornerAbso
     )
 
 
-def PascalVocBBox_to_YoloBBox(bbox: CornerAbsoluteBoundingBox, image_width: int, image_height: int) -> CenterNormalizedBoundingBox:
-    """Converts Pascal VOC absolute bounding box to YOLO normalized coordinates.
-    
+def CornerAbsolute_to_CenterNormalized(bbox: CornerAbsoluteBoundingBox, image_width: int, image_height: int) -> CenterNormalizedBoundingBox:
+    """Converts absolute corner coordinates (CornerAbsoluteBoundingBox) to normalized center-based format (CenterNormalizedBoundingBox).
+
     Args:
-        bbox (CornerAbsoluteBoundingBox): Pascal VOC format box with absolute pixel coordinates
-        image_width (int): Original image width in pixels for normalization
-        image_height (int): Original image height in pixels for normalization
-    
+        bbox (CornerAbsoluteBoundingBox): Absolute bounding box with corners (x_min, y_min, x_max, y_max) in pixels.
+        image_width (int): Original image width in pixels.
+        image_height (int): Original image height in pixels.
+
     Returns:
-        CenterNormalizedBoundingBox: Box in YOLO format with normalized coordinates (0-1)
-    
-    Note:
-        Pascal VOC: [x_min, y_min, x_max, y_max] absolute pixels
-        YOLO format: [x_center, y_center, width, height] normalized
+        CenterNormalizedBoundingBox: Bounding box with normalized center coordinates and size (values from 0 to 1).
     """
     x_center = ((bbox.x_min + bbox.x_max) / 2) / image_width
     y_center = ((bbox.y_min + bbox.y_max) / 2) / image_height
@@ -114,19 +100,14 @@ def PascalVocBBox_to_YoloBBox(bbox: CornerAbsoluteBoundingBox, image_width: int,
         height=height
     )
 
-def PascalVocBBox_to_CocoBBox(bbox: CornerAbsoluteBoundingBox) -> TopLeftAbsoluteBoundingBox:
-    """Converts Pascal VOC absolute bounding box to COCO absolute coordinates.
-    
+def CornerAbsolute_to_TopLeftAbsolute(bbox: CornerAbsoluteBoundingBox) -> TopLeftAbsoluteBoundingBox:
+    """Converts a bounding box in absolute corner coordinates (CornerAbsoluteBoundingBox) to top-left absolute and size format (TopLeftAbsoluteBoundingBox).
+
     Args:
-        bbox (CornerAbsoluteBoundingBox): Pascal VOC format box [x_min, y_min, x_max, y_max]
-    
+        bbox (CornerAbsoluteBoundingBox): Bounding box with (x_min, y_min, x_max, y_max) in pixels.
+
     Returns:
-        TopLeftAbsoluteBoundingBox: Box in COCO format [x_min, y_min, width, height] in pixels
-    
-    Note:
-        Both formats use absolute pixel coordinates but different representations:
-        - Pascal VOC: Uses max coordinates
-        - COCO: Uses width/height dimensions
+        TopLeftAbsoluteBoundingBox: Bounding box with (x_min, y_min) coordinates and (width, height) in pixels.
     """
     x_min = bbox.x_min
     y_min = bbox.y_min
@@ -141,18 +122,14 @@ def PascalVocBBox_to_CocoBBox(bbox: CornerAbsoluteBoundingBox) -> TopLeftAbsolut
     )
 
 
-def PascalVocBBox_to_CreateMLBBox(bbox: CornerAbsoluteBoundingBox) -> CenterAbsoluteBoundingBox:
-    """Converts Pascal VOC absolute bounding box to CreateML center-based coordinates.
-    
+def CornerAbsolute_to_CenterAbsolute(bbox: CornerAbsoluteBoundingBox) -> CenterAbsoluteBoundingBox:
+    """Converts a bounding box with absolute corner coordinates (CornerAbsoluteBoundingBox) into center-absolute format (CenterAbsoluteBoundingBox).
+
     Args:
-        bbox (CornerAbsoluteBoundingBox): Pascal VOC format box [x_min, y_min, x_max, y_max]
-    
+        bbox (CornerAbsoluteBoundingBox): Absolute coordinates of the corners (x_min, y_min, x_max, y_max) in pixels.
+
     Returns:
-        CenterAbsoluteBoundingBox: Box in CreateML format with center coordinates and dimensions
-    
-    Note:
-        Pascal VOC: [x_min, y_min, x_max, y_max] absolute pixels (corner-based)
-        CreateML format: [x_center, y_center, width, height] absolute pixels (center-based)
+        CenterAbsoluteBoundingBox: Center coordinates (x_center, y_center) and size (width, height), in pixels.
     """
     x_center = (bbox.x_min + bbox.x_max) / 2
     y_center = (bbox.y_min + bbox.y_max) / 2

@@ -8,7 +8,7 @@ from .dataset_converter import DatasetConverter
 from ..formats.coco import Category, CocoFile, CocoFormat, CocoImage, CocoLabel, Info, License
 from ..formats.neutral_format import ImageOrigin, NeutralAnnotation, NeutralFile, NeutralFormat
 from ..formats.pascal_voc import CornerAbsoluteBoundingBox
-from ..utils.bbox_utils import CocoBBox_to_PascalVocBBox, PascalVocBBox_to_CocoBBox
+from ..utils.bbox_utils import TopLeftAbsolute_to_CornerAbsolute, CornerAbsolute_to_TopLeftAbsolute
 from ..formats.bounding_box import TopLeftAbsoluteBoundingBox
 
 class CocoConverter(DatasetConverter[CocoFormat]):
@@ -202,7 +202,7 @@ class CocoConverter(DatasetConverter[CocoFormat]):
                     next_cat_id += 1
                 
                 # Convert bbox
-                coco_bbox: TopLeftAbsoluteBoundingBox = PascalVocBBox_to_CocoBBox(ann.geometry)
+                coco_bbox: TopLeftAbsoluteBoundingBox = CornerAbsolute_to_TopLeftAbsolute(ann.geometry)
                 
                 # Create CocoLabel
                 coco_ann = CocoLabel(
@@ -245,7 +245,7 @@ def COCOLabel_to_NeutralAnnotation(annotation: CocoLabel, category_map: dict[int
     Returns:
         NeutralAnnotation: Converted annotation in Neutral format
     """
-    bbox: CornerAbsoluteBoundingBox = CocoBBox_to_PascalVocBBox(annotation.geometry)
+    bbox: CornerAbsoluteBoundingBox = TopLeftAbsolute_to_CornerAbsolute(annotation.geometry)
 
     return NeutralAnnotation(
         bbox = bbox,

@@ -5,7 +5,7 @@ from .dataset_converter import DatasetConverter
 from ..formats.neutral_format import ImageOrigin, NeutralAnnotation, NeutralFile, NeutralFormat
 from ..formats.pascal_voc import CornerAbsoluteBoundingBox
 from ..formats.createml import CreateMLAnnotation, CreateMLFile, CreateMLFormat
-from ..utils.bbox_utils import PascalVocBBox_to_CreateMLBBox, CreateMLBBox_to_PascalVocBBox
+from ..utils.bbox_utils import CornerAbsolute_to_CenterAbsolute, CenterAbsolute_to_CornerAbsolute
 from ..utils.file_utils import get_image_path, get_image_info_from_file
 from ..formats.bounding_box import CenterAbsoluteBoundingBox
 
@@ -136,7 +136,7 @@ def CreateMLAnnotation_to_NeutralAnnotation(annotation: CreateMLAnnotation) -> N
         NeutralAnnotation: Converted annotation
     """
     
-    bbox: CornerAbsoluteBoundingBox = CreateMLBBox_to_PascalVocBBox(annotation.geometry)
+    bbox: CornerAbsoluteBoundingBox = CenterAbsolute_to_CornerAbsolute(annotation.geometry)
 
     return NeutralAnnotation(
         bbox = bbox, 
@@ -178,7 +178,7 @@ def NeutralAnnotation_to_CreateMLAnnotation(annotation: NeutralAnnotation) -> Cr
         CreateMLAnnotation: Converted CreateML annotation
     """
 
-    bbox: CenterAbsoluteBoundingBox = PascalVocBBox_to_CreateMLBBox(annotation.geometry)
+    bbox: CenterAbsoluteBoundingBox = CornerAbsolute_to_CenterAbsolute(annotation.geometry)
 
     return CreateMLAnnotation(
         bbox = bbox,

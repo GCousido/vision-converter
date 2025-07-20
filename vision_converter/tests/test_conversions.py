@@ -17,7 +17,7 @@ from vision_converter.formats.pascal_voc import PascalVocFormat
 from vision_converter.formats.tensorflow_csv import TensorflowCsvFormat
 from vision_converter.formats.vgg import VGGFormat
 from vision_converter.formats.yolo import YoloFormat
-from vision_converter.utils.bbox_utils import CreateMLBBox_to_PascalVocBBox, PascalVocBBox_to_YoloBBox
+from vision_converter.utils.bbox_utils import CenterAbsolute_to_CornerAbsolute, CornerAbsolute_to_CenterNormalized
 
 
 def bbox_almost_equal(bbox1, bbox2, epsilon=1e-3) -> bool:
@@ -66,7 +66,7 @@ def test_yolo_to_neutral():
 
             # Check bbox
             yolo_bbox = yolo_ann.geometry.getBoundingBox()
-            neutral_bbox = PascalVocBBox_to_YoloBBox(neutral_ann.geometry, neutral_file.width, neutral_file.height).getBoundingBox()
+            neutral_bbox = CornerAbsolute_to_CenterNormalized(neutral_ann.geometry, neutral_file.width, neutral_file.height).getBoundingBox()
             assert yolo_bbox == pytest.approx(neutral_bbox, rel=1e-3, abs=1e-3)
 
             # Get name from the map
@@ -103,7 +103,7 @@ def test_neutral_to_yolo():
 
             # Check bbox
             yolo_bbox = reconv_ann.geometry.getBoundingBox()
-            neutral_bbox = PascalVocBBox_to_YoloBBox(neutral_ann.geometry, neutral_file.width, neutral_file.height).getBoundingBox()
+            neutral_bbox = CornerAbsolute_to_CenterNormalized(neutral_ann.geometry, neutral_file.width, neutral_file.height).getBoundingBox()
             assert yolo_bbox == pytest.approx(neutral_bbox, rel=1e-3, abs=1e-3)
 
             # Get name from the map
@@ -308,7 +308,7 @@ def test_createml_to_neutral():
 
             assert createml_ann.label == neutral_ann.class_name
             neutral_bbox = neutral_ann.geometry.getBoundingBox()
-            createml_bbox = CreateMLBBox_to_PascalVocBBox(createml_ann.geometry).getBoundingBox()
+            createml_bbox = CenterAbsolute_to_CornerAbsolute(createml_ann.geometry).getBoundingBox()
             assert createml_bbox == pytest.approx(neutral_bbox, rel=1e-6, abs=1e-6)
 
 
@@ -341,7 +341,7 @@ def test_neutral_to_createml():
         for createml_ann, neutral_ann in zip(createml_file.annotations, neutral_file.annotations):
             assert createml_ann.label == neutral_ann.class_name
             neutral_bbox = neutral_ann.geometry.getBoundingBox()
-            createml_bbox = CreateMLBBox_to_PascalVocBBox(createml_ann.geometry).getBoundingBox()
+            createml_bbox = CenterAbsolute_to_CornerAbsolute(createml_ann.geometry).getBoundingBox()
             assert createml_bbox == pytest.approx(neutral_bbox, rel=1e-6, abs=1e-6)
 
 

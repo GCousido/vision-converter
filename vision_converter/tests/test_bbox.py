@@ -1,14 +1,14 @@
 from vision_converter.formats.bounding_box import TopLeftAbsoluteBoundingBox, CenterAbsoluteBoundingBox, CornerAbsoluteBoundingBox, CenterNormalizedBoundingBox
 from vision_converter.utils.bbox_utils import (
-    CreateMLBBox_to_PascalVocBBox,
-    PascalVocBBox_to_CreateMLBBox,
-    YoloBBox_to_PascalVocBBox,
-    CocoBBox_to_PascalVocBBox,
-    PascalVocBBox_to_YoloBBox,
-    PascalVocBBox_to_CocoBBox
+    CenterAbsolute_to_CornerAbsolute,
+    CornerAbsolute_to_CenterAbsolute,
+    CenterNormalized_to_CornerAbsolute,
+    TopLeftAbsolute_to_CornerAbsolute,
+    CornerAbsolute_to_CenterNormalized,
+    CornerAbsolute_to_TopLeftAbsolute
 )
 
-def test_YoloBBox_to_PascalVocBBox():
+def test_CenterNormalized_to_CornerAbsolute():
     yolo_bbox1 = CenterNormalizedBoundingBox(0.5, 0.5, 0.2, 0.2)
     yolo_bbox2 = CenterNormalizedBoundingBox(0.0, 0.0, 0.1, 0.1)
     yolo_bbox3 = CenterNormalizedBoundingBox(1.0, 1.0, 0.2, 0.2)
@@ -20,34 +20,22 @@ def test_YoloBBox_to_PascalVocBBox():
     expected_bbox4 = CornerAbsoluteBoundingBox(28, 61, 38, 71)
 
     # Case 1
-    new_bbox1 = YoloBBox_to_PascalVocBBox(yolo_bbox1, 100, 100)
-    assert new_bbox1.x_min == expected_bbox1.x_min
-    assert new_bbox1.y_min == expected_bbox1.y_min
-    assert new_bbox1.x_max == expected_bbox1.x_max
-    assert new_bbox1.y_max == expected_bbox1.y_max
+    new_bbox1 = CenterNormalized_to_CornerAbsolute(yolo_bbox1, 100, 100)
+    assert new_bbox1 == expected_bbox1
 
     # Case 2
-    new_bbox2 = YoloBBox_to_PascalVocBBox(yolo_bbox2, 100, 100)
-    assert new_bbox2.x_min == expected_bbox2.x_min
-    assert new_bbox2.y_min == expected_bbox2.y_min
-    assert new_bbox2.x_max == expected_bbox2.x_max
-    assert new_bbox2.y_max == expected_bbox2.y_max
+    new_bbox2 = CenterNormalized_to_CornerAbsolute(yolo_bbox2, 100, 100)
+    assert new_bbox2 == expected_bbox2
 
     # Case 3
-    new_bbox3 = YoloBBox_to_PascalVocBBox(yolo_bbox3, 100, 100)
-    assert new_bbox3.x_min == expected_bbox3.x_min
-    assert new_bbox3.y_min == expected_bbox3.y_min
-    assert new_bbox3.x_max == expected_bbox3.x_max
-    assert new_bbox3.y_max == expected_bbox3.y_max
+    new_bbox3 = CenterNormalized_to_CornerAbsolute(yolo_bbox3, 100, 100)
+    assert new_bbox3 == expected_bbox3
 
     # Case 4
-    new_bbox4 = YoloBBox_to_PascalVocBBox(yolo_bbox4, 100, 100)
-    assert new_bbox4.x_min == expected_bbox4.x_min
-    assert new_bbox4.y_min == expected_bbox4.y_min
-    assert new_bbox4.x_max == expected_bbox4.x_max
-    assert new_bbox4.y_max == expected_bbox4.y_max
+    new_bbox4 = CenterNormalized_to_CornerAbsolute(yolo_bbox4, 100, 100)
+    assert new_bbox4 == expected_bbox4
 
-def test_CocoBBox_to_PascalVocBBox():
+def test_TopLeftAbsolute_to_CornerAbsolute():
     # Test cases
     coco_bbox1 = TopLeftAbsoluteBoundingBox(10.0, 20.0, 30.0, 40.0)
     coco_bbox2 = TopLeftAbsoluteBoundingBox(10.3, 20.7, 30.2, 40.4)
@@ -60,34 +48,22 @@ def test_CocoBBox_to_PascalVocBBox():
     expected_bbox4 = CornerAbsoluteBoundingBox(11, 20, 31, 51)
 
     # Case 1: Exact integer values
-    result1 = CocoBBox_to_PascalVocBBox(coco_bbox1)
-    assert result1.x_min == expected_bbox1.x_min
-    assert result1.y_min == expected_bbox1.y_min
-    assert result1.x_max == expected_bbox1.x_max
-    assert result1.y_max == expected_bbox1.y_max
+    result1 = TopLeftAbsolute_to_CornerAbsolute(coco_bbox1)
+    assert result1 == expected_bbox1
 
     # Case 2: Standard decimal rounding
-    result2 = CocoBBox_to_PascalVocBBox(coco_bbox2)
-    assert result2.x_min == expected_bbox2.x_min
-    assert result2.y_min == expected_bbox2.y_min
-    assert result2.x_max == expected_bbox2.x_max
-    assert result2.y_max == expected_bbox2.y_max
+    result2 = TopLeftAbsolute_to_CornerAbsolute(coco_bbox2)
+    assert result2 == expected_bbox2
 
     # Case 3: .5 values (bankers rounding)
-    result3 = CocoBBox_to_PascalVocBBox(coco_bbox3)
-    assert result3.x_min == expected_bbox3.x_min
-    assert result3.y_min == expected_bbox3.y_min
-    assert result3.x_max == expected_bbox3.x_max
-    assert result3.y_max == expected_bbox3.y_max
+    result3 = TopLeftAbsolute_to_CornerAbsolute(coco_bbox3)
+    assert result3 == expected_bbox3
 
     # Case 4: Decimal accumulation
-    result4 = CocoBBox_to_PascalVocBBox(coco_bbox4)
-    assert result4.x_min == expected_bbox4.x_min
-    assert result4.y_min == expected_bbox4.y_min
-    assert result4.x_max == expected_bbox4.x_max
-    assert result4.y_max == expected_bbox4.y_max
+    result4 = TopLeftAbsolute_to_CornerAbsolute(coco_bbox4)
+    assert result4 == expected_bbox4
 
-def test_PascalVocBBox_to_YoloBBox():
+def test_CornerAbsolute_to_CenterNormalized():
     bbox1 = CornerAbsoluteBoundingBox(40, 40, 60, 60)
     bbox2 = CornerAbsoluteBoundingBox(-5, -5, 5, 5)
     bbox3 = CornerAbsoluteBoundingBox(90, 90, 110, 110)
@@ -99,35 +75,23 @@ def test_PascalVocBBox_to_YoloBBox():
     expected_bbox4 = CenterNormalizedBoundingBox(0.33, 0.66, 0.1, 0.1)
 
     # Case 1
-    new_bbox1 = PascalVocBBox_to_YoloBBox(bbox1, 100, 100)
-    assert abs(new_bbox1.x_center - expected_bbox1.x_center) < 1e-2
-    assert abs(new_bbox1.y_center - expected_bbox1.y_center) < 1e-2
-    assert abs(new_bbox1.width - expected_bbox1.width) < 1e-2
-    assert abs(new_bbox1.height - expected_bbox1.height) < 1e-2
+    new_bbox1 = CornerAbsolute_to_CenterNormalized(bbox1, 100, 100)
+    assert new_bbox1 == expected_bbox1
 
     # Case 2
-    new_bbox2 = PascalVocBBox_to_YoloBBox(bbox2, 100, 100)
-    assert abs(new_bbox2.x_center - expected_bbox2.x_center) < 1e-2
-    assert abs(new_bbox2.y_center - expected_bbox2.y_center) < 1e-2
-    assert abs(new_bbox2.width - expected_bbox2.width) < 1e-2
-    assert abs(new_bbox2.height - expected_bbox2.height) < 1e-2
+    new_bbox2 = CornerAbsolute_to_CenterNormalized(bbox2, 100, 100)
+    assert new_bbox2 == expected_bbox2
 
     # Case 3
-    new_bbox3 = PascalVocBBox_to_YoloBBox(bbox3, 100, 100)
-    assert abs(new_bbox3.x_center - expected_bbox3.x_center) < 1e-2
-    assert abs(new_bbox3.y_center - expected_bbox3.y_center) < 1e-2
-    assert abs(new_bbox3.width - expected_bbox3.width) < 1e-2
-    assert abs(new_bbox3.height - expected_bbox3.height) < 1e-2
+    new_bbox3 = CornerAbsolute_to_CenterNormalized(bbox3, 100, 100)
+    assert new_bbox3 == expected_bbox3
 
     # Case 4
-    new_bbox4 = PascalVocBBox_to_YoloBBox(bbox4, 100, 100)
-    assert abs(new_bbox4.x_center - expected_bbox4.x_center) < 1e-2
-    assert abs(new_bbox4.y_center - expected_bbox4.y_center) < 1e-2
-    assert abs(new_bbox4.width - expected_bbox4.width) < 1e-2
-    assert abs(new_bbox4.height - expected_bbox4.height) < 1e-2
+    new_bbox4 = CornerAbsolute_to_CenterNormalized(bbox4, 100, 100)
+    assert new_bbox4 == expected_bbox4
 
 
-def test_PascalVocBBox_to_CocoBBox():
+def test_CornerAbsolute_to_TopLeftAbsolute():
     bbox1 = CornerAbsoluteBoundingBox(5, 10, 25, 30)       
     bbox2 = CornerAbsoluteBoundingBox(100, 150, 300, 400)  
     bbox3 = CornerAbsoluteBoundingBox(7, 21, 57, 99)       
@@ -141,42 +105,27 @@ def test_PascalVocBBox_to_CocoBBox():
     expected_bbox5 = TopLeftAbsoluteBoundingBox(60, 80, 30, 120)
 
     # Case 1: Small box
-    new_bbox1 = PascalVocBBox_to_CocoBBox(bbox1)
-    assert new_bbox1.x_min == expected_bbox1.x_min
-    assert new_bbox1.y_min == expected_bbox1.y_min
-    assert new_bbox1.width == expected_bbox1.width
-    assert new_bbox1.height == expected_bbox1.height
+    new_bbox1 = CornerAbsolute_to_TopLeftAbsolute(bbox1)
+    assert new_bbox1 == expected_bbox1
 
     # Case 2: Medium box
-    new_bbox2 = PascalVocBBox_to_CocoBBox(bbox2)
-    assert new_bbox2.x_min == expected_bbox2.x_min
-    assert new_bbox2.y_min == expected_bbox2.y_min
-    assert new_bbox2.width == expected_bbox2.width
-    assert new_bbox2.height == expected_bbox2.height
+    new_bbox2 = CornerAbsolute_to_TopLeftAbsolute(bbox2)
+    assert new_bbox2 == expected_bbox2
 
     # Case 3: Non-rounded values
-    new_bbox3 = PascalVocBBox_to_CocoBBox(bbox3)
-    assert new_bbox3.x_min == expected_bbox3.x_min
-    assert new_bbox3.y_min == expected_bbox3.y_min
-    assert new_bbox3.width == expected_bbox3.width
-    assert new_bbox3.height == expected_bbox3.height
+    new_bbox3 = CornerAbsolute_to_TopLeftAbsolute(bbox3)
+    assert new_bbox3 == expected_bbox3
 
     # Case 4: Large horizontal box
-    new_bbox4 = PascalVocBBox_to_CocoBBox(bbox4)
-    assert new_bbox4.x_min == expected_bbox4.x_min
-    assert new_bbox4.y_min == expected_bbox4.y_min
-    assert new_bbox4.width == expected_bbox4.width
-    assert new_bbox4.height == expected_bbox4.height
+    new_bbox4 = CornerAbsolute_to_TopLeftAbsolute(bbox4)
+    assert new_bbox4 == expected_bbox4
 
     # Case 5: Large vertical box
-    new_bbox5 = PascalVocBBox_to_CocoBBox(bbox5)
-    assert new_bbox5.x_min == expected_bbox5.x_min
-    assert new_bbox5.y_min == expected_bbox5.y_min
-    assert new_bbox5.width == expected_bbox5.width
-    assert new_bbox5.height == expected_bbox5.height
+    new_bbox5 = CornerAbsolute_to_TopLeftAbsolute(bbox5)
+    assert new_bbox5 == expected_bbox5
 
 
-def test_CreateMLBBox_to_PascalVocBBox():
+def test_CenterAbsolute_to_CornerAbsolute():
     """Test conversion from CreateML bounding box format to Pascal VOC format."""
     
     # Test cases with center coordinates + dimensions -> corner coordinates
@@ -194,42 +143,27 @@ def test_CreateMLBBox_to_PascalVocBBox():
     expected_bbox5 = CornerAbsoluteBoundingBox(10, 15, 20, 35)   # 15±5, 25±10
 
     # Case 1: Standard center conversion
-    result1 = CreateMLBBox_to_PascalVocBBox(createml_bbox1)
-    assert result1.x_min == expected_bbox1.x_min
-    assert result1.y_min == expected_bbox1.y_min
-    assert result1.x_max == expected_bbox1.x_max
-    assert result1.y_max == expected_bbox1.y_max
+    result1 = CenterAbsolute_to_CornerAbsolute(createml_bbox1)
+    assert result1 == expected_bbox1
 
     # Case 2: Medium sized box
-    result2 = CreateMLBBox_to_PascalVocBBox(createml_bbox2)
-    assert result2.x_min == expected_bbox2.x_min
-    assert result2.y_min == expected_bbox2.y_min
-    assert result2.x_max == expected_bbox2.x_max
-    assert result2.y_max == expected_bbox2.y_max
+    result2 = CenterAbsolute_to_CornerAbsolute(createml_bbox2)
+    assert result2 == expected_bbox2
 
     # Case 3: Box near image edge
-    result3 = CreateMLBBox_to_PascalVocBBox(createml_bbox3)
-    assert result3.x_min == expected_bbox3.x_min
-    assert result3.y_min == expected_bbox3.y_min
-    assert result3.x_max == expected_bbox3.x_max
-    assert result3.y_max == expected_bbox3.y_max
+    result3 = CenterAbsolute_to_CornerAbsolute(createml_bbox3)
+    assert result3 == expected_bbox3
 
     # Case 4: Large box
-    result4 = CreateMLBBox_to_PascalVocBBox(createml_bbox4)
-    assert result4.x_min == expected_bbox4.x_min
-    assert result4.y_min == expected_bbox4.y_min
-    assert result4.x_max == expected_bbox4.x_max
-    assert result4.y_max == expected_bbox4.y_max
+    result4 = CenterAbsolute_to_CornerAbsolute(createml_bbox4)
+    assert result4 == expected_bbox4
 
     # Case 5: Small box
-    result5 = CreateMLBBox_to_PascalVocBBox(createml_bbox5)
-    assert result5.x_min == expected_bbox5.x_min
-    assert result5.y_min == expected_bbox5.y_min
-    assert result5.x_max == expected_bbox5.x_max
-    assert result5.y_max == expected_bbox5.y_max
+    result5 = CenterAbsolute_to_CornerAbsolute(createml_bbox5)
+    assert result5 == expected_bbox5
 
 
-def test_PascalVocBBox_to_CreateMLBBox():
+def test_CornerAbsolute_to_CenterAbsolute():
     """Test conversion from Pascal VOC bounding box format to CreateML format."""
     
     # Test cases with corner coordinates -> center coordinates + dimensions
@@ -247,36 +181,47 @@ def test_PascalVocBBox_to_CreateMLBBox():
     expected_bbox5 = CenterAbsoluteBoundingBox(15, 25, 10, 20)
 
     # Case 1: Standard corner to center conversion
-    result1 = PascalVocBBox_to_CreateMLBBox(pascal_bbox1)
-    assert result1.x_center == expected_bbox1.x_center
-    assert result1.y_center == expected_bbox1.y_center
-    assert result1.width == expected_bbox1.width
-    assert result1.height == expected_bbox1.height
+    result1 = CornerAbsolute_to_CenterAbsolute(pascal_bbox1)
+    assert result1 == expected_bbox1
 
     # Case 2: Medium sized box
-    result2 = PascalVocBBox_to_CreateMLBBox(pascal_bbox2)
-    assert result2.x_center == expected_bbox2.x_center
-    assert result2.y_center == expected_bbox2.y_center
-    assert result2.width == expected_bbox2.width
-    assert result2.height == expected_bbox2.height
+    result2 = CornerAbsolute_to_CenterAbsolute(pascal_bbox2)
+    assert result2 == expected_bbox2
 
     # Case 3: Box with edge coordinates
-    result3 = PascalVocBBox_to_CreateMLBBox(pascal_bbox3)
-    assert result3.x_center == expected_bbox3.x_center
-    assert result3.y_center == expected_bbox3.y_center
-    assert result3.width == expected_bbox3.width
-    assert result3.height == expected_bbox3.height
+    result3 = CornerAbsolute_to_CenterAbsolute(pascal_bbox3)
+    assert result3 == expected_bbox3
 
     # Case 4: Large box
-    result4 = PascalVocBBox_to_CreateMLBBox(pascal_bbox4)
-    assert result4.x_center == expected_bbox4.x_center
-    assert result4.y_center == expected_bbox4.y_center
-    assert result4.width == expected_bbox4.width
-    assert result4.height == expected_bbox4.height
+    result4 = CornerAbsolute_to_CenterAbsolute(pascal_bbox4)
+    assert result4 == expected_bbox4
 
     # Case 5: Small box
-    result5 = PascalVocBBox_to_CreateMLBBox(pascal_bbox5)
-    assert result5.x_center == expected_bbox5.x_center
-    assert result5.y_center == expected_bbox5.y_center
-    assert result5.width == expected_bbox5.width
-    assert result5.height == expected_bbox5.height
+    result5 = CornerAbsolute_to_CenterAbsolute(pascal_bbox5)
+    assert result5 == expected_bbox5
+
+def test_representation_methods():
+    # __str__ and __repr__ tests for all box classes
+    boxes = [
+        CenterNormalizedBoundingBox(0.5, 0.5, 0.2, 0.2),
+        CenterAbsoluteBoundingBox(50, 50, 20, 30),
+        CornerAbsoluteBoundingBox(40, 40, 60, 60),
+        TopLeftAbsoluteBoundingBox(10, 20, 30, 40),
+    ]
+
+    expected_strs = [
+        "[0.5, 0.5, 0.2, 0.2]",
+        "[50, 50, 20, 30]",
+        "[40, 40, 60, 60]",
+        "[10, 20, 30, 40]",
+    ]
+    expected_reprs = [
+        "CenterNormalizedBoundingBox(x_center=0.5, y_center=0.5, width=0.2, height=0.2)",
+        "CenterAbsoluteBoundingBox(x_center=50, y_center=50, width=20, height=30)",
+        "CornerAbsoluteBoundingBox(x_min=40, y_min=40, x_max=60, y_max=60)",
+        "TopLeftAbsoluteBoundingBox(x_min=10, y_min=20, width=30, height=40)",
+    ]
+
+    for box, exp_str, exp_repr in zip(boxes, expected_strs, expected_reprs):
+        assert str(box) == exp_str, f"__str__ failed for {type(box).__name__}"
+        assert repr(box) == exp_repr, f"__repr__ failed for {type(box).__name__}"
