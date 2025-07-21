@@ -3,6 +3,7 @@ from pathlib import Path
 from PIL import Image
 import pytest
 import csv
+import tensorflow as tf
 
 from vision_converter.formats.tensorflow_csv import TensorflowCsvAnnotation, TensorflowCsvFile, TensorflowCsvFormat
 from vision_converter.formats.bounding_box import CornerAbsoluteBoundingBox
@@ -349,3 +350,73 @@ def test_save_tensorflow_without_copy(tensorflow_csv_format_instance, tmp_path):
     
     images_dir = output_dir / "images"
     assert not any(images_dir.iterdir()) if images_dir.exists() else True
+
+def test_save_tensorflow_binary(tensorflow_csv_format_instance, tmp_path):
+    output_dir = tmp_path / "output"
+
+    tensorflow_csv_format_instance.save(
+        str(output_dir),
+        copy_images = False,
+        copy_as_links = False,
+        tfrecord = True
+    )
+
+    # Define the expected TFRecord path
+    tfrecord_path = output_dir / "dataset.tfrecord"
+    
+    # Check that the TFRecord file was created
+    assert tfrecord_path.exists(), "TFRecord file was not created"
+
+    # Define feature schema to parse the TFRecord
+    feature_description = {
+        'image/encoded': tf.io.FixedLenFeature([], tf.string),
+        'image/filename': tf.io.FixedLenFeature([], tf.string),
+        'image/width': tf.io.FixedLenFeature([], tf.int64),
+        'image/height': tf.io.FixedLenFeature([], tf.int64),
+        'image/object/class/text': tf.io.FixedLenFeature([], tf.string),
+        'image/object/bbox/xmin': tf.io.FixedLenFeature([], tf.float32),
+        'image/object/bbox/ymin': tf.io.FixedLenFeature([], tf.float32),
+        'image/object/bbox/xmax': tf.io.FixedLenFeature([], tf.float32),
+        'image/object/bbox/ymax': tf.io.FixedLenFeature([], tf.float32),
+    }
+
+    def parse_example(example_proto):
+        return tf.io.parse_single_example(example_proto, feature_description)
+
+    # Read and parse the TFRecord file
+    raw_dataset = tf.data.TFRecordDataset(str(tfrecord_path))
+    parsed_dataset = raw_dataset.map(parse_example)
+
+    # Collect all parsed records
+    records = list(parsed_dataset)
+
+    # Ensure at least one record exists
+    assert len(records) > 0, "TFRecord file is empty"
+
+    # Validate each record
+    for record in records:
+        filename = record['image/filename'].numpy().decode("utf-8")
+        width = record['image/width'].numpy()
+        height = record['image/height'].numpy()
+        class_text = record['image/object/class/text'].numpy().decode("utf-8")
+        xmin = record['image/object/bbox/xmin'].numpy()
+        ymin = record['image/object/bbox/ymin'].numpy()
+        xmax = record['image/object/bbox/xmax'].numpy()
+        ymax = record['image/object/bbox/ymax'].numpy()
+
+        # ✅ Find matching file from original dataset
+        matching_file = next((f for f in tensorflow_csv_format_instance.files if f.filename == filename), None)
+        assert matching_file is not None, f"Filename {filename} not found in original dataset"
+
+        # ✅ Check width and height
+        assert matching_file.width == width, f"Width mismatch for {filename}: {width} != {matching_file.width}"
+        assert matching_file.height == height, f"Height mismatch for {filename}: {height} != {matching_file.height}"
+
+        # ✅ Find matching annotation
+        matching_ann = next((ann for ann in matching_file.annotations if ann.class_name == class_text and
+                        ann.geometry.x_min == xmin and
+                        ann.geometry.y_min == ymin and
+                        ann.geometry.x_max == xmax and
+                        ann.geometry.y_max == ymax), None)
+
+        assert matching_ann is not None, f"Annotation mismatch for {filename}, class {class_text}"

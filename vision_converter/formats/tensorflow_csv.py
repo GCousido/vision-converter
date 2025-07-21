@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Optional
 import csv
+import tensorflow as tf
 
 from vision_converter.utils.file_utils import find_all_images_folders, find_annotation_file
 
@@ -66,7 +67,7 @@ class TensorflowCsvFormat(DatasetFormat[TensorflowCsvFile]):
         return TensorflowCsvFormat(name, files, folder_path, images_path_list)
 
     @staticmethod
-    def read_from_folder(path: str, copy_images: bool = False, copy_as_links: bool = False) -> 'TensorflowCsvFormat':
+    def read_from_folder(path: str, copy_images: bool = False, copy_as_links: bool = False, tfrecord: bool = False) -> 'TensorflowCsvFormat':
         """Constructs TensorFlow CSV dataset from CSV file.
 
         Expected CSV format:
@@ -81,6 +82,7 @@ class TensorflowCsvFormat(DatasetFormat[TensorflowCsvFile]):
             path (str): Path to the dataset folder or annotation file
             copy_images (bool, default False): If True, loads and stores the image file paths in the dataset object; if False, image paths are not loaded.
             copy_as_links (bool, default False): If True, loads and stores the image file paths in the dataset object; if False, image paths are not loaded.
+            tfrecord (bool, default False): If True, loads and stores the image file paths in the dataset object; if False, image paths are not loaded.
             
         Returns:
             TensorflowCsvFormat: Dataset object
@@ -140,7 +142,7 @@ class TensorflowCsvFormat(DatasetFormat[TensorflowCsvFile]):
 
         # Save images path
         image_paths = []
-        if copy_images or copy_as_links:
+        if copy_images or copy_as_links or tfrecord:
             # Search for images folders
             list_images_dir = find_all_images_folders(annotations_path.parent) 
             for images_dir in list_images_dir:
@@ -153,7 +155,7 @@ class TensorflowCsvFormat(DatasetFormat[TensorflowCsvFile]):
             images_path_list = image_paths if len(image_paths) > 0 else None
         )
 
-    def save(self, folder_path: str, copy_images: bool = False, copy_as_links: bool = False) -> None:
+    def save(self, folder_path: str, copy_images: bool = False, copy_as_links: bool = False, tfrecord: bool = False) -> None:
         """Saves TensorFlow CSV dataset to CSV file.
         
         Output format:
@@ -169,6 +171,7 @@ class TensorflowCsvFormat(DatasetFormat[TensorflowCsvFile]):
             csv_path (str): Output CSV file path
             copy_images (bool, default False): If True, copies image files to the output directory. If False, images are not copied.
             copy_as_links (bool, default False): If True, creates links to the original images in the output directory instead of copying them. If False, no links are created.
+            tfrecord (bool, default False): If True, creates the TFRecord binary file with the information of the dataset.
         """
         # Ensure output directory exists
         Path(folder_path).mkdir(parents=True, exist_ok=True)
@@ -198,3 +201,49 @@ class TensorflowCsvFormat(DatasetFormat[TensorflowCsvFile]):
 
         if copy_images or copy_as_links:
             self.handle_images(self.images_path_list, str(images_dir), copy_images, copy_as_links)
+
+        if tfrecord:
+            _generate_tfrecord(self, folder_path)
+
+
+def _generate_tfrecord(dataset: TensorflowCsvFormat, folder_path: str):
+    record_file = str(Path(folder_path) / "dataset.tfrecord")
+    with tf.io.TFRecordWriter(record_file) as writer:
+        for file in dataset.files:
+            img_path = _find_image_path_in_list(file.filename, dataset.images_path_list)
+            if img_path:
+                with open(img_path, 'rb') as img_f:
+                    img_bytes = img_f.read()
+            else:
+                raise FileNotFoundError(f"Image {file.filename} not found")
+            
+            for ann in file.annotations:
+                feature = {
+                    'image/encoded': _bytes_feature(img_bytes),
+                    'image/filename': _bytes_feature(file.filename.encode('utf-8')),
+                    'image/width': _int64_feature(file.width),
+                    'image/height': _int64_feature(file.height),
+                    'image/object/class/text': _bytes_feature(ann.class_name.encode('utf-8')),
+                    'image/object/bbox/xmin': _float_feature(ann.geometry.x_min),
+                    'image/object/bbox/ymin': _float_feature(ann.geometry.y_min),
+                    'image/object/bbox/xmax': _float_feature(ann.geometry.x_max),
+                    'image/object/bbox/ymax': _float_feature(ann.geometry.y_max)
+                }
+                example = tf.train.Example(features=tf.train.Features(feature=feature))
+                writer.write(example.SerializeToString())
+
+
+def _bytes_feature(value):
+    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+
+def _float_feature(value):
+    return tf.train.Feature(float_list=tf.train.FloatList(value=[value]))
+
+def _int64_feature(value):
+    return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
+
+def _find_image_path_in_list(filename, images_path_list) -> str | None:
+    for path in images_path_list:
+        if path.endswith(filename):
+            return str(path)
+    return None
