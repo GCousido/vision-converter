@@ -13,6 +13,7 @@ setup(
     install_requires=[
         "click>=8.1.8",
         "pillow>=11.2.1",
+        "tensorflow>=2.19.0"
     ],
     keywords=[
         "dataset", "converter", "computer vision", "cli", "yolo", "coco", "pascal voc"

@@ -19,6 +19,7 @@ classifiers = [
 dependencies = [
     "click>=8.1.8",
     "pillow>=11.2.1",
+    "tensorflow>=2.19.0",
 ]
 
 [project.optional-dependencies]
