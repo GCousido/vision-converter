@@ -1,8 +1,8 @@
 # VisionConverter
 
-![License](https://img.shields.io/github/license/GCousido/VisionConverter)
+![License](https://img.shields.io/github/license/GCousido/vision-converter)
 ![Status](https://img.shields.io/badge/status-in%20development-yellow)
-![Last Commit](https://img.shields.io/github/last-commit/GCousido/VisionConverter)
+![Last Commit](https://img.shields.io/github/last-commit/GCousido/vision-converter)
 
 ## Index
 
@@ -49,8 +49,8 @@ pip install vision-converter
 Clone the repository and install the package:
 
 ```bash
-git clone https://github.com/GCousido/VisionConverter.git
-cd VisionConverter
+git clone https://github.com/GCousido/vision-converter.git
+cd vision-converter
 pip install  .
 ```
 
@@ -59,8 +59,8 @@ pip install  .
 For development including dependencies for testing and in editable mode:
 
 ```bash
-git clone https://github.com/GCousido/VisionConverter.git
-cd VisionConverter
+git clone https://github.com/GCousido/vision-converter.git
+cd vision-converter
 pip install -e ".[dev]"
 ```
 
