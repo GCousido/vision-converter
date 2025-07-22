@@ -16,7 +16,7 @@ setup(
         "tensorflow>=2.19.0"
     ],
     keywords=[
-        "dataset", "converter", "computer vision", "cli", "yolo", "coco", "pascal voc"
+        "dataset", "converter", "annotations", "computer vision", "cli", "object detection", "yolo", "coco", "pascal voc",  "vgg-image-annotator", "labelme", "createml", "tensorflow"
     ],
     entry_points={
         "console_scripts": [

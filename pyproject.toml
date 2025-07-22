@@ -8,7 +8,7 @@ authors = [
     { name = "Guillermo Cousido Martínez", email = "guillermo.cousido@gmail.com" }
 ]
 license = "MIT"
-keywords = ["dataset", "converter", "computer vision", "cli", "yolo", "coco", "pascal voc"]
+keywords = ["dataset", "converter", "annotations", "computer vision", "cli", "object detection", "yolo", "coco", "pascal voc",  "vgg-image-annotator", "labelme", "createml", "tensorflow"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
