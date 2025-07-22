@@ -13,6 +13,9 @@ setup(
     install_requires=[
         "click>=8.1.8",
         "pillow>=11.2.1",
+        "tensorflow>=2.19.0",
+        "pycocotools>=2.0.10",
+        "numpy>=2.1.3"
     ],
     keywords=[
         "dataset", "converter", "computer vision", "cli", "yolo", "coco", "pascal voc"

@@ -1,6 +1,6 @@
-
 from abc import ABC, abstractmethod
 
+# TODO: maybe add checks -> bounding box with allowed coordinates, (negative, out of image, points that forms a boundingbox)
 class BoundingBox(ABC):
     """Abstract base class representing a bounding box structure.
     
@@ -46,6 +46,19 @@ class CenterNormalizedBoundingBox(BoundingBox):
     height: float
 
     def __init__(self, x_center: float, y_center: float, width: float, height: float) -> None:
+        # Type checks
+        for name, val in zip(["x_center", "y_center", "width", "height"], [x_center, y_center, width, height]):
+            if not isinstance(val, float):
+                raise TypeError(f"{name} must be a float. Got {val} ({type(val)})")
+        # Range checks
+        if not (0.0 <= x_center <= 1.0):
+            raise ValueError(f"x_center must be in [0.0, 1.0]. Got {x_center}")
+        if not (0.0 <= y_center <= 1.0):
+            raise ValueError(f"y_center must be in [0.0, 1.0]. Got {y_center}")
+        if not (0.0 < width <= 1.0):
+            raise ValueError(f"width must be > 0 and <= 1. Got {width}")
+        if not (0.0 < height <= 1.0):
+            raise ValueError(f"height must be > 0 and <= 1. Got {height}")
         self.x_center = x_center
         self.y_center = y_center
         self.width = width
@@ -64,17 +77,24 @@ class CenterAbsoluteBoundingBox(BoundingBox):
     formats such as Apple CreateML.
 
     Attributes:
-        x_center (float): Absolute x-coordinate of the bounding box center (in pixels).
-        y_center (float): Absolute y-coordinate of the bounding box center (in pixels).
-        width (float): Absolute width of the bounding box (in pixels).
-        height (float): Absolute height of the bounding box (in pixels).
+        x_center (float | int): Absolute x-coordinate of the bounding box center (in pixels).
+        y_center (float | int): Absolute y-coordinate of the bounding box center (in pixels).
+        width (float | int): Absolute width of the bounding box (in pixels).
+        height (float | int): Absolute height of the bounding box (in pixels).
     """
-    x_center: float
-    y_center: float
-    width: float
-    height: float
+    x_center: float | int
+    y_center: float | int
+    width: float | int
+    height: float | int
 
-    def __init__(self, x_center: float, y_center: float, width: float, height: float) -> None:
+    def __init__(self, x_center: float | int, y_center: float | int, width: float | int, height: float | int) -> None:
+        for name, val in zip(["x_center", "y_center", "width", "height"], [x_center, y_center, width, height]):
+            if not isinstance(val, (float, int)):
+                raise TypeError(f"{name} must be a float or int. Got {val} ({type(val)})")
+        if width <= 0:
+            raise ValueError(f"width must be > 0. Got {width}")
+        if height <= 0:
+            raise ValueError(f"height must be > 0. Got {height}")
         self.x_center = x_center
         self.y_center = y_center
         self.width = width
@@ -104,6 +124,13 @@ class CornerAbsoluteBoundingBox(BoundingBox):
     y_max: int
 
     def __init__(self, x_min: int,  y_min: int, x_max: int, y_max: int) -> None:
+        for name, val in zip(["x_min", "y_min", "x_max", "y_max"], [x_min, y_min, x_max, y_max]):
+            if not isinstance(val, int):
+                raise TypeError(f"{name} must be an int. Got {val} ({type(val)})")
+        if x_min > x_max:
+            raise ValueError(f"x_min ({x_min}) cannot be greater than x_max ({x_max})")
+        if y_min > y_max:
+            raise ValueError(f"y_min ({y_min}) cannot be greater than y_max ({y_max})")
         self.x_min = x_min
         self.y_min = y_min
         self.x_max = x_max
@@ -121,17 +148,24 @@ class TopLeftAbsoluteBoundingBox(BoundingBox):
     along with the absolute width and height in pixels. Commonly used in formats such as COCO.
 
     Attributes:
-        x_min (float): Absolute x-coordinate of the top-left corner (in pixels).
-        y_min (float): Absolute y-coordinate of the top-left corner (in pixels).
-        width (float): Absolute width of the bounding box (in pixels).
-        height (float): Absolute height of the bounding box (in pixels).
+        x_min (float | int): Absolute x-coordinate of the top-left corner (in pixels).
+        y_min (float | int): Absolute y-coordinate of the top-left corner (in pixels).
+        width (float | int): Absolute width of the bounding box (in pixels).
+        height (float | int): Absolute height of the bounding box (in pixels).
     """
-    x_min: float
-    y_min: float
-    width: float
-    height: float
+    x_min: float | int
+    y_min: float | int
+    width: float | int
+    height: float | int
 
-    def __init__(self, x_min: float, y_min: float, width: float, height: float) -> None:
+    def __init__(self, x_min: float | int, y_min: float | int, width: float | int, height: float | int) -> None:
+        for name, val in zip(["x_min", "y_min", "width", "height"], [x_min, y_min, width, height]):
+            if not isinstance(val, (float,int)):
+                raise TypeError(f"{name} must be a float or int. Got {val} ({type(val)})")
+        if width <= 0:
+            raise ValueError(f"width must be > 0. Got {width}")
+        if height <= 0:
+            raise ValueError(f"height must be > 0. Got {height}")
         self.x_min = x_min
         self.y_min = y_min
         self.width = width

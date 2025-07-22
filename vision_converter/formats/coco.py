@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from pathlib import Path
 import json
+import numpy as np
+from pycocotools import mask as maskUtils
 from typing import Optional
 
 from .bounding_box import TopLeftAbsoluteBoundingBox
@@ -225,27 +227,74 @@ class CocoFormat(DatasetFormat[CocoFile]):
         # Extract annotations
         annotations = []
         for ann_data in coco_data.get('annotations', []):
-            bbox_data = ann_data.get('bbox', [0, 0, 0, 0])
-            bbox = TopLeftAbsoluteBoundingBox(
-                x_min=bbox_data[0] if len(bbox_data) > 0 else 0,
-                y_min=bbox_data[1] if len(bbox_data) > 1 else 0,
-                width=bbox_data[2] if len(bbox_data) > 2 else 0,
-                height=bbox_data[3] if len(bbox_data) > 3 else 0
-            )
-            
-            # Procesing segmentation data
+            bbox_data = ann_data.get('bbox', [])
+            bbox = None
+
+            if isinstance(bbox_data, list) and len(bbox_data) == 4:
+                bbox = TopLeftAbsoluteBoundingBox(
+                    x_min=float(bbox_data[0]),
+                    y_min=float(bbox_data[1]),
+                    width=float(bbox_data[2]),
+                    height=float(bbox_data[3])
+                )
+
+            # Processing segmentation data
             segmentation_data = ann_data.get('segmentation', [])
+
             if isinstance(segmentation_data, dict) and 'counts' in segmentation_data:
-                # RLE: dict
+                # RLE segmentation (compressed)
                 segmentation = RLESegmentation(
                     size=segmentation_data.get('size', [0, 0]),
                     counts=segmentation_data.get('counts', '')
                 )
+
+                if bbox is None:
+                    # segmentation_data contains 'size' and 'counts'
+                    rle = {
+                        "size": segmentation_data.get("size", [0, 0]),
+                        "counts": segmentation_data.get("counts", "")
+                    }
+                    mask = maskUtils.decode(rle)  # returns a 2D numpy array (height x width)
+                    y_indices, x_indices = np.where(mask)
+                    if len(x_indices) == 0 or len(y_indices) == 0:
+                        raise ValueError("RLE segmentation mask is empty; cannot compute bounding box.")
+                    x_min, x_max = np.min(x_indices), np.max(x_indices)
+                    y_min, y_max = np.min(y_indices), np.max(y_indices)
+                    bbox = TopLeftAbsoluteBoundingBox(
+                        x_min=float(x_min),
+                        y_min=float(y_min),
+                        width=float(x_max - x_min),
+                        height=float(y_max - y_min)
+                    )
+
             elif isinstance(segmentation_data, list):
-                # Polygon: list
+                # Polygon segmentation (list of coordinate arrays)
                 segmentation = segmentation_data
+                if bbox is None and segmentation:
+                    all_x = []
+                    all_y = []
+                    for poly in segmentation:
+                        if isinstance(poly, list) and len(poly) >= 6:  # at least 3 points (6 coords)
+                            xs = poly[0::2]
+                            ys = poly[1::2]
+                            all_x.extend(xs)
+                            all_y.extend(ys)
+                    if all_x and all_y:
+                        x_min, y_min = min(all_x), min(all_y)
+                        x_max, y_max = max(all_x), max(all_y)
+                        bbox = TopLeftAbsoluteBoundingBox(
+                            x_min=float(x_min),
+                            y_min=float(y_min),
+                            width=float(x_max - x_min),
+                            height=float(y_max - y_min)
+                        )
             else:
                 segmentation = []
+
+            if bbox is None:
+                raise ValueError(
+                    "Annotation does not have a valid bounding box, nor a segmentation from which the bounding box can be inferred."
+                )
 
             annotations.append(CocoLabel(
                 bbox=bbox,
